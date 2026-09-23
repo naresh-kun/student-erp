@@ -62,4 +62,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Repository Git Hygiene**:
   - Created root `.gitignore` to prevent Python bytecode (`__pycache__/`, `*.pyc`), Node build directories (`node_modules/`, `dist/`), environment secrets (`.env*`), and IDE artifacts from being tracked.
   - Purged all compiled `.pyc` and `__pycache__/` files from Git tracking and working tree.
+- **Frontend Runtime & Module Resolution**:
+  - Renamed `postcss.config.js` and `tailwind.config.js` to `.cjs` (`postcss.config.cjs`, `tailwind.config.cjs`) to resolve CommonJS/ESM scope mismatch when `"type": "module"` is defined in `package.json`.
+  - Removed unused `Database` icon import from `src/App.tsx` satisfying strict TypeScript `noUnusedLocals` checks.
+  - Verified local dev server (`npm run dev`) and production bundle build (`npm run build`).
 

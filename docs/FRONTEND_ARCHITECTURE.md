@@ -39,9 +39,10 @@ frontend/
 ├── public/                 # Static assets, branding, favicons
 ├── tests/                  # Unit and integration test suites (Vitest + React Testing Library)
 ├── package.json
+├── package-lock.json
 ├── vite.config.ts
 ├── tsconfig.json
-└── tailwind.config.js
+└── tailwind.config.cjs
 ```
 
 ---

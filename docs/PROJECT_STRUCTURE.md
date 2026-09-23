@@ -34,8 +34,9 @@ student-erp/
 │   ├── tests/                    # Vitest and React Testing Library suites
 │   ├── index.html                # HTML entry point
 │   ├── package.json              # NPM dependencies and scripts
-│   ├── postcss.config.js         # PostCSS pipeline configuration
-│   ├── tailwind.config.js        # Design tokens and theme configuration
+│   ├── package-lock.json         # NPM dependency lockfile
+│   ├── postcss.config.cjs        # PostCSS pipeline configuration
+│   ├── tailwind.config.cjs       # Design tokens and theme configuration
 │   ├── tsconfig.json             # TypeScript root compiler configuration
 │   ├── tsconfig.node.json        # TypeScript Node environment configuration
 │   └── vite.config.ts            # Vite bundler configuration and path aliases

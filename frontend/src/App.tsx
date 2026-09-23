@@ -5,7 +5,6 @@ import {
   BookOpen, 
   ShieldCheck, 
   Award, 
-  Database, 
   Server, 
   CheckCircle2, 
   Layers, 
