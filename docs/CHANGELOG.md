@@ -57,3 +57,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `infra/README.md`: Infrastructure topology and deployment guidelines.
   - `infra/docker-compose.yml`: Baseline multi-service Docker configuration.
   - `infra/caddy/Caddyfile`: Reverse proxy and automated TLS routing specification.
+
+### Fixed & Maintained
+- **Repository Git Hygiene**:
+  - Created root `.gitignore` to prevent Python bytecode (`__pycache__/`, `*.pyc`), Node build directories (`node_modules/`, `dist/`), environment secrets (`.env*`), and IDE artifacts from being tracked.
+  - Purged all compiled `.pyc` and `__pycache__/` files from Git tracking and working tree.
+

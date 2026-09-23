@@ -28,6 +28,7 @@ To ensure strict engineering honesty, features and modules are classified into e
 | **Phase 1 Status Ledger** | `IMPLEMENTED` | Tracked under `docs/phases/PHASE_01_STATUS.md` |
 | **Architecture Decision Records (ADR)** | `IMPLEMENTED` | Documented in `docs/DECISIONS.md` |
 | **Root README** | `IMPLEMENTED` | High-level onboarding guide and project roadmap |
+| **Repository Git Hygiene** | `IMPLEMENTED` | Root `.gitignore` and clean tracking (no bytecode or cache artifacts) |
 
 ### 2.2 Datasets & Prototyping
 | Component / Area | Status | Notes |

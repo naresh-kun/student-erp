@@ -81,3 +81,13 @@ chore(infra): add multi-container docker-compose definition
    - [ ] Phase status document updated.
    - [ ] Code formatting and linting pass without errors.
    - [ ] No unapproved technologies or directory restructurings introduced.
+
+---
+
+## 4. Repository Hygiene & Ignored Files
+
+To prevent development artifacts from leaking into version control:
+- The root `.gitignore` file enforces exclusion of generated Python bytecode (`__pycache__/`, `*.py[cod]`), frontend build caches (`node_modules/`, `dist/`), secrets (`.env`, `.env.*`), and local editor configs (`.vscode/`, `.idea/`).
+- Never force-add ignored files (`git add -f`).
+- If cached artifacts are generated during testing or compilation, ensure they remain excluded prior to committing.
+

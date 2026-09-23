@@ -112,6 +112,7 @@ student-erp/
 │   └── phases/                   # Phase execution status records
 │       └── PHASE_01_STATUS.md    # Phase 1 completion and sign-off status
 │
+├── .gitignore                    # Git hygiene rules for build and cache artifacts
 └── README.md                     # Root project overview and onboarding guide
 ```
 

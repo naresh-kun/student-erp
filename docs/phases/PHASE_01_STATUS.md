@@ -60,6 +60,9 @@ Establish the authoritative project repository layout, author complete architect
 - [x] **Database & Infrastructure**:
   - `database/README.md` and schema migration guidelines.
   - `infra/README.md`, `infra/docker-compose.yml`, `infra/caddy/Caddyfile`.
+- [x] **Repository Git Hygiene**:
+  - Root `.gitignore` configured to exclude Python bytecode, Node artifacts, `.env`, and IDE files.
+  - All tracked `__pycache__` and `.pyc` files purged from Git index and working tree.
 
 ---
 
@@ -76,6 +79,7 @@ The following items were explicitly excluded from Phase 1 per master rules:
 
 ## 4. Files Created / Modified
 
+- `.gitignore` (Root git hygiene configuration)
 - `docs/*` (16 markdown files)
 - `mock-data/*` (10 JSON files)
 - `frontend/*` (Vite, TS, Tailwind configs, index.html, src modular directories, types, services, App.tsx, index.css)
