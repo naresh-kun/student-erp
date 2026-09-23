@@ -1,0 +1,38 @@
+[
+  {
+    "id": "sub_001",
+    "name": "Advanced Calculus & Linear Algebra",
+    "code": "MATH-301",
+    "department": "Mathematics",
+    "credits": 4,
+    "description": "Comprehensive study of vector spaces, matrices, differentiation, and multivariable integration.",
+    "faculty_ids": ["fac_001"]
+  },
+  {
+    "id": "sub_002",
+    "name": "Data Structures & Algorithms",
+    "code": "CS-201",
+    "department": "Computer Science",
+    "credits": 4,
+    "description": "Fundamental data representations: trees, graphs, sorting, searching, and algorithmic complexity.",
+    "faculty_ids": ["fac_002"]
+  },
+  {
+    "id": "sub_003",
+    "name": "Database Management Systems",
+    "code": "CS-204",
+    "department": "Computer Science",
+    "credits": 3,
+    "description": "Relational schema design, SQL, normalization, ACID transactions, and indexing strategies.",
+    "faculty_ids": ["fac_002"]
+  },
+  {
+    "id": "sub_004",
+    "name": "Technical Communication & Ethics",
+    "code": "HUM-102",
+    "department": "Humanities",
+    "credits": 2,
+    "description": "Professional writing, presentation skills, engineering ethics, and digital privacy policies.",
+    "faculty_ids": []
+  }
+]

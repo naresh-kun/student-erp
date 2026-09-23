@@ -1,0 +1,62 @@
+[
+  {
+    "id": "tt_001",
+    "class_id": "cls_001",
+    "section_id": "sec_001",
+    "subject_id": "sub_001",
+    "faculty_id": "fac_001",
+    "day_of_week": "Monday",
+    "period_number": 1,
+    "start_time": "09:00",
+    "end_time": "10:00",
+    "room_number": "Room 201"
+  },
+  {
+    "id": "tt_002",
+    "class_id": "cls_001",
+    "section_id": "sec_001",
+    "subject_id": "sub_002",
+    "faculty_id": "fac_002",
+    "day_of_week": "Monday",
+    "period_number": 2,
+    "start_time": "10:15",
+    "end_time": "11:15",
+    "room_number": "Lab 102"
+  },
+  {
+    "id": "tt_003",
+    "class_id": "cls_001",
+    "section_id": "sec_001",
+    "subject_id": "sub_003",
+    "faculty_id": "fac_002",
+    "day_of_week": "Monday",
+    "period_number": 3,
+    "start_time": "11:30",
+    "end_time": "12:30",
+    "room_number": "Room 201"
+  },
+  {
+    "id": "tt_004",
+    "class_id": "cls_001",
+    "section_id": "sec_001",
+    "subject_id": "sub_001",
+    "faculty_id": "fac_001",
+    "day_of_week": "Tuesday",
+    "period_number": 1,
+    "start_time": "09:00",
+    "end_time": "10:00",
+    "room_number": "Room 201"
+  },
+  {
+    "id": "tt_005",
+    "class_id": "cls_001",
+    "section_id": "sec_001",
+    "subject_id": "sub_004",
+    "faculty_id": "fac_001",
+    "day_of_week": "Tuesday",
+    "period_number": 2,
+    "start_time": "10:15",
+    "end_time": "11:15",
+    "room_number": "Auditorium B"
+  }
+]

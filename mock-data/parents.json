@@ -1,0 +1,26 @@
+[
+  {
+    "id": "par_001",
+    "user_id": "usr_007",
+    "first_name": "Robert",
+    "last_name": "Morgan",
+    "relation": "Father",
+    "occupation": "Software Architect",
+    "phone": "+1-555-0106",
+    "email": "robert.morgan@gmail.com",
+    "address": "742 Evergreen Terrace, Springfield",
+    "children_student_ids": ["stu_001"]
+  },
+  {
+    "id": "par_002",
+    "user_id": "usr_008",
+    "first_name": "Priya",
+    "last_name": "Patel",
+    "relation": "Mother",
+    "occupation": "Pediatrician",
+    "phone": "+1-555-0107",
+    "email": "priya.patel@gmail.com",
+    "address": "124 Conch Street, Springfield",
+    "children_student_ids": ["stu_002"]
+  }
+]

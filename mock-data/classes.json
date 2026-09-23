@@ -1,0 +1,41 @@
+[
+  {
+    "id": "cls_001",
+    "name": "Grade 11 - Computer Science",
+    "code": "G11-CS",
+    "academic_year": "2025-2026",
+    "class_teacher_id": "fac_001",
+    "sections": [
+      {
+        "id": "sec_001",
+        "name": "Section A",
+        "room": "Room 201",
+        "capacity": 35,
+        "enrolled_count": 28
+      },
+      {
+        "id": "sec_002",
+        "name": "Section B",
+        "room": "Room 202",
+        "capacity": 35,
+        "enrolled_count": 30
+      }
+    ]
+  },
+  {
+    "id": "cls_002",
+    "name": "Grade 12 - Computer Science",
+    "code": "G12-CS",
+    "academic_year": "2025-2026",
+    "class_teacher_id": "fac_002",
+    "sections": [
+      {
+        "id": "sec_003",
+        "name": "Section A",
+        "room": "Room 203",
+        "capacity": 35,
+        "enrolled_count": 25
+      }
+    ]
+  }
+]

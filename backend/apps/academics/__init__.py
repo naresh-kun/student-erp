@@ -1,0 +1,3 @@
+"""
+Academics & Curriculum Domain App
+"""

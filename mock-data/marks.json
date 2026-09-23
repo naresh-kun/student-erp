@@ -1,0 +1,58 @@
+[
+  {
+    "id": "mrk_001",
+    "student_id": "stu_001",
+    "subject_id": "sub_001",
+    "exam_type": "Midterm Exam",
+    "academic_year": "2025-2026",
+    "term": "Fall",
+    "marks_obtained": 88.5,
+    "max_marks": 100.0,
+    "grade": "A",
+    "remarks": "Excellent problem-solving in calculus proofs",
+    "evaluated_by": "fac_001",
+    "evaluated_at": "2026-09-15T14:30:00Z"
+  },
+  {
+    "id": "mrk_002",
+    "student_id": "stu_001",
+    "subject_id": "sub_002",
+    "exam_type": "Midterm Exam",
+    "academic_year": "2025-2026",
+    "term": "Fall",
+    "marks_obtained": 94.0,
+    "max_marks": 100.0,
+    "grade": "A+",
+    "remarks": "Outstanding binary search tree implementation",
+    "evaluated_by": "fac_002",
+    "evaluated_at": "2026-09-16T11:00:00Z"
+  },
+  {
+    "id": "mrk_003",
+    "student_id": "stu_002",
+    "subject_id": "sub_001",
+    "exam_type": "Midterm Exam",
+    "academic_year": "2025-2026",
+    "term": "Fall",
+    "marks_obtained": 79.0,
+    "max_marks": 100.0,
+    "grade": "B+",
+    "remarks": "Good foundation; focus more on matrix decomposition",
+    "evaluated_by": "fac_001",
+    "evaluated_at": "2026-09-15T15:00:00Z"
+  },
+  {
+    "id": "mrk_004",
+    "student_id": "stu_002",
+    "subject_id": "sub_002",
+    "exam_type": "Midterm Exam",
+    "academic_year": "2025-2026",
+    "term": "Fall",
+    "marks_obtained": 85.5,
+    "max_marks": 100.0,
+    "grade": "A-",
+    "remarks": "Strong algorithmic complexity analysis",
+    "evaluated_by": "fac_002",
+    "evaluated_at": "2026-09-16T11:45:00Z"
+  }
+]

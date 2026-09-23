@@ -1,0 +1,40 @@
+[
+  {
+    "id": "stu_001",
+    "user_id": "usr_005",
+    "roll_number": "CS2026-042",
+    "admission_number": "ADM-2024-0091",
+    "first_name": "Alex",
+    "last_name": "Morgan",
+    "date_of_birth": "2008-05-14",
+    "gender": "Non-Binary",
+    "class_id": "cls_001",
+    "section_id": "sec_001",
+    "parent_id": "par_001",
+    "academic_year": "2025-2026",
+    "enrollment_date": "2024-08-01",
+    "status": "Active",
+    "blood_group": "O+",
+    "emergency_contact": "+1-555-0106",
+    "address": "742 Evergreen Terrace, Springfield"
+  },
+  {
+    "id": "stu_002",
+    "user_id": "usr_006",
+    "roll_number": "CS2026-043",
+    "admission_number": "ADM-2024-0092",
+    "first_name": "Maya",
+    "last_name": "Patel",
+    "date_of_birth": "2008-09-22",
+    "gender": "Female",
+    "class_id": "cls_001",
+    "section_id": "sec_001",
+    "parent_id": "par_002",
+    "academic_year": "2025-2026",
+    "enrollment_date": "2024-08-01",
+    "status": "Active",
+    "blood_group": "B+",
+    "emergency_contact": "+1-555-0107",
+    "address": "124 Conch Street, Springfield"
+  }
+]

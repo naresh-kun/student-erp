@@ -1,0 +1,62 @@
+[
+  {
+    "id": "att_001",
+    "student_id": "stu_001",
+    "class_id": "cls_001",
+    "section_id": "sec_001",
+    "subject_id": "sub_001",
+    "faculty_id": "fac_001",
+    "date": "2026-09-22",
+    "session_period": 1,
+    "status": "Present",
+    "remarks": "On time"
+  },
+  {
+    "id": "att_002",
+    "student_id": "stu_001",
+    "class_id": "cls_001",
+    "section_id": "sec_001",
+    "subject_id": "sub_002",
+    "faculty_id": "fac_002",
+    "date": "2026-09-22",
+    "session_period": 2,
+    "status": "Present",
+    "remarks": "Lab session active"
+  },
+  {
+    "id": "att_003",
+    "student_id": "stu_002",
+    "class_id": "cls_001",
+    "section_id": "sec_001",
+    "subject_id": "sub_001",
+    "faculty_id": "fac_001",
+    "date": "2026-09-22",
+    "session_period": 1,
+    "status": "Absent",
+    "remarks": "Sick leave submitted"
+  },
+  {
+    "id": "att_004",
+    "student_id": "stu_002",
+    "class_id": "cls_001",
+    "section_id": "sec_001",
+    "subject_id": "sub_002",
+    "faculty_id": "fac_002",
+    "date": "2026-09-22",
+    "session_period": 2,
+    "status": "Excused",
+    "remarks": "Medical note verified by admin"
+  },
+  {
+    "id": "att_005",
+    "student_id": "stu_001",
+    "class_id": "cls_001",
+    "section_id": "sec_001",
+    "subject_id": "sub_003",
+    "faculty_id": "fac_002",
+    "date": "2026-09-23",
+    "session_period": 3,
+    "status": "Late",
+    "remarks": "Arrived 10 minutes late due to transit"
+  }
+]

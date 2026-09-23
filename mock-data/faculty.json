@@ -1,0 +1,32 @@
+[
+  {
+    "id": "fac_001",
+    "user_id": "usr_003",
+    "employee_code": "FAC-MATH-012",
+    "first_name": "Sarah",
+    "last_name": "Jenkins",
+    "department": "Mathematics",
+    "designation": "Senior Lecturer & Head of Department",
+    "qualification": "Ph.D. in Applied Mathematics",
+    "specialization": "Linear Algebra, Discrete Mathematics",
+    "office_room": "Room 304, Academic Block A",
+    "joining_date": "2020-07-15",
+    "assigned_subject_ids": ["sub_001"],
+    "class_teacher_of": "cls_001"
+  },
+  {
+    "id": "fac_002",
+    "user_id": "usr_004",
+    "employee_code": "FAC-CS-008",
+    "first_name": "David",
+    "last_name": "Ross",
+    "department": "Computer Science",
+    "designation": "Assistant Professor",
+    "qualification": "M.S. in Computer Science",
+    "specialization": "Data Structures, Operating Systems",
+    "office_room": "Lab 102, Turing Center",
+    "joining_date": "2022-01-10",
+    "assigned_subject_ids": ["sub_002", "sub_003"],
+    "class_teacher_of": null
+  }
+]

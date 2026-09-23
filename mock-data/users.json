@@ -1,0 +1,98 @@
+[
+  {
+    "id": "usr_001",
+    "username": "superadmin",
+    "email": "admin@studenterp.edu",
+    "first_name": "Eleanor",
+    "last_name": "Vance",
+    "role": "Admin",
+    "is_active": true,
+    "avatar_url": "https://images.unsplash.com/photo-1494790108377-be9c29b29330",
+    "phone": "+1-555-0100",
+    "created_at": "2026-01-10T08:00:00Z"
+  },
+  {
+    "id": "usr_002",
+    "username": "principal.sharma",
+    "email": "principal.sharma@studenterp.edu",
+    "first_name": "Arthur",
+    "last_name": "Sharma",
+    "role": "Principal",
+    "is_active": true,
+    "avatar_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
+    "phone": "+1-555-0101",
+    "created_at": "2026-01-10T08:15:00Z"
+  },
+  {
+    "id": "usr_003",
+    "username": "sarah.jenkins",
+    "email": "sarah.jenkins@studenterp.edu",
+    "first_name": "Sarah",
+    "last_name": "Jenkins",
+    "role": "Faculty",
+    "is_active": true,
+    "avatar_url": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2",
+    "phone": "+1-555-0102",
+    "created_at": "2026-01-12T09:00:00Z"
+  },
+  {
+    "id": "usr_004",
+    "username": "david.ross",
+    "email": "david.ross@studenterp.edu",
+    "first_name": "David",
+    "last_name": "Ross",
+    "role": "Faculty",
+    "is_active": true,
+    "avatar_url": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e",
+    "phone": "+1-555-0103",
+    "created_at": "2026-01-12T09:30:00Z"
+  },
+  {
+    "id": "usr_005",
+    "username": "alex.morgan",
+    "email": "alex.morgan@studenterp.edu",
+    "first_name": "Alex",
+    "last_name": "Morgan",
+    "role": "Student",
+    "is_active": true,
+    "avatar_url": "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
+    "phone": "+1-555-0104",
+    "created_at": "2026-01-15T10:00:00Z"
+  },
+  {
+    "id": "usr_006",
+    "username": "maya.patel",
+    "email": "maya.patel@studenterp.edu",
+    "first_name": "Maya",
+    "last_name": "Patel",
+    "role": "Student",
+    "is_active": true,
+    "avatar_url": "https://images.unsplash.com/photo-1517841905240-472988babdf9",
+    "phone": "+1-555-0105",
+    "created_at": "2026-01-15T10:15:00Z"
+  },
+  {
+    "id": "usr_007",
+    "username": "robert.morgan",
+    "email": "robert.morgan@gmail.com",
+    "first_name": "Robert",
+    "last_name": "Morgan",
+    "role": "Parent",
+    "is_active": true,
+    "avatar_url": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e",
+    "phone": "+1-555-0106",
+    "created_at": "2026-01-15T10:45:00Z"
+  },
+  {
+    "id": "usr_008",
+    "username": "priya.patel",
+    "email": "priya.patel@gmail.com",
+    "first_name": "Priya",
+    "last_name": "Patel",
+    "role": "Parent",
+    "is_active": true,
+    "avatar_url": "https://images.unsplash.com/photo-1544005313-94ddf0286df2",
+    "phone": "+1-555-0107",
+    "created_at": "2026-01-15T11:00:00Z"
+  }
+]
