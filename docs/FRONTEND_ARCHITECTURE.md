@@ -79,6 +79,12 @@ graph LR
 - Query keys are strongly typed and organized hierarchically: `['students', id]`, `['attendance', classId, date]`.
 - Automatic background refetching and optimistic updates ensure real-time UI feel.
 
+### 2.3 Contextual Prototype Data Separation
+- Page and presentation components MUST NOT define local prototype datasets inline or import raw `.json` files directly.
+- All domain records, timetable slots, examination rosters, attendance session logs, and report metadata are exposed via typed async methods on the service abstraction layer (`MockDataService`).
+- Strict data flow: `Mock JSON / Service Data -> Mock Service -> Typed Data -> React Page / Component`.
+- When transitioning to live Django REST APIs in future phases, pages require zero data structure refactoring.
+
 ---
 
 ## 3. Routing & Role-Based Navigation Philosophy

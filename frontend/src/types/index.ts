@@ -137,6 +137,8 @@ export interface TimetableSlot {
   room_number: string;
 }
 
+export type TimetableEntry = TimetableSlot;
+
 export interface CalendarEvent {
   id: string;
   title: string;

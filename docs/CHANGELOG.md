@@ -67,3 +67,66 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Removed unused `Database` icon import from `src/App.tsx` satisfying strict TypeScript `noUnusedLocals` checks.
   - Verified local dev server (`npm run dev`) and production bundle build (`npm run build`).
 
+---
+
+## [Phase 2: Frontend Core + Role Dashboards + Mock Data Integration] - 2026-09-23
+
+### Added (Task 2.1: Frontend Application Foundation)
+- **Phase 2 Governance & Specification**:
+  - `docs/phase_prompts/PHASE_02.md`: Authoritative Phase 2 specification covering objectives, constraints, 34 application routes + catch-all 404 route contract, and acceptance criteria.
+  - `docs/phases/PHASE_02_STATUS.md`: Phase 2 tracking ledger initiated (IN PROGRESS).
+- **Frontend Application Shell & Routing**:
+  - `src/app/router.tsx`: Fixed contract of 34 application routes + catch-all 404 route fully wired with React Router across Shared (1), Student (6), Parent (6), Faculty (5), Admin (11), and Principal (5) domains.
+  - `src/app/navigation.ts`: Comprehensive role-specific navigation definitions with Lucide React icons.
+  - `src/layouts/DashboardLayout.tsx`: Responsive shell featuring collapsible sidebar, top navigation, user profile summary, dark/light theme toggle, and quick role switcher.
+  - `src/layouts/AuthLayout.tsx`: Centered focus layout for authentication with institutional branding.
+  - `src/layouts/RoleRoute.tsx`: Client-side route guard enforcing authentication and role clearance.
+- **Mock Authentication System**:
+  - `src/services/authService.ts`: Client-side session management with `localStorage` persistence and simulated credentials.
+  - `src/features/auth/AuthContext.tsx` & `src/hooks/useAuth.ts`: Reactive auth context and hook supporting 1-click role simulation.
+  - `src/pages/LoginPage.tsx`: Interactive login portal with 1-click role selectors for all 5 roles.
+- **Shared UI Component Primitives**:
+  - `src/components/ui/Card.tsx`, `Button.tsx`, `Badge.tsx`, `PageContainer.tsx`, `SectionHeader.tsx`, `States.tsx` (Loading, Empty, Error), and `RoutePlaceholder.tsx`.
+- **Route Shell Pages**:
+  - Scaffolding of all 34 application routes in `src/pages/` (Student, Parent, Faculty, Admin, Principal, and 404 handler) ensuring zero broken links or 404 errors during navigation.
+
+### Changed (Task 2.1 Demo Surface Upgrade)
+- **Elimination of Developer Scaffold Views**:
+  - Replaced technical placeholder panels with role-tailored, believable ERP presentation surfaces across all 34 routes.
+  - Student: Interactive dashboard with attendance AreaChart and midterm scores BarChart, 2-column profile record, attendance log, score register, weekly timetable tabs, and categorized calendar.
+  - Parent: Family academic overview with child switcher, attendance logs with excuse submission form, term report card with teacher remarks, and school calendar.
+  - Faculty: Teaching workspace with today's lecture schedule, class roster tables, live interactive attendance recording sheet, marks grade book with Recharts distribution chart, and faculty timetable.
+  - Admin: Institutional operations center with 6-month trends, master student/parent/faculty directories with live search, classes & capacity bars, subjects catalog, attendance/marks audits, master timetable, and section allocation engine preview.
+  - Principal: Executive leadership console with school-wide KPIs, departmental pass rate bar chart, cohort attendance line chart, faculty appraisal roster, and downloadable executive dossiers.
+- **Service Layer Enrichment**:
+  - Extended `src/services/mockService.ts` with typed methods for student directories, faculty directories, parent directories, weekly timetable grids, section allocation previews, and institutional KPIs.
+- **Component Hygiene**:
+  - Removed obsolete `src/components/ui/RoutePlaceholder.tsx` and added `info` variant to `src/components/ui/Badge.tsx`.
+
+### Changed (Task 2.1 Demo Surface — Service Data Cleanup)
+- **Extracted Inline Contextual Prototype Data Behind Service Abstraction Layer**:
+  - Migrated hardcoded contextual prototype arrays out of React page components and placed them behind typed async methods on `MockDataService`:
+    - `/student/attendance`: `getStudentAttendanceHistory()` for attendance session log records.
+    - `/student/marks`: `getStudentExamRecords()` for detailed examination score rows.
+    - `/student/calendar`: `getAcademicCalendarEvents()` for categorized campus events.
+    - `/parent/children`: `getParentChildrenCards()` for linked children cards.
+    - `/parent/attendance`: `getStudentAbsenceLogs()` for student absence advisory records.
+    - `/parent/marks`: `getParentStudentEvaluations()` for term subject evaluations.
+    - `/parent/calendar`: `getParentCalendarEvents()` for family calendar events.
+    - `/faculty/dashboard`: `getFacultyTodayLectures()` and `getFacultyAssignedClassesSummary()`.
+    - `/faculty/marks`: `getFacultyGradeDistribution()` and `getFacultyClassGrades()`.
+    - `/faculty/timetable`: `getFacultyTimetableSlots()`.
+    - `/admin/classes`: `getClassSections()` for class section capacities and coordinators.
+    - `/admin/subjects`: `getSubjectsCatalog()`.
+    - `/admin/attendance`: `getAttendanceAuditLogs()`.
+    - `/admin/marks`: `getExamSummaries()`.
+    - `/admin/timetable`: `getMasterTimetableEntries()`.
+    - `/admin/calendar`: `getCalendarNotices()`.
+    - `/principal/academics`: `getClassGpaComparisons()`.
+    - `/principal/attendance`: `getGradeAttendanceTrends()`.
+    - `/principal/reports`: `getReportMetadata()` for formal institutional dossiers.
+  - Zero raw JSON imports in any page or presentation component; zero duplicate dataset copies.
+  - Strict data flow maintained: `Mock JSON / Service Data -> Mock Service -> Typed Data -> React Page / Component`.
+
+
+

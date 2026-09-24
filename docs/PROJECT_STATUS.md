@@ -1,7 +1,7 @@
 # Project Status & Milestone Ledger
 
-> **Current Phase**: Phase 1 (Foundation + Documentation + Governance)  
-> **Authoritative State**: Active Phase 1 Foundation  
+> **Current Phase**: Phase 2 (Frontend Core + Role Dashboards + Mock Data Integration)  
+> **Authoritative State**: Active Phase 2 — Task 2.1 (Foundation & Shell Complete; Phase IN PROGRESS)  
 > **Last Updated**: 2026-09-23
 
 ---
@@ -19,13 +19,14 @@ To ensure strict engineering honesty, features and modules are classified into e
 
 ## 2. Comprehensive Status Matrix
 
-### 2.1 Governance & Architecture (Phase 1)
+### 2.1 Governance & Architecture
 | Component / Area | Status | Notes |
 | :--- | :--- | :--- |
 | **Top-Level Monorepo Structure** | `IMPLEMENTED` | Strict folder boundaries (`frontend/`, `backend/`, `database/`, `infra/`, `mock-data/`, `docs/`) |
 | **Authoritative Documentation Suite** | `IMPLEMENTED` | 16 comprehensive `.md` specifications covering all architecture, schema, RBAC, workflows |
-| **Phase 1 Kickoff Specification** | `IMPLEMENTED` | Preserved under `docs/phase_prompts/PHASE_01.md` |
-| **Phase 1 Status Ledger** | `IMPLEMENTED` | Tracked under `docs/phases/PHASE_01_STATUS.md` |
+| **Phase 1 Kickoff Specification & Status** | `IMPLEMENTED` | Preserved under `docs/phase_prompts/PHASE_01.md` & `docs/phases/PHASE_01_STATUS.md` |
+| **Phase 2 Kickoff Specification** | `IMPLEMENTED` | Preserved under `docs/phase_prompts/PHASE_02.md` |
+| **Phase 2 Status Ledger** | `IMPLEMENTED` | Tracked under `docs/phases/PHASE_02_STATUS.md` (Active, IN PROGRESS) |
 | **Architecture Decision Records (ADR)** | `IMPLEMENTED` | Documented in `docs/DECISIONS.md` |
 | **Root README** | `IMPLEMENTED` | High-level onboarding guide and project roadmap |
 | **Repository Git Hygiene** | `IMPLEMENTED` | Root `.gitignore` and clean tracking (no bytecode or cache artifacts) |
@@ -49,11 +50,14 @@ To ensure strict engineering honesty, features and modules are classified into e
 | :--- | :--- | :--- |
 | **Frontend Directory Skeleton** | `IMPLEMENTED` | Modular layout (`app`, `components`, `features`, `layouts`, `pages`, `hooks`, `services`, `types`) |
 | **Build & Tooling Configuration** | `IMPLEMENTED` | Vite, TypeScript (`tsconfig.json`), Tailwind CSS, PostCSS configured & runtime verified |
-| **Service Layer Abstraction Setup** | `IMPLEMENTED` | Dual-mode mock/api service interfaces defined |
-| **TypeScript Domain Interfaces** | `IMPLEMENTED` | Core domain types defined in `src/types/index.ts` |
-| **Role-Specific Dashboards** | `NOT IMPLEMENTED` | Scheduled for Phase 2 |
-| **Authentication Flow & Screens** | `NOT IMPLEMENTED` | Scheduled for Phase 2 |
-| **Attendance & Marks UI Views** | `NOT IMPLEMENTED` | Scheduled for Phase 2 |
+| **Service Layer Abstraction Setup** | `IMPLEMENTED` | Dual-mode static/async mock service interfaces defined in `services/mockService.ts`; all contextual prototype data is service-backed with zero raw JSON imports in UI pages |
+| **TypeScript Domain Interfaces** | `IMPLEMENTED` | Core domain types defined in `src/types/index.ts` alongside service domain schemas |
+| **Application Router & 34 Routes (+ 404)** | `IMPLEMENTED` | Fixed contract of 34 application routes + catch-all 404 route fully wired with React Router in `src/app/router.tsx` |
+| **Role-Aware Layouts & Navigation** | `IMPLEMENTED` | `DashboardLayout`, `AuthLayout`, `<RoleRoute>`, dynamic sidebar in `src/layouts/` |
+| **Mock Authentication & Role Switcher** | `MOCKED` | `useAuth`, 1-click role simulation, `localStorage` persistence in `src/features/auth/` |
+| **Shared UI Component Primitives** | `IMPLEMENTED` | `Card`, `Button`, `Badge`, `PageContainer`, `SectionHeader`, `States` |
+| **Role-Specific Presentation Surfaces** | `IMPLEMENTED` | All 34 application routes have demo-ready visual surfaces with Recharts analytics backed by `MockDataService` |
+| **Domain Feature Modules & Mutation Forms** | `PLANNED` | Granular CRUD workflows, Zod validation schemas, mutation hooks scheduled across Tasks 2.2–2.6 |
 
 ### 2.4 Application Layer (Backend)
 | Component / Area | Status | Notes |
