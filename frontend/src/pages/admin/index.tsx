@@ -489,23 +489,70 @@ export const AdminAttendancePage: React.FC = () => {
     MockDataService.getAttendanceAuditLogs().then(setAuditLogs);
   }, []);
 
+  const totalEnrolled = auditLogs.reduce((acc, log) => acc + log.total, 0);
+  const totalPresent = auditLogs.reduce((acc, log) => acc + log.present, 0);
+  const totalOnDuty = auditLogs.reduce((acc, log) => acc + log.onDuty, 0);
+  const totalAbsent = auditLogs.reduce((acc, log) => acc + log.absent, 0);
+  const totalLeave = auditLogs.reduce((acc, log) => acc + log.leave, 0);
+
+  const aggregateRate = totalEnrolled > 0
+    ? Number((((totalPresent + totalOnDuty) / totalEnrolled) * 100).toFixed(1))
+    : 0;
+
   return (
     <PageContainer>
       <SectionHeader 
         title="Institutional Attendance Audit" 
-        description="School-wide presence telemetry, absenteeism reports, and manual override log"
+        description="School-wide presence telemetry, absenteeism reports, and Master Plan Amendment 2 status reconciliation"
       />
 
+      {/* Institutional KPI Summary */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-emerald-500">
+          <span className="text-xs text-slate-500 font-medium">Total Present</span>
+          <span className="text-xl font-black text-emerald-600 block mt-0.5">{totalPresent}</span>
+          <span className="text-[10px] text-slate-400">Regular lecture presence</span>
+        </Card>
+        <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-blue-500">
+          <span className="text-xs text-slate-500 font-medium">On Duty</span>
+          <span className="text-xl font-black text-blue-600 block mt-0.5">{totalOnDuty}</span>
+          <span className="text-[10px] text-slate-400">Institutional duty (Present)</span>
+        </Card>
+        <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-purple-500">
+          <span className="text-xs text-slate-500 font-medium">Approved Leave</span>
+          <span className="text-xl font-black text-purple-600 block mt-0.5">{totalLeave}</span>
+          <span className="text-[10px] text-slate-400">Faculty approved (Absence)</span>
+        </Card>
+        <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-rose-500">
+          <span className="text-xs text-slate-500 font-medium">Unapproved Absent</span>
+          <span className="text-xl font-black text-rose-600 block mt-0.5">{totalAbsent}</span>
+          <span className="text-[10px] text-slate-400">Unjustified absence</span>
+        </Card>
+        <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-indigo-500 col-span-2 sm:col-span-1">
+          <span className="text-xs text-slate-500 font-medium">Effective Presence %</span>
+          <span className="text-xl font-black text-indigo-600 block mt-0.5">{aggregateRate}%</span>
+          <span className="text-[10px] text-slate-400">([P + OD] / Total)</span>
+        </Card>
+      </div>
+
       <Card>
-        <CardContent className="pt-4">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Section Attendance Audit Ledger</CardTitle>
+          <CardDescription className="text-xs">
+            Calculated per Master Plan Amendment 2 formula: <code>Attendance % = (Present + On Duty) / (Present + Absent + On Duty + Leave) × 100</code>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
-              <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-semibold">
+              <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-semibold border-b border-slate-200 dark:border-slate-800">
                 <tr>
                   <th className="py-2.5 px-3">Audit Date</th>
                   <th className="py-2.5 px-3">Class Section</th>
                   <th className="py-2.5 px-3">Enrolled</th>
                   <th className="py-2.5 px-3">Present</th>
+                  <th className="py-2.5 px-3">On Duty</th>
+                  <th className="py-2.5 px-3">Leave</th>
                   <th className="py-2.5 px-3">Absent</th>
                   <th className="py-2.5 px-3">Attendance %</th>
                   <th className="py-2.5 px-3">Verified Faculty</th>
@@ -516,10 +563,12 @@ export const AdminAttendancePage: React.FC = () => {
                   <tr key={i} className="hover:bg-slate-50/50">
                     <td className="py-2.5 px-3 font-mono">{log.date}</td>
                     <td className="py-2.5 px-3 font-semibold">{log.class}</td>
-                    <td className="py-2.5 px-3">{log.total}</td>
+                    <td className="py-2.5 px-3 font-medium">{log.total}</td>
                     <td className="py-2.5 px-3 text-emerald-600 font-bold">{log.present}</td>
+                    <td className="py-2.5 px-3 text-blue-600 font-bold">{log.onDuty}</td>
+                    <td className="py-2.5 px-3 text-purple-600 font-bold">{log.leave}</td>
                     <td className="py-2.5 px-3 text-rose-600 font-bold">{log.absent}</td>
-                    <td className="py-2.5 px-3 font-bold font-mono text-amber-600">{log.rate}</td>
+                    <td className="py-2.5 px-3 font-bold font-mono text-indigo-600">{log.rate}</td>
                     <td className="py-2.5 px-3 text-slate-500">{log.verifiedBy}</td>
                   </tr>
                 ))}

@@ -2,7 +2,7 @@
 
 > **Status**: Authoritative Security Governance  
 > **Phase**: Phase 1 (Foundation & Governance)  
-> **Last Updated**: 2026-09-23
+> **Last Updated**: 2026-09-24
 
 ---
 
@@ -62,6 +62,7 @@ In the Student ERP architecture, there is a strict separation between navigation
 *Legend*:
 - **Read (Self / Child)**: Scoped access strictly verified via foreign key ownership (`user_id == request.user.id`).
 - **Create / Update**: Operational ability to record data in assigned scopes.
+- **Attendance Leave Approval**: Per Master Plan Amendment 2, Faculty alone holds authority to mark/approve student `LEAVE` for their assigned classes/sections (`approved_by_faculty_id`). Parents and Students can view status or submit absence advisories, but cannot mark or approve `LEAVE`. Admin retains system-wide audit and override privileges.
 - **Oversight**: Read-only institution-wide visibility across all departments and performance metrics.
 - **Approval**: Final authority to lock terms, sign off grade reports, and finalize master class allocations.
 

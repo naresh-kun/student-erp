@@ -3,7 +3,7 @@
 > **Status**: Authoritative Design Specification  
 > **Target Engine**: PostgreSQL 16+  
 > **Implementation State**: PLANNED (Conceptual / Specification Phase - No migrations applied in Phase 1)  
-> **Last Updated**: 2026-09-23
+> **Last Updated**: 2026-09-24
 
 ---
 
@@ -158,9 +158,10 @@ erDiagram
   - `timetable_id`: FK -> `timetables.id` (SET NULL, NULLABLE)
   - `date`: DATE NOT NULL
   - `session_period`: SMALLINT
-  - `status`: VARCHAR(16) NOT NULL (e.g., `'Present'`, `'Absent'`, `'Late'`, `'Excused'`)
+  - `status`: VARCHAR(16) NOT NULL CHECK (`status IN ('PRESENT', 'ABSENT', 'ON_DUTY', 'LEAVE')`) -- Canonical 4 statuses per Master Plan Amendment 2; LATE and EXCUSED strictly prohibited
   - `remarks`: TEXT
   - `recorded_by`: FK -> `users.id` (PROTECT)
+  - `approved_by_faculty_id`: FK -> `faculty.id` (SET NULL, NULLABLE) -- Required when status is 'LEAVE'
   - Index on `(enrollment_id, date)`
 - **`exam_types`**:
   - `id`: UUID (PK)

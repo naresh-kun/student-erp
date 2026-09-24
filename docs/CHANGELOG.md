@@ -143,3 +143,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Preserved developer testing velocity through a hidden helper panel activated solely via `?dev=true` URL query parameter or `Alt+Shift+D` keyboard shortcut, and console helpers (`window.__erpRoleLogin`, `window.__erpFillCredentials`). Completely omitted from normal demonstration presentation.
 - **Security & Architectural Status**:
   - Authentication remains strictly **MOCKED** on synthetic datasets without live Django/PostgreSQL/Redis connectivity. Real cryptographic authentication remains **PLANNED** for Phase 4.
+
+### Changed (Master Plan Amendment 2 — Attendance LEAVE Status)
+- **Attendance Status Architecture**:
+  - Adopted canonical 4-status model across domain types, mock data, services, utilities, and UI views: `PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`.
+  - Strictly maintained removal of `LATE` and `EXCUSED` across the entire codebase and synthetic datasets.
+  - Defined `approved_by_faculty_id` on attendance records reflecting faculty authority for approving `LEAVE`.
+- **Pure Attendance Calculation Utilities (`src/utils/attendance.ts`)**:
+  - Implemented `calculateAttendancePercentage((PRESENT + ON_DUTY) / (PRESENT + ABSENT + ON_DUTY + LEAVE) * 100)` ensuring consistent calculation across all roles.
+  - Added helpers `isAttending`, `isAbsence`, `getAttendanceStatusLabel`, and style constants `ATTENDANCE_BADGE_CLASSES` and `ATTENDANCE_CHART_COLORS`.
+- **Mock Data & Service Layer (`mock-data/attendance.json` & `src/services/mockService.ts`)**:
+  - Converted all mock attendance records to canonical 4 statuses with verified arithmetic.
+  - Enriched `MockDataService` with `getPrincipalAttendanceDistribution()`, updated `getStudentAttendanceHistory()`, `getStudentAbsenceLogs()`, and `getAttendanceAuditLogs()` with `onDuty` and `leave` counts.
+- **Role Portal Enhancements**:
+  - **Faculty Portal** (`src/pages/faculty/index.tsx`): Attendance sheet supports 4 status buttons (`PRESENT`, `ON_DUTY`, `LEAVE`, `ABSENT`) with live recalculation and 5-card KPI summary.
+  - **Student Portal** (`src/pages/student/index.tsx`): Attendance & Dashboard views feature 4 KPI cards (Overall %, Attended, Approved Leave, Absent) and violet badges for `LEAVE`.
+  - **Parent Portal** (`src/pages/parent/index.tsx`): Clean distinction between approved `LEAVE` vs unexcused `ABSENT` with faculty approval requirements clearly stated in absence submission forms.
+  - **Admin Portal** (`src/pages/admin/index.tsx`): 5-column institutional KPI bar and audit table with discrete columns for Enrolled, Present, On Duty, Leave, Absent, Attendance %, and Verified Faculty.
+  - **Principal Portal** (`src/pages/principal/index.tsx`): 5 KPI cards, Recharts 4-status distribution chart (`#8b5cf6` for `LEAVE`, `#f43f5e` for `ABSENT`, `#3b82f6` for `ON_DUTY`, `#10b981` for `PRESENT`), and Master Plan Amendment 2 business rules legend.
+- **Automated Unit Testing**:
+  - Added 15 Vitest unit tests in `frontend/tests/attendance.test.ts` verifying calculation accuracy, edge cases, predicate classifications, and visual color assignments. All tests pass with zero regressions.
+

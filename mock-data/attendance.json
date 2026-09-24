@@ -8,8 +8,8 @@
     "faculty_id": "fac_001",
     "date": "2026-09-22",
     "session_period": 1,
-    "status": "Present",
-    "remarks": "On time"
+    "status": "PRESENT",
+    "remarks": "Regular lecture presence"
   },
   {
     "id": "att_002",
@@ -20,7 +20,7 @@
     "faculty_id": "fac_002",
     "date": "2026-09-22",
     "session_period": 2,
-    "status": "Present",
+    "status": "PRESENT",
     "remarks": "Lab session active"
   },
   {
@@ -32,8 +32,8 @@
     "faculty_id": "fac_001",
     "date": "2026-09-22",
     "session_period": 1,
-    "status": "Absent",
-    "remarks": "Sick leave submitted"
+    "status": "ABSENT",
+    "remarks": "Unapproved absence - morning roll call"
   },
   {
     "id": "att_004",
@@ -44,8 +44,9 @@
     "faculty_id": "fac_002",
     "date": "2026-09-22",
     "session_period": 2,
-    "status": "Excused",
-    "remarks": "Medical note verified by admin"
+    "status": "LEAVE",
+    "remarks": "Approved medical leave verified by class coordinator",
+    "approved_by_faculty_id": "fac_002"
   },
   {
     "id": "att_005",
@@ -56,7 +57,34 @@
     "faculty_id": "fac_002",
     "date": "2026-09-23",
     "session_period": 3,
-    "status": "Late",
-    "remarks": "Arrived 10 minutes late due to transit"
+    "status": "ON_DUTY",
+    "remarks": "Inter-school mathematics olympiad delegate",
+    "approved_by_faculty_id": "fac_001"
+  },
+  {
+    "id": "att_006",
+    "student_id": "stu_001",
+    "class_id": "cls_001",
+    "section_id": "sec_001",
+    "subject_id": "sub_001",
+    "faculty_id": "fac_001",
+    "date": "2026-09-24",
+    "session_period": 1,
+    "status": "LEAVE",
+    "remarks": "Official family leave approved by faculty coordinator",
+    "approved_by_faculty_id": "fac_001"
+  },
+  {
+    "id": "att_007",
+    "student_id": "stu_002",
+    "class_id": "cls_001",
+    "section_id": "sec_001",
+    "subject_id": "sub_001",
+    "faculty_id": "fac_001",
+    "date": "2026-09-24",
+    "session_period": 2,
+    "status": "ON_DUTY",
+    "remarks": "Zonal athletic meet representative",
+    "approved_by_faculty_id": "fac_001"
   }
 ]

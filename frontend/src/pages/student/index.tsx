@@ -127,11 +127,11 @@ export const StudentDashboardPage: React.FC = () => {
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-slate-900 dark:text-slate-100">94.2%</span>
-            <span className="text-xs text-slate-500 font-medium">82/87 Days</span>
+            <span className="text-2xl font-black text-slate-900 dark:text-slate-100">94.3%</span>
+            <span className="text-xs text-slate-500 font-medium">82/87 Sessions (P + OD)</span>
           </div>
           <span className="text-[11px] text-blue-600 font-medium mt-1 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" /> Minimum 85% Met
+            <CheckCircle2 className="w-3 h-3" /> Minimum 85% Clearance Met
           </span>
         </Card>
 
@@ -405,25 +405,25 @@ export const StudentAttendancePage: React.FC = () => {
       />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="p-4 bg-white dark:bg-slate-900">
-          <span className="text-xs text-slate-500 font-semibold uppercase">Overall Rate</span>
-          <span className="text-2xl font-black text-blue-600 block mt-1">94.2%</span>
-          <span className="text-[11px] text-slate-400">Total 87 Working Sessions</span>
+        <Card className="p-4 bg-white dark:bg-slate-900 border-l-4 border-l-blue-500">
+          <span className="text-xs text-slate-500 font-semibold uppercase">Overall Presence</span>
+          <span className="text-2xl font-black text-blue-600 block mt-1">94.3%</span>
+          <span className="text-[11px] text-slate-400">(Present + On Duty) / Total</span>
         </Card>
-        <Card className="p-4 bg-white dark:bg-slate-900">
-          <span className="text-xs text-slate-500 font-semibold uppercase">Present Days</span>
+        <Card className="p-4 bg-white dark:bg-slate-900 border-l-4 border-l-emerald-500">
+          <span className="text-xs text-slate-500 font-semibold uppercase">Attended Sessions</span>
           <span className="text-2xl font-black text-emerald-600 block mt-1">82</span>
-          <span className="text-[11px] text-slate-400">Full day attendances</span>
+          <span className="text-[11px] text-slate-400">78 Present • 4 On-Duty</span>
         </Card>
-        <Card className="p-4 bg-white dark:bg-slate-900">
-          <span className="text-xs text-slate-500 font-semibold uppercase">Absences</span>
-          <span className="text-2xl font-black text-rose-600 block mt-1">3</span>
-          <span className="text-[11px] text-slate-400">1 Unexcused, 2 Excused</span>
+        <Card className="p-4 bg-white dark:bg-slate-900 border-l-4 border-l-purple-500">
+          <span className="text-xs text-slate-500 font-semibold uppercase">Approved Leave</span>
+          <span className="text-2xl font-black text-purple-600 block mt-1">3</span>
+          <span className="text-[11px] text-slate-400">Faculty-approved absence</span>
         </Card>
-        <Card className="p-4 bg-white dark:bg-slate-900">
-          <span className="text-xs text-slate-500 font-semibold uppercase">Late Arrivals</span>
-          <span className="text-2xl font-black text-amber-600 block mt-1">2</span>
-          <span className="text-[11px] text-slate-400">Within permissible grace</span>
+        <Card className="p-4 bg-white dark:bg-slate-900 border-l-4 border-l-rose-500">
+          <span className="text-xs text-slate-500 font-semibold uppercase">Unapproved Absent</span>
+          <span className="text-2xl font-black text-rose-600 block mt-1">2</span>
+          <span className="text-[11px] text-slate-400">Unjustified absence</span>
         </Card>
       </div>
 
@@ -432,7 +432,7 @@ export const StudentAttendancePage: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Subject Attendance Breakdown</CardTitle>
-            <CardDescription>Minimum 85% attendance required for examination clearance</CardDescription>
+            <CardDescription>Minimum 85% attendance required for examination clearance (Formula: [P + OD] / Total)</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {subjectAttendance.map((s, idx) => (
@@ -479,7 +479,7 @@ export const StudentAttendancePage: React.FC = () => {
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <div>
             <CardTitle className="text-base">Recent Attendance Logs</CardTitle>
-            <CardDescription>Logged entries from instructors and session coordinators</CardDescription>
+            <CardDescription>Verified session entries across Present, On Duty, Leave, and Absent</CardDescription>
           </div>
           <Button variant="outline" size="sm" className="text-xs">
             <Filter className="w-3.5 h-3.5 mr-1" /> Filter Log
@@ -495,7 +495,7 @@ export const StudentAttendancePage: React.FC = () => {
                   <th className="py-2.5 px-3">Period</th>
                   <th className="py-2.5 px-3">Instructor</th>
                   <th className="py-2.5 px-3">Status</th>
-                  <th className="py-2.5 px-3">Remarks</th>
+                  <th className="py-2.5 px-3">Remarks / Verification</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -506,11 +506,16 @@ export const StudentAttendancePage: React.FC = () => {
                     <td className="py-2.5 px-3 text-slate-500">{l.period}</td>
                     <td className="py-2.5 px-3 text-slate-600 dark:text-slate-300">{l.faculty}</td>
                     <td className="py-2.5 px-3">
-                      <Badge variant={l.status === 'Present' ? 'success' : l.status === 'Late' ? 'warning' : 'outline'} className="text-[10px]">
-                        {l.status}
-                      </Badge>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        l.status === 'PRESENT' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300' :
+                        l.status === 'ON_DUTY' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300' :
+                        l.status === 'LEAVE' ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300' :
+                        'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300'
+                      }`}>
+                        {l.status === 'PRESENT' ? 'Present' : l.status === 'ON_DUTY' ? 'On Duty' : l.status === 'LEAVE' ? 'Leave (Approved)' : 'Absent'}
+                      </span>
                     </td>
-                    <td className="py-2.5 px-3 text-slate-400">{l.note || '—'}</td>
+                    <td className="py-2.5 px-3 text-slate-500">{l.note || '—'}</td>
                   </tr>
                 ))}
               </tbody>

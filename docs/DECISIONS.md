@@ -75,3 +75,27 @@
   - Single deployment artifact drastically reduces operational overhead.
   - Relational joins and ACID transactions remain native and performant.
   - Future extraction of a specific domain into an independent microservice remains feasible if extreme scale requires it.
+
+---
+
+## ADR 007: Master Plan Amendment 2 — Attendance Four-Status Model (PRESENT, ABSENT, ON_DUTY, LEAVE)
+
+- **Status**: ACCEPTED / AUTHORITATIVE (Approved Master Plan Amendment 2)
+- **Context**: 
+  - Educational institutions require distinguishing unexcused absences from sanctioned, faculty-approved leaves.
+  - Prior specifications only supported `PRESENT`, `ABSENT`, and `ON_DUTY`. Legacy statuses (`LATE`, `EXCUSED`) were previously deprecated due to subjective scoring ambiguities.
+- **Decision**:
+  - Adopt a canonical 4-status model across all layers: `PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`.
+  - `LATE` and `EXCUSED` remain strictly deprecated and forbidden from reintroduction.
+  - **Business Rules**:
+    1. `LEAVE` represents a student absence sanctioned with faculty/school permission. Faculty are responsible for approving and marking `LEAVE`.
+    2. `LEAVE` counts as an absence in attendance percentage calculations (it is included in the denominator only).
+    3. `ON_DUTY` continues to count as present (included in both numerator and denominator).
+    4. `LEAVE` must remain visually and semantically distinct from ordinary `ABSENT` across all UI dashboards (using Violet/Purple tokens).
+    5. Mathematical calculation rule:
+       $$\text{Attendance \%} = \frac{\text{PRESENT} + \text{ON\_DUTY}}{\text{PRESENT} + \text{ABSENT} + \text{ON\_DUTY} + \text{LEAVE}} \times 100$$
+- **Consequences**:
+  - Faculty portal includes a dedicated `LEAVE` toggle action with `approved_by_faculty_id` auditing.
+  - Student and Parent portals display approved leave breakdowns without distorting the canonical absence calculation.
+  - Admin and Principal oversight metrics aggregate 4 statuses with complete mathematical consistency.
+

@@ -4,7 +4,7 @@
 > **API Version**: `v1`  
 > **Current Status**: **PLANNED** (Phase 1 establishes design contracts only; NO API endpoints are currently implemented)  
 > **Base URL**: `/api/v1`  
-> **Last Updated**: 2026-09-23
+> **Last Updated**: 2026-09-24
 
 ---
 
@@ -107,11 +107,16 @@
 - `GET /api/v1/attendance/` `[PLANNED]`
   - Query parameters: `student_id`, `class_id`, `date`, `month`
   - Permitted Roles: Admin, Principal, Faculty, Student (self only), Parent (child only)
+  - Calculation Rule: Attendance % strictly follows Master Plan Amendment 2:
+    `Attendance % = (PRESENT + ON_DUTY) / (PRESENT + ABSENT + ON_DUTY + LEAVE) * 100`
 - `POST /api/v1/attendance/bulk/` `[PLANNED]`
   - Bulk records session or daily attendance for an entire class/section.
+  - Allowed Statuses: `['PRESENT', 'ABSENT', 'ON_DUTY', 'LEAVE']` (`LATE` and `EXCUSED` strictly prohibited).
+  - Attributes: When `status === 'LEAVE'`, `approved_by_faculty_id` is required.
   - Permitted Roles: Faculty (assigned class), Admin
 - `PATCH /api/v1/attendance/{id}/` `[PLANNED]`
-  - Updates attendance state (e.g. converting Absent to Excused).
+  - Updates attendance state (e.g. faculty approving and marking `LEAVE`).
+  - Allowed Statuses: `['PRESENT', 'ABSENT', 'ON_DUTY', 'LEAVE']`.
   - Permitted Roles: Faculty, Admin
 
 ### 3.8 Marks & Examinations (`/api/v1/marks/`)

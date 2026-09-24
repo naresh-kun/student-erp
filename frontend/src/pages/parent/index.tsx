@@ -252,32 +252,32 @@ export const ParentAttendancePage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <div className="grid grid-cols-3 gap-4">
-            <Card className="p-4 bg-white dark:bg-slate-900 text-center">
+            <Card className="p-4 bg-white dark:bg-slate-900 text-center border-l-4 border-l-emerald-500">
               <span className="text-xs text-slate-500 font-semibold uppercase">Overall Presence</span>
-              <span className="text-2xl font-black text-emerald-600 block mt-1">94.2%</span>
-              <span className="text-[11px] text-slate-400">82 of 87 Sessions</span>
+              <span className="text-2xl font-black text-emerald-600 block mt-1">94.3%</span>
+              <span className="text-[11px] text-slate-400">82 of 87 Sessions (P + OD)</span>
             </Card>
-            <Card className="p-4 bg-white dark:bg-slate-900 text-center">
-              <span className="text-xs text-slate-500 font-semibold uppercase">Excused Absences</span>
-              <span className="text-2xl font-black text-blue-600 block mt-1">2</span>
-              <span className="text-[11px] text-slate-400">Approved by school</span>
+            <Card className="p-4 bg-white dark:bg-slate-900 text-center border-l-4 border-l-purple-500">
+              <span className="text-xs text-slate-500 font-semibold uppercase">Approved Leave</span>
+              <span className="text-2xl font-black text-purple-600 block mt-1">3</span>
+              <span className="text-[11px] text-slate-400">Faculty approved leave</span>
             </Card>
-            <Card className="p-4 bg-white dark:bg-slate-900 text-center">
-              <span className="text-xs text-slate-500 font-semibold uppercase">Unexcused</span>
-              <span className="text-2xl font-black text-rose-600 block mt-1">1</span>
-              <span className="text-[11px] text-slate-400">Needs excuse note</span>
+            <Card className="p-4 bg-white dark:bg-slate-900 text-center border-l-4 border-l-rose-500">
+              <span className="text-xs text-slate-500 font-semibold uppercase">Unapproved Absent</span>
+              <span className="text-2xl font-black text-rose-600 block mt-1">2</span>
+              <span className="text-[11px] text-slate-400">Excuse submission needed</span>
             </Card>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Recent Absence & Tardy Log</CardTitle>
-              <CardDescription>Records recorded by faculty during morning registration</CardDescription>
+              <CardTitle className="text-base">Recent Absence & Leave Advisory Log</CardTitle>
+              <CardDescription>Records verified by class faculty across Approved Leave and Unapproved Absence</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-left">
-                  <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-semibold">
+                  <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-semibold border-b border-slate-200 dark:border-slate-800">
                     <tr>
                       <th className="py-2.5 px-3">Date</th>
                       <th className="py-2.5 px-3">Period</th>
@@ -292,7 +292,13 @@ export const ParentAttendancePage: React.FC = () => {
                         <td className="py-2.5 px-3 font-mono">{l.date}</td>
                         <td className="py-2.5 px-3">{l.period}</td>
                         <td className="py-2.5 px-3">
-                          <Badge variant={l.status === 'Excused' ? 'info' : 'warning'} className="text-[10px]">{l.status}</Badge>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                            l.status === 'LEAVE'
+                              ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300'
+                              : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300'
+                          }`}>
+                            {l.status === 'LEAVE' ? 'Approved Leave' : 'Unapproved Absent'}
+                          </span>
                         </td>
                         <td className="py-2.5 px-3">{l.faculty}</td>
                         <td className="py-2.5 px-3 text-slate-500">{l.note || '—'}</td>
@@ -311,14 +317,14 @@ export const ParentAttendancePage: React.FC = () => {
             <Send className="w-4 h-4 text-emerald-600" /> Submit Absence Excuse
           </CardTitle>
           <CardDescription>
-            Notify the class teacher and registrar regarding upcoming or past absences.
+            Notify the class teacher regarding upcoming or past absences. Once reviewed, authorized absences are recorded as approved LEAVE.
           </CardDescription>
 
           {submittedExcuse ? (
             <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-xs space-y-1">
               <CheckCircle2 className="w-5 h-5 text-emerald-600" />
               <p className="font-bold">Excuse Note Submitted</p>
-              <p>Your note has been dispatched to Dr. Anita Desai and logged with the school attendance office.</p>
+              <p>Your note has been dispatched to Dr. Anita Desai. Once verified, the absence will reflect as authorized LEAVE.</p>
             </div>
           ) : (
             <form onSubmit={(e) => { e.preventDefault(); setSubmittedExcuse(true); }} className="space-y-3 text-xs">

@@ -95,7 +95,14 @@ export interface Subject {
   faculty_ids: string[];
 }
 
-export type AttendanceStatus = 'Present' | 'Absent' | 'Late' | 'Excused';
+/**
+ * Master Plan Amendment 2 — Four Canonical Attendance Statuses:
+ * - PRESENT: In-person presence during lecture/session (counts as present)
+ * - ABSENT: Unapproved absence (counts as absence)
+ * - ON_DUTY: Authorized institutional representation (counts as present)
+ * - LEAVE: Faculty/school-approved absence (counts as absence)
+ */
+export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'ON_DUTY' | 'LEAVE';
 
 export interface AttendanceRecord {
   id: string;
@@ -108,6 +115,7 @@ export interface AttendanceRecord {
   session_period: number;
   status: AttendanceStatus;
   remarks?: string;
+  approved_by_faculty_id?: string;
 }
 
 export interface MarkRecord {

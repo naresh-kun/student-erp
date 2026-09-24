@@ -10,6 +10,7 @@ import {
   FacultyDirectoryItem,
   type PrincipalClassGpaItem,
   type PrincipalGradeAttendanceTrend,
+  type PrincipalAttendanceDistributionItem,
   type PrincipalReportItem
 } from '@/services/mockService';
 import { 
@@ -22,6 +23,7 @@ import {
   ResponsiveContainer, 
   BarChart, 
   Bar, 
+  Cell,
   LineChart, 
   Line, 
   XAxis, 
@@ -220,22 +222,137 @@ export const PrincipalAcademicsPage: React.FC = () => {
 // ==========================================
 export const PrincipalAttendancePage: React.FC = () => {
   const [gradeAttendance, setGradeAttendance] = useState<PrincipalGradeAttendanceTrend[]>([]);
+  const [distribution, setDistribution] = useState<PrincipalAttendanceDistributionItem[]>([]);
 
   useEffect(() => {
     MockDataService.getGradeAttendanceTrends().then(setGradeAttendance);
+    MockDataService.getPrincipalAttendanceDistribution().then(setDistribution);
   }, []);
+
+  const totalSessions = distribution.reduce((sum, d) => sum + d.count, 0);
+  const presentItem = distribution.find((d) => d.status === 'PRESENT');
+  const onDutyItem = distribution.find((d) => d.status === 'ON_DUTY');
+  const leaveItem = distribution.find((d) => d.status === 'LEAVE');
+  const absentItem = distribution.find((d) => d.status === 'ABSENT');
+
+  const presentCount = presentItem ? presentItem.count : 0;
+  const onDutyCount = onDutyItem ? onDutyItem.count : 0;
+  const leaveCount = leaveItem ? leaveItem.count : 0;
+  const absentCount = absentItem ? absentItem.count : 0;
+
+  // Attendance % = (PRESENT + ON_DUTY) / (PRESENT + ABSENT + ON_DUTY + LEAVE) * 100
+  const overallPresenceRate = totalSessions > 0
+    ? Number((((presentCount + onDutyCount) / totalSessions) * 100).toFixed(1))
+    : 0;
 
   return (
     <PageContainer>
       <SectionHeader 
         title="Institutional Attendance Intelligence" 
-        description="Longitudinal presence analytics, absenteeism anomalies, and retention tracking"
+        description="School-wide presence telemetry, longitudinal trends, and Master Plan Amendment 2 status reconciliation"
       />
 
+      {/* Executive Attendance KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-indigo-500 col-span-2 sm:col-span-1">
+          <span className="text-xs text-slate-500 font-medium">Presence Rate</span>
+          <span className="text-xl font-black text-indigo-600 block mt-0.5">{overallPresenceRate}%</span>
+          <span className="text-[10px] text-slate-400">([P + OD] / Total)</span>
+        </Card>
+        <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-emerald-500">
+          <span className="text-xs text-slate-500 font-medium">Present</span>
+          <span className="text-xl font-black text-emerald-600 block mt-0.5">{presentCount.toLocaleString()}</span>
+          <span className="text-[10px] text-slate-400">In lecture</span>
+        </Card>
+        <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-blue-500">
+          <span className="text-xs text-slate-500 font-medium">On Duty</span>
+          <span className="text-xl font-black text-blue-600 block mt-0.5">{onDutyCount}</span>
+          <span className="text-[10px] text-slate-400">Counts as Present</span>
+        </Card>
+        <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-purple-500">
+          <span className="text-xs text-slate-500 font-medium">Approved Leave</span>
+          <span className="text-xl font-black text-purple-600 block mt-0.5">{leaveCount}</span>
+          <span className="text-[10px] text-slate-400">Faculty approved (Absence)</span>
+        </Card>
+        <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-rose-500">
+          <span className="text-xs text-slate-500 font-medium">Unapproved Absent</span>
+          <span className="text-xl font-black text-rose-600 block mt-0.5">{absentCount}</span>
+          <span className="text-[10px] text-slate-400">Direct absence</span>
+        </Card>
+      </div>
+
+      {/* Four-Status Distribution & Rule Explanations */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Institutional Status Composition</CardTitle>
+            <CardDescription>Visual comparison across the four canonical attendance states</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[220px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={distribution} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="label" stroke="#94a3b8" fontSize={11} />
+                  <YAxis stroke="#94a3b8" fontSize={11} />
+                  <Tooltip 
+                    formatter={(val: any, _name: any, item: any) => [
+                      `${val} sessions (${item.payload.percentage}%)`,
+                      `${item.payload.label} [${item.payload.countsAs}]`
+                    ]}
+                  />
+                  <Bar dataKey="count" name="Sessions" radius={[4, 4, 0, 0]}>
+                    {distribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Attendance Classification & Business Rules</CardTitle>
+            <CardDescription>Master Plan Amendment 2 Calculation Policies</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {distribution.map((item) => (
+              <div 
+                key={item.status} 
+                className="p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex items-center justify-between text-xs"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span 
+                    className="w-3 h-3 rounded-full shrink-0" 
+                    style={{ backgroundColor: item.color }} 
+                  />
+                  <div>
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">{item.label}</span>
+                    <span className="text-[10px] text-slate-400 block">{item.description}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <Badge 
+                    variant={item.countsAs === 'Presence' ? 'success' : item.status === 'LEAVE' ? 'warning' : 'outline'}
+                    className="text-[10px]"
+                  >
+                    {item.countsAs}
+                  </Badge>
+                  <span className="text-[10px] font-mono text-slate-400 block mt-0.5">{item.count} sessions ({item.percentage}%)</span>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Cohort Longitudinal Trends */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Cohort Attendance Progression (Grades 9 - 12)</CardTitle>
-          <CardDescription>Monthly presence telemetry by academic cohort</CardDescription>
+          <CardDescription>Monthly presence telemetry by academic cohort (Calculated as [Present + On Duty] / Total)</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-[240px] w-full">

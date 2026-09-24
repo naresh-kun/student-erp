@@ -12,6 +12,7 @@ import type {
   ClassEntity,
   Subject,
   AttendanceRecord,
+  AttendanceStatus,
   MarkRecord,
   TimetableSlot,
   CalendarEvent,
@@ -88,7 +89,7 @@ export interface StudentAttendanceSessionLog {
   date: string;
   subject: string;
   period: string;
-  status: 'Present' | 'Absent' | 'Late' | 'Excused';
+  status: AttendanceStatus;
   faculty: string;
   note?: string;
 }
@@ -129,7 +130,7 @@ export interface ParentChildCardItem {
 export interface StudentAbsenceAdvisoryRecord {
   date: string;
   period: string;
-  status: 'Present' | 'Absent' | 'Late' | 'Excused' | 'Tardy';
+  status: 'ABSENT' | 'LEAVE';
   faculty: string;
   note?: string;
 }
@@ -202,9 +203,21 @@ export interface AdminAttendanceAuditRecord {
   class: string;
   total: number;
   present: number;
+  onDuty: number;
   absent: number;
+  leave: number;
   rate: string;
   verifiedBy: string;
+}
+
+export interface PrincipalAttendanceDistributionItem {
+  status: AttendanceStatus;
+  label: string;
+  count: number;
+  percentage: number;
+  color: string;
+  countsAs: 'Presence' | 'Absence';
+  description: string;
 }
 
 export interface AdminExamSummaryRecord {
@@ -393,11 +406,12 @@ export class MockDataService {
   static async getStudentAttendanceHistory(_studentId?: string): Promise<StudentAttendanceSessionLog[]> {
     await delay();
     return [
-      { date: '2026-02-16', subject: 'Mathematics', period: 'Period 1', status: 'Present', faculty: 'Dr. Anita Desai' },
-      { date: '2026-02-16', subject: 'Computer Science', period: 'Period 2', status: 'Present', faculty: 'David Ross' },
-      { date: '2026-02-15', subject: 'Physics', period: 'Period 3', status: 'Late', faculty: 'Dr. Marcus Vance', note: 'Traffic delay (10m)' },
-      { date: '2026-02-14', subject: 'English', period: 'Period 4', status: 'Present', faculty: 'Elena Rostova' },
-      { date: '2026-02-13', subject: 'Physics Lab', period: 'Period 1', status: 'Excused', faculty: 'Dr. Marcus Vance', note: 'Medical certificate submitted' },
+      { date: '2026-02-16', subject: 'Mathematics', period: 'Period 1', status: 'PRESENT', faculty: 'Dr. Anita Desai' },
+      { date: '2026-02-16', subject: 'Computer Science', period: 'Period 2', status: 'PRESENT', faculty: 'David Ross' },
+      { date: '2026-02-15', subject: 'Physics', period: 'Period 3', status: 'ON_DUTY', faculty: 'Dr. Marcus Vance', note: 'State Science Olympiad Representation' },
+      { date: '2026-02-14', subject: 'English', period: 'Period 4', status: 'PRESENT', faculty: 'Elena Rostova' },
+      { date: '2026-02-13', subject: 'Physics Lab', period: 'Period 1', status: 'LEAVE', faculty: 'Dr. Marcus Vance', note: 'Medical leave approved by faculty' },
+      { date: '2026-02-12', subject: 'Mathematics', period: 'Period 2', status: 'ABSENT', faculty: 'Dr. Anita Desai', note: 'Unreported absence' },
     ];
   }
 
@@ -514,8 +528,8 @@ export class MockDataService {
   static async getStudentAbsenceLogs(_studentId?: string): Promise<StudentAbsenceAdvisoryRecord[]> {
     await delay();
     return [
-      { date: '2026-02-15', period: 'Period 3 (Physics)', status: 'Tardy', faculty: 'Dr. Marcus Vance', note: 'Transit delay (excuse verified)' },
-      { date: '2026-02-13', period: 'Full Day', status: 'Excused', faculty: 'Office Registrar', note: 'Medical appointment note on file' },
+      { date: '2026-02-13', period: 'Full Day', status: 'LEAVE', faculty: 'Office Registrar', note: 'Medical certificate approved by class faculty' },
+      { date: '2026-02-12', period: 'Period 2 (Mathematics)', status: 'ABSENT', faculty: 'Dr. Anita Desai', note: 'Unapproved absence — excuse submission required' },
     ];
   }
 
@@ -677,10 +691,10 @@ export class MockDataService {
   static async getAttendanceAuditLogs(): Promise<AdminAttendanceAuditRecord[]> {
     await delay();
     return [
-      { date: '2026-02-16', class: 'Grade 11-A', total: 32, present: 30, absent: 2, rate: '93.8%', verifiedBy: 'Dr. Anita Desai' },
-      { date: '2026-02-16', class: 'Grade 11-B', total: 34, present: 33, absent: 1, rate: '97.1%', verifiedBy: 'Dr. Marcus Vance' },
-      { date: '2026-02-16', class: 'Grade 12-A', total: 28, present: 27, absent: 1, rate: '96.4%', verifiedBy: 'David Ross' },
-      { date: '2026-02-16', class: 'Grade 10-A', total: 30, present: 29, absent: 1, rate: '96.7%', verifiedBy: 'Elena Rostova' },
+      { date: '2026-02-16', class: 'Grade 11-A', total: 32, present: 28, onDuty: 2, absent: 1, leave: 1, rate: '93.8%', verifiedBy: 'Dr. Anita Desai' },
+      { date: '2026-02-16', class: 'Grade 11-B', total: 34, present: 31, onDuty: 2, absent: 1, leave: 0, rate: '97.1%', verifiedBy: 'Dr. Marcus Vance' },
+      { date: '2026-02-16', class: 'Grade 12-A', total: 28, present: 25, onDuty: 2, absent: 0, leave: 1, rate: '96.4%', verifiedBy: 'David Ross' },
+      { date: '2026-02-16', class: 'Grade 10-A', total: 30, present: 27, onDuty: 2, absent: 1, leave: 0, rate: '96.7%', verifiedBy: 'Elena Rostova' },
     ];
   }
 
@@ -740,6 +754,16 @@ export class MockDataService {
       { month: 'Nov', gr9: 91.5, gr10: 93.0, gr11: 94.2, gr12: 95.5 },
       { month: 'Dec', gr9: 93.8, gr10: 94.5, gr11: 95.8, gr12: 96.2 },
       { month: 'Jan', gr9: 95.0, gr10: 95.8, gr11: 96.5, gr12: 97.4 },
+    ];
+  }
+
+  static async getPrincipalAttendanceDistribution(): Promise<PrincipalAttendanceDistributionItem[]> {
+    await delay();
+    return [
+      { status: 'PRESENT', label: 'Present', count: 1120, percentage: 90.3, color: '#10b981', countsAs: 'Presence', description: 'In-person lecture presence' },
+      { status: 'ON_DUTY', label: 'On Duty', count: 48, percentage: 3.9, color: '#3b82f6', countsAs: 'Presence', description: 'Institutional duty representation (counts as present)' },
+      { status: 'LEAVE', label: 'Approved Leave', count: 42, percentage: 3.4, color: '#8b5cf6', countsAs: 'Absence', description: 'Faculty-approved leave (counts in absence denominator)' },
+      { status: 'ABSENT', label: 'Unapproved Absent', count: 30, percentage: 2.4, color: '#f43f5e', countsAs: 'Absence', description: 'Unapproved absence' },
     ];
   }
 

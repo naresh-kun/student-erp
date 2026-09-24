@@ -37,6 +37,13 @@ Build a complete, responsive, role-tailored presentation layer that demonstrates
 - [x] **Demo-Ready ERP Presentation Surfaces**: Replaced all developer-facing scaffolding with realistic, role-tailored presentation pages across all 34 routes (Student, Parent, Faculty, Admin, Principal), featuring Recharts analytics, data tables, and schedule grids.
 - [x] **Service Data Cleanup (Task 2.1)**: Extracted all inline contextual prototype arrays out of React page components and placed them behind typed async methods on `MockDataService`. Zero raw JSON imports in any page or component; strict data flow maintained: `Mock JSON / Service Data -> Mock Service -> Typed Data -> React Page / Component`.
 - [x] **Authentication Demo Correction**: Replaced visible 1-click role simulation buttons on `LoginPage.tsx` and header role-switcher dropdown in `DashboardLayout.tsx` with realistic institutional credential-based mock authentication (`User ID / Email` + `Password`). Role is strictly derived from the matched synthetic mock record (`mock-data/users.json`); users cannot choose or switch roles in normal UI. Protected route guards verified across all 5 roles. Authentication remains strictly **MOCKED**; real JWT authentication remains **PLANNED** for Phase 4.
+- [x] **Master Plan Amendment 2 — Attendance LEAVE Status**:
+  - Adopted canonical 4-status model across domain types, mock datasets, services, utilities, and UI views: `PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`. Legacy statuses `LATE` and `EXCUSED` remain permanently removed.
+  - Implemented pure calculation utility module (`src/utils/attendance.ts`) enforcing the formula:
+    $$\text{Attendance \%} = \frac{\text{PRESENT} + \text{ON\_DUTY}}{\text{PRESENT} + \text{ABSENT} + \text{ON\_DUTY} + \text{LEAVE}} \times 100$$
+  - Updated synthetic mock dataset (`mock-data/attendance.json`) with canonical statuses and `approved_by_faculty_id` audit attributes.
+  - Upgraded all 5 role portals with distinct visual badges for `LEAVE` (Violet/Purple), faculty approval controls, 5-column institutional audit views, and executive Recharts 4-status distribution.
+  - Implemented 15 Vitest automated unit tests in `frontend/tests/attendance.test.ts` (15/15 passing).
 - [x] **TanStack Query Integration**: Initialized `QueryClientProvider` at application root.
 
 ---

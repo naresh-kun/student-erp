@@ -249,33 +249,40 @@ export const FacultyClassesPage: React.FC = () => {
 export const FacultyAttendancePage: React.FC = () => {
   const [students, setStudents] = useState<StudentDirectoryItem[]>([]);
   const [submitted, setSubmitted] = useState(false);
-  const [attendanceMap, setAttendanceMap] = useState<Record<string, 'Present' | 'Absent' | 'Late' | 'Excused'>>({});
+  const [attendanceMap, setAttendanceMap] = useState<Record<string, 'PRESENT' | 'ABSENT' | 'ON_DUTY' | 'LEAVE'>>({});
 
   useEffect(() => {
     MockDataService.getStudentDirectory().then((res) => {
       setStudents(res);
-      const initial: Record<string, 'Present' | 'Absent' | 'Late' | 'Excused'> = {};
-      res.forEach(s => { initial[s.id] = 'Present'; });
+      const initial: Record<string, 'PRESENT' | 'ABSENT' | 'ON_DUTY' | 'LEAVE'> = {};
+      res.forEach(s => { initial[s.id] = 'PRESENT'; });
       setAttendanceMap(initial);
     });
   }, []);
 
-  const handleStatusChange = (id: string, status: 'Present' | 'Absent' | 'Late' | 'Excused') => {
+  const handleStatusChange = (id: string, status: 'PRESENT' | 'ABSENT' | 'ON_DUTY' | 'LEAVE') => {
     setAttendanceMap(prev => ({ ...prev, [id]: status }));
   };
 
-  const presentCount = Object.values(attendanceMap).filter(v => v === 'Present').length;
-  const absentCount = Object.values(attendanceMap).filter(v => v === 'Absent').length;
-  const lateCount = Object.values(attendanceMap).filter(v => v === 'Late').length;
+  const presentCount = Object.values(attendanceMap).filter(v => v === 'PRESENT').length;
+  const onDutyCount = Object.values(attendanceMap).filter(v => v === 'ON_DUTY').length;
+  const leaveCount = Object.values(attendanceMap).filter(v => v === 'LEAVE').length;
+  const absentCount = Object.values(attendanceMap).filter(v => v === 'ABSENT').length;
+  const totalCount = Object.keys(attendanceMap).length;
+
+  // Attendance % = (PRESENT + ON_DUTY) / (PRESENT + ABSENT + ON_DUTY + LEAVE) * 100
+  const sessionAttendanceRate = totalCount > 0 
+    ? Number((((presentCount + onDutyCount) / totalCount) * 100).toFixed(1))
+    : 0;
 
   return (
     <PageContainer>
       <SectionHeader 
         title="Session Attendance Recording Sheet" 
-        description="Mark and submit live attendance registers for scheduled lectures"
+        description="Mark and submit live session registers across the 4 canonical statuses: Present, On Duty, Leave, and Absent"
         actions={
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500">Class: <strong>Grade 11-A</strong> • Period: <strong>Period 1</strong></span>
+            <span className="text-xs text-slate-500">Class: <strong>Grade 11-A</strong> • Period: <strong>Period 1 (Mathematics)</strong></span>
           </div>
         }
       />
@@ -290,31 +297,49 @@ export const FacultyAttendancePage: React.FC = () => {
         </div>
       )}
 
-      {/* Quick Summary Pill Bar */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card className="p-3 bg-white dark:bg-slate-900 text-center">
-          <span className="text-xs text-slate-500 font-medium">Marked Present</span>
-          <span className="text-xl font-black text-emerald-600 block">{presentCount}</span>
+      {/* Summary KPI Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-emerald-500">
+          <span className="text-xs text-slate-500 font-medium">Present</span>
+          <span className="text-xl font-black text-emerald-600 block mt-0.5">{presentCount}</span>
+          <span className="text-[10px] text-slate-400">In lecture</span>
         </Card>
-        <Card className="p-3 bg-white dark:bg-slate-900 text-center">
-          <span className="text-xs text-slate-500 font-medium">Marked Absent</span>
-          <span className="text-xl font-black text-rose-600 block">{absentCount}</span>
+        <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-blue-500">
+          <span className="text-xs text-slate-500 font-medium">On Duty</span>
+          <span className="text-xl font-black text-blue-600 block mt-0.5">{onDutyCount}</span>
+          <span className="text-[10px] text-slate-400">Counts as Present</span>
         </Card>
-        <Card className="p-3 bg-white dark:bg-slate-900 text-center">
-          <span className="text-xs text-slate-500 font-medium">Tardy / Late</span>
-          <span className="text-xl font-black text-amber-600 block">{lateCount}</span>
+        <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-purple-500">
+          <span className="text-xs text-slate-500 font-medium">Leave</span>
+          <span className="text-xl font-black text-purple-600 block mt-0.5">{leaveCount}</span>
+          <span className="text-[10px] text-slate-400">Approved by Faculty</span>
+        </Card>
+        <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-rose-500">
+          <span className="text-xs text-slate-500 font-medium">Absent</span>
+          <span className="text-xl font-black text-rose-600 block mt-0.5">{absentCount}</span>
+          <span className="text-[10px] text-slate-400">Unapproved</span>
+        </Card>
+        <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-indigo-500 col-span-2 sm:col-span-1">
+          <span className="text-xs text-slate-500 font-medium">Effective Presence</span>
+          <span className="text-xl font-black text-indigo-600 block mt-0.5">{sessionAttendanceRate}%</span>
+          <span className="text-[10px] text-slate-400">({presentCount + onDutyCount}/{totalCount})</span>
         </Card>
       </div>
 
       {/* Attendance Register Table */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <CardTitle className="text-base">Student Roll Call</CardTitle>
+          <div>
+            <CardTitle className="text-base">Student Roll Call (Grade 11-A)</CardTitle>
+            <CardDescription className="text-xs mt-0.5">
+              Faculty is authorized to approve student <strong>Leave</strong> and mark institutional <strong>On Duty</strong>. Both Leave and Absent count as absences in attendance percentage calculations.
+            </CardDescription>
+          </div>
           <Button 
             variant="default" 
             size="sm" 
             onClick={() => setSubmitted(true)}
-            className="text-xs bg-purple-600 hover:bg-purple-700"
+            className="text-xs bg-indigo-600 hover:bg-indigo-700"
           >
             <Save className="w-3.5 h-3.5 mr-1.5" /> Submit Attendance Register
           </Button>
@@ -322,12 +347,12 @@ export const FacultyAttendancePage: React.FC = () => {
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
-              <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-semibold">
+              <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-semibold border-b border-slate-200 dark:border-slate-800">
                 <tr>
                   <th className="py-2.5 px-3">Roll No</th>
                   <th className="py-2.5 px-3">Student Name</th>
-                  <th className="py-2.5 px-3">Attendance History</th>
-                  <th className="py-2.5 px-3 text-right">Attendance Status</th>
+                  <th className="py-2.5 px-3">Historical Rate</th>
+                  <th className="py-2.5 px-3 text-right">Session Status Selection</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -338,19 +363,25 @@ export const FacultyAttendancePage: React.FC = () => {
                     <td className="py-2.5 px-3 text-slate-500">{s.attendance_rate}% Overall</td>
                     <td className="py-2.5 px-3 text-right">
                       <div className="inline-flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-                        {(['Present', 'Absent', 'Late', 'Excused'] as const).map((status) => (
+                        {(
+                          [
+                            { id: 'PRESENT', label: 'Present', activeBg: 'bg-emerald-600 text-white' },
+                            { id: 'ON_DUTY', label: 'On Duty', activeBg: 'bg-blue-600 text-white' },
+                            { id: 'LEAVE', label: 'Leave', activeBg: 'bg-purple-600 text-white' },
+                            { id: 'ABSENT', label: 'Absent', activeBg: 'bg-rose-600 text-white' },
+                          ] as const
+                        ).map((statusItem) => (
                           <button
-                            key={status}
-                            onClick={() => handleStatusChange(s.id, status)}
-                            className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-all ${
-                              attendanceMap[s.id] === status
-                                ? status === 'Present' ? 'bg-emerald-600 text-white' :
-                                  status === 'Absent' ? 'bg-rose-600 text-white' :
-                                  status === 'Late' ? 'bg-amber-600 text-white' : 'bg-blue-600 text-white'
-                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                            key={statusItem.id}
+                            type="button"
+                            onClick={() => handleStatusChange(s.id, statusItem.id)}
+                            className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-all cursor-pointer ${
+                              attendanceMap[s.id] === statusItem.id
+                                ? statusItem.activeBg
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                             }`}
                           >
-                            {status}
+                            {statusItem.label}
                           </button>
                         ))}
                       </div>

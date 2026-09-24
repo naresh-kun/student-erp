@@ -2,7 +2,7 @@
 
 > **Current Phase**: Phase 2 (Frontend Core + Role Dashboards + Mock Data Integration)  
 > **Authoritative State**: Active Phase 2 — Task 2.1 (Foundation & Shell Complete; Phase IN PROGRESS)  
-> **Last Updated**: 2026-09-23
+> **Last Updated**: 2026-09-24
 
 ---
 
@@ -40,7 +40,7 @@ To ensure strict engineering honesty, features and modules are classified into e
 | **Faculty Mock Data** | `MOCKED` | 2 faculty records with departments and subject assignments |
 | **Classes & Sections Mock Data** | `MOCKED` | Grade 11 & 12 with sections, rooms, capacities |
 | **Subjects Mock Data** | `MOCKED` | 4 subjects with department codes and credits |
-| **Attendance Mock Data** | `MOCKED` | 5 session attendance records with multiple status types |
+| **Attendance Mock Data** | `MOCKED` | Session attendance records with canonical 4-status model (PRESENT, ABSENT, ON_DUTY, LEAVE per Master Plan Amendment 2) |
 | **Marks Mock Data** | `MOCKED` | 4 exam evaluation records with grades and evaluator references |
 | **Timetable Mock Data** | `MOCKED` | 5 scheduled period slots across subjects and rooms |
 | **Calendar Events Mock Data** | `MOCKED` | 4 institutional events (exams, holidays, conferences) |
@@ -52,6 +52,7 @@ To ensure strict engineering honesty, features and modules are classified into e
 | **Build & Tooling Configuration** | `IMPLEMENTED` | Vite, TypeScript (`tsconfig.json`), Tailwind CSS, PostCSS configured & runtime verified |
 | **Service Layer Abstraction Setup** | `IMPLEMENTED` | Dual-mode static/async mock service interfaces defined in `services/mockService.ts`; all contextual prototype data is service-backed with zero raw JSON imports in UI pages |
 | **TypeScript Domain Interfaces** | `IMPLEMENTED` | Core domain types defined in `src/types/index.ts` alongside service domain schemas |
+| **Attendance Calculation & 4-Status UI** | `IMPLEMENTED` | Canonical 4-status model (`PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`), pure calculation utility (`src/utils/attendance.ts`), formula adherence, distinct visual styling across all 5 roles, verified by 15 Vitest tests (Master Plan Amendment 2) |
 | **Application Router & 34 Routes (+ 404)** | `IMPLEMENTED` | Fixed contract of 34 application routes + catch-all 404 route fully wired with React Router in `src/app/router.tsx` |
 | **Role-Aware Layouts & Navigation** | `IMPLEMENTED` | `DashboardLayout`, `AuthLayout`, `<RoleRoute>`, dynamic sidebar in `src/layouts/` |
 | **Institutional Mock Authentication** | `MOCKED` | Credential-based login (User ID / Email + Password), synthetic user record lookup, role derived from record, client `localStorage` session; 1-click role buttons and header switcher removed from normal UI. Real JWT/OAuth authentication `PLANNED` for Phase 4 |
