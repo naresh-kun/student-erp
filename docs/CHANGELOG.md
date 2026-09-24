@@ -128,5 +128,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Zero raw JSON imports in any page or presentation component; zero duplicate dataset copies.
   - Strict data flow maintained: `Mock JSON / Service Data -> Mock Service -> Typed Data -> React Page / Component`.
 
-
-
+### Changed (Phase 2 Authentication Demo Correction)
+- **Institutional Mock Credential-Based Authentication**:
+  - Replaced visible 1-click role simulation buttons on `src/pages/LoginPage.tsx` with a realistic institutional ERP login portal requesting User ID / Institutional Email and Password.
+  - Implemented `MockAuthService.loginWithCredentials(identifier, password)` matching against synthetic records in `mock-data/users.json` with institutional aliases.
+  - Role is strictly derived from the matched synthetic mock user record; users do NOT select their role during normal login.
+  - Authenticated synthetic user session persisted in client `localStorage` (`student_erp_active_user`).
+  - Enriched `mock-data/users.json` with synthetic demonstration password (`"password": "demo123"`).
+- **Elimination of Role Switchers from Normal UI**:
+  - Completely removed the interactive quick role-switcher dropdown from `src/layouts/DashboardLayout.tsx`, replacing it with a read-only role indicator pill.
+  - A logged-in student has zero UI mechanisms to switch to Parent, Faculty, Admin, or Principal.
+  - Client-side `<RoleRoute>` guard enforcement verified: direct unauthorized URL navigations (e.g. Student entering `/admin/dashboard`) are blocked and redirected to `/student/dashboard`.
+- **Development-Only Testing Accessibility**:
+  - Preserved developer testing velocity through a hidden helper panel activated solely via `?dev=true` URL query parameter or `Alt+Shift+D` keyboard shortcut, and console helpers (`window.__erpRoleLogin`, `window.__erpFillCredentials`). Completely omitted from normal demonstration presentation.
+- **Security & Architectural Status**:
+  - Authentication remains strictly **MOCKED** on synthetic datasets without live Django/PostgreSQL/Redis connectivity. Real cryptographic authentication remains **PLANNED** for Phase 4.

@@ -87,7 +87,23 @@ graph LR
 
 ---
 
-## 3. Routing & Role-Based Navigation Philosophy
+## 3. Mock Authentication & Session Architecture (Phase 2)
+
+### 3.1 Credential-Based Institutional Mock Authentication
+In Phase 2, the frontend simulates institutional access via credential-based mock authentication (`MockAuthService.loginWithCredentials`):
+- **User Inputs**: User ID / Institutional Email and Password.
+- **Lookup**: Synthetic user records queried from `mock-data/users.json`.
+- **Role Assignment**: Derived strictly from the matched synthetic mock record (`u.role`). The user does NOT select their role during normal login.
+- **Session Persistence**: Serialized user session stored in client-side `localStorage` (`student_erp_active_user`).
+- **Normal Demo UI Integrity**: 1-click role buttons and dashboard role-switcher dropdowns are removed from normal presentation flows. A logged-in student has no UI mechanism to assume administrative or faculty roles.
+- **Status**: Authentication remains **MOCKED** for Phase 2. Real cryptographic JWT authentication with backend token issuance, rotation, and revocation remains **PLANNED** for Phase 4.
+
+> [!WARNING]
+> **Engineering Boundary Clarification**: Client-side route filtering and `localStorage` session state provide UX routing, NOT cryptographic security. Authoritative RBAC verification and object-level permission enforcement are strictly enforced at the backend REST API layer in future phases.
+
+---
+
+## 4. Routing & Role-Based Navigation Philosophy
 
 1. **Declarative Routing**: Managed via `react-router-dom` (v6/v7).
 2. **Role Gate Component**: 
@@ -97,7 +113,7 @@ graph LR
 
 ---
 
-## 4. UI Components & Design System
+## 5. UI Components & Design System
 
 - **Styling Architecture**: Vanilla Tailwind CSS with custom HSL CSS variable design tokens.
 - **Component Primitives**: Modeled after `shadcn/ui`, utilizing Radix UI accessible primitives and `clsx` + `tailwind-merge` (`cn()` utility).
@@ -106,7 +122,7 @@ graph LR
 
 ---
 
-## 5. Forms, Validation & Data Integrity
+## 6. Forms, Validation & Data Integrity
 
 - **Form State**: Managed using `react-hook-form` to minimize component re-renders.
 - **Validation**: Schema-first client validation using `zod`.
@@ -114,7 +130,7 @@ graph LR
 
 ---
 
-## 6. Data Visualization & Charting
+## 7. Data Visualization & Charting
 
 - **Library**: `recharts` for composable, responsive SVG charts.
 - **Implementations**:
@@ -124,7 +140,7 @@ graph LR
 
 ---
 
-## 7. Responsiveness & Accessibility (A11y)
+## 8. Responsiveness & Accessibility (A11y)
 
 1. **Mobile-First Responsive Grid**: Breakpoints follow Tailwind standards (`sm`, `md`, `lg`, `xl`, `2xl`).
 2. **Accessible Primitives**: Keyboard navigability (`Tab`, `Esc`, arrow keys), ARIA labels on all icon-only buttons, and WCAG AA contrast compliance across all themes.

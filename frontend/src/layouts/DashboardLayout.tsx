@@ -1,27 +1,24 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { ROLE_NAVIGATION, ROLE_DEFAULT_ROUTES } from '@/app/navigation';
+import { ROLE_NAVIGATION } from '@/app/navigation';
 import type { UserRole } from '@/types';
 import { 
   GraduationCap, 
   Menu, 
   X, 
   LogOut, 
-  UserCog, 
   Sun, 
   Moon, 
-  ShieldCheck, 
-  ChevronDown
+  ShieldCheck
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 
 export const DashboardLayout: React.FC = () => {
-  const { user, role, logout, switchRole } = useAuth();
+  const { user, role, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   if (!user || !role) {
@@ -29,13 +26,6 @@ export const DashboardLayout: React.FC = () => {
   }
 
   const navItems = ROLE_NAVIGATION[role] || [];
-
-  const handleRoleSwitch = async (newRole: UserRole) => {
-    setRoleSwitcherOpen(false);
-    setMobileMenuOpen(false);
-    await switchRole(newRole);
-    navigate(ROLE_DEFAULT_ROUTES[newRole]);
-  };
 
   const handleLogout = () => {
     logout();
@@ -58,8 +48,6 @@ export const DashboardLayout: React.FC = () => {
     Admin: 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800',
     Principal: 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-800',
   };
-
-  const allRoles: UserRole[] = ['Student', 'Parent', 'Faculty', 'Admin', 'Principal'];
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col">
@@ -87,39 +75,10 @@ export const DashboardLayout: React.FC = () => {
 
         {/* Header Right Controls */}
         <div className="flex items-center gap-2 sm:gap-4">
-          
-          {/* Demo Quick Role Switcher */}
-          <div className="relative">
-            <button
-              onClick={() => setRoleSwitcherOpen(!roleSwitcherOpen)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold cursor-pointer transition-colors"
-              title="Switch stakeholder role (Demo Simulation)"
-            >
-              <UserCog className="w-4 h-4 text-indigo-500" />
-              <span className="hidden md:inline text-slate-500 dark:text-slate-400">Role:</span>
-              <span className="text-slate-900 dark:text-slate-100">{role}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-            </button>
-
-            {roleSwitcherOpen && (
-              <div className="absolute right-0 mt-2 w-52 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl py-2 z-50 animate-in fade-in zoom-in-95">
-                <div className="px-3 py-1.5 border-b border-slate-100 dark:border-slate-800">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Switch Demo Role</span>
-                </div>
-                {allRoles.map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => handleRoleSwitch(r)}
-                    className={`w-full text-left px-3 py-2 text-xs font-medium flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/80 cursor-pointer ${
-                      r === role ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50/50 dark:bg-indigo-950/20' : 'text-slate-700 dark:text-slate-300'
-                    }`}
-                  >
-                    <span>{r}</span>
-                    {r === role && <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />}
-                  </button>
-                ))}
-              </div>
-            )}
+          {/* Institutional Role Indicator (Read-Only) */}
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 text-xs">
+            <span className="text-slate-400 font-medium">Role:</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-200">{role}</span>
           </div>
 
           {/* Theme Toggle Button */}

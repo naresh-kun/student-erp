@@ -54,7 +54,7 @@ To ensure strict engineering honesty, features and modules are classified into e
 | **TypeScript Domain Interfaces** | `IMPLEMENTED` | Core domain types defined in `src/types/index.ts` alongside service domain schemas |
 | **Application Router & 34 Routes (+ 404)** | `IMPLEMENTED` | Fixed contract of 34 application routes + catch-all 404 route fully wired with React Router in `src/app/router.tsx` |
 | **Role-Aware Layouts & Navigation** | `IMPLEMENTED` | `DashboardLayout`, `AuthLayout`, `<RoleRoute>`, dynamic sidebar in `src/layouts/` |
-| **Mock Authentication & Role Switcher** | `MOCKED` | `useAuth`, 1-click role simulation, `localStorage` persistence in `src/features/auth/` |
+| **Institutional Mock Authentication** | `MOCKED` | Credential-based login (User ID / Email + Password), synthetic user record lookup, role derived from record, client `localStorage` session; 1-click role buttons and header switcher removed from normal UI. Real JWT/OAuth authentication `PLANNED` for Phase 4 |
 | **Shared UI Component Primitives** | `IMPLEMENTED` | `Card`, `Button`, `Badge`, `PageContainer`, `SectionHeader`, `States` |
 | **Role-Specific Presentation Surfaces** | `IMPLEMENTED` | All 34 application routes have demo-ready visual surfaces with Recharts analytics backed by `MockDataService` |
 | **Domain Feature Modules & Mutation Forms** | `PLANNED` | Granular CRUD workflows, Zod validation schemas, mutation hooks scheduled across Tasks 2.2–2.6 |

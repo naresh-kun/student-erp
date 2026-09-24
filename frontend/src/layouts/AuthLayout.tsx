@@ -21,8 +21,8 @@ export const AuthLayout: React.FC = () => {
         <Outlet />
       </div>
 
-      <footer className="mt-8 text-center text-xs text-slate-400 dark:text-slate-600">
-        Phase 2 Frontend Demonstration Mode &bull; Synthetic Mock Authentication
+      <footer className="mt-8 text-center text-xs text-slate-400 dark:text-slate-500">
+        Demonstration environment &bull; Synthetic data
       </footer>
     </div>
   );

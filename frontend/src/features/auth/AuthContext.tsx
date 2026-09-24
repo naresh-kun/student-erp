@@ -9,6 +9,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (role: UserRole, userId?: string) => Promise<User>;
   loginWithEmail: (email: string) => Promise<User>;
+  loginWithCredentials: (identifier: string, password?: string) => Promise<User>;
   switchRole: (role: UserRole) => Promise<User>;
   logout: () => void;
   mockUsers: User[];
@@ -42,6 +43,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return authenticatedUser;
   };
 
+  const loginWithCredentials = async (identifier: string, password?: string): Promise<User> => {
+    const authenticatedUser = await MockAuthService.loginWithCredentials(identifier, password);
+    setUser(authenticatedUser);
+    return authenticatedUser;
+  };
+
   const switchRole = async (targetRole: UserRole): Promise<User> => {
     const newUser = await MockAuthService.login(targetRole);
     setUser(newUser);
@@ -62,6 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         login,
         loginWithEmail,
+        loginWithCredentials,
         switchRole,
         logout,
         mockUsers,

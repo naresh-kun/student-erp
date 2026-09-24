@@ -36,6 +36,7 @@ Build a complete, responsive, role-tailored presentation layer that demonstrates
 - [x] **Reusable UI Component Foundation**: Built shared atomic components (`Button`, `Card`, `Badge`, `PageContainer`, `SectionHeader`, `LoadingState`, `EmptyState`, `ErrorState`).
 - [x] **Demo-Ready ERP Presentation Surfaces**: Replaced all developer-facing scaffolding with realistic, role-tailored presentation pages across all 34 routes (Student, Parent, Faculty, Admin, Principal), featuring Recharts analytics, data tables, and schedule grids.
 - [x] **Service Data Cleanup (Task 2.1)**: Extracted all inline contextual prototype arrays out of React page components and placed them behind typed async methods on `MockDataService`. Zero raw JSON imports in any page or component; strict data flow maintained: `Mock JSON / Service Data -> Mock Service -> Typed Data -> React Page / Component`.
+- [x] **Authentication Demo Correction**: Replaced visible 1-click role simulation buttons on `LoginPage.tsx` and header role-switcher dropdown in `DashboardLayout.tsx` with realistic institutional credential-based mock authentication (`User ID / Email` + `Password`). Role is strictly derived from the matched synthetic mock record (`mock-data/users.json`); users cannot choose or switch roles in normal UI. Protected route guards verified across all 5 roles. Authentication remains strictly **MOCKED**; real JWT authentication remains **PLANNED** for Phase 4.
 - [x] **TanStack Query Integration**: Initialized `QueryClientProvider` at application root.
 
 ---
@@ -49,22 +50,30 @@ While all 34 routes possess functional **demo presentation surfaces** for evalua
 - **Task 2.5 (Admin & Principal Experience)**: Full directory CRUD management, interactive class capacity editors, algorithmic allocation simulation engine, and report PDF export generation.
 - **Task 2.6 (Hardening & QA)**: Comprehensive Vitest unit test suite, automated WCAG AA accessibility audit, and final Phase 2 sign-off.
 - **Phase 3 (Backend Integration)**: Real Django REST API endpoints (`/api/v1/`), PostgreSQL persistence, and Redis caching.
+- **Phase 4 (Live Security & Production Auth)**: Cryptographic JWT authentication, token rotation/revocation, password hashing (Argon2/bcrypt), and authoritative backend RBAC permission classes.
 
 ---
 
-## 5. Files Changed in Task 2.1
+## 5. Files Changed in Task 2.1 & Corrective Tasks
 
 - `docs/phase_prompts/PHASE_02.md` (New specification)
-- `docs/phases/PHASE_02_STATUS.md` (New status ledger)
+- `docs/phases/PHASE_02_STATUS.md` (Updated status ledger)
+- `docs/FRONTEND_ARCHITECTURE.md` (Documented mock auth architecture and boundary rules)
+- `docs/PROJECT_STATUS.md` (Updated auth status row)
+- `docs/CHANGELOG.md` (Logged auth demo correction)
+- `mock-data/users.json` (Enriched with synthetic demo passwords)
+- `frontend/src/types/index.ts` (Added `password?: string` to `User`)
+- `frontend/src/services/authService.ts` (Implemented `loginWithCredentials` with synthetic user lookup and institutional aliases)
+- `frontend/src/features/auth/AuthContext.tsx` (Exposed `loginWithCredentials`)
+- `frontend/src/pages/LoginPage.tsx` (Rebuilt with institutional portal aesthetics and hidden developer testing tool)
+- `frontend/src/layouts/DashboardLayout.tsx` (Removed role switcher dropdown, added read-only role indicator)
+- `frontend/src/layouts/AuthLayout.tsx` (Cleaned footer note to avoid internal terminology)
 - `frontend/src/app/` (Router, navigation definitions, root providers)
-- `frontend/src/features/auth/` (AuthContext, mock credentials, role switcher)
 - `frontend/src/hooks/useAuth.ts`
-- `frontend/src/layouts/` (`DashboardLayout.tsx`, `AuthLayout.tsx`, `RoleRoute.tsx`)
+- `frontend/src/layouts/RoleRoute.tsx`
 - `frontend/src/components/ui/` (Card, Button, Badge, PageContainer, SectionHeader, states)
 - `frontend/src/services/mockService.ts` (Enriched with typed prototype data methods and interfaces)
 - `frontend/src/pages/` (Student, Parent, Faculty, Admin, Principal pages refactored to consume `MockDataService`)
-- `frontend/src/components/ui/Badge.tsx` (Added `info` badge variant)
-- `frontend/src/components/ui/RoutePlaceholder.tsx` (Removed obsolete component)
 
 ---
 
