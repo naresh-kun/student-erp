@@ -98,23 +98,23 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Institutional Login Card */}
-      <Card className="border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none bg-white dark:bg-slate-900">
+      <Card className="border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
         <CardHeader className="text-center pb-4 pt-6 space-y-1">
-          <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 w-fit mx-auto mb-2 border border-slate-200 dark:border-slate-700/60">
-            <Shield className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            <span>Institutional Access Portal</span>
+          <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-xs font-semibold text-blue-900 dark:text-blue-300 w-fit mx-auto mb-2 border border-blue-200 dark:border-blue-800">
+            <Shield className="w-3.5 h-3.5 text-blue-800 dark:text-blue-400" />
+            <span>School ERP Access Portal</span>
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
             Sign In
           </CardTitle>
           <CardDescription className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-            Enter your institutional User ID or email address and password to access your role-scoped workspace.
+            Enter your Student ID (e.g. STU202600001) or school email and password to access your dashboard.
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-5 px-6 pb-6">
           {errorMsg && (
-            <div className="p-3.5 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2.5 animate-in fade-in zoom-in-95">
+            <div className="p-3.5 rounded-lg border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2.5 animate-in fade-in zoom-in-95">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
               <div className="space-y-0.5">
                 <span className="font-semibold block">Authentication Error</span>
@@ -131,7 +131,8 @@ export const LoginPage: React.FC = () => {
                 htmlFor="identifier" 
                 className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between"
               >
-                <span>User ID / Institutional Email</span>
+                <span>Student ID / User ID / School Email</span>
+                <span className="text-[11px] text-slate-400 font-normal">Parents use Child's Student ID</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -141,11 +142,11 @@ export const LoginPage: React.FC = () => {
                   id="identifier"
                   type="text"
                   autoComplete="username"
-                  placeholder="e.g. alex.morgan@studenterp.edu or user ID"
+                  placeholder="e.g. STU202600001 or suresh.r@vidyamandir.edu.in"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   disabled={loading}
-                  className="w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  className="w-full pl-9 pr-3 py-2 text-sm rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all"
                 />
               </div>
             </div>

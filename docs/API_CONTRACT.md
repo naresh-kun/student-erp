@@ -126,8 +126,8 @@
 - `POST /api/v1/marks/bulk/` `[PLANNED]`
   - Records student evaluation marks for a test.
   - Permitted Roles: Faculty, Admin
-- `GET /api/v1/marks/transcript/{student_id}/` `[PLANNED]`
-  - Returns calculated GPA, cumulative grades, and term report.
+- `GET /api/v1/marks/report-card/{student_id}/` `[PLANNED]`
+  - Returns calculated cumulative marks out of maximum, overall percentage, 8-tier letter grade, and term report card.
 
 ### 3.9 Timetable (`/api/v1/timetable/`)
 - `GET /api/v1/timetable/class/{class_id}/` `[PLANNED]`

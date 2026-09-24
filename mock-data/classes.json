@@ -1,40 +1,178 @@
 [
   {
+    "id": "cls_000",
+    "name": "Grade 10",
+    "code": "G10",
+    "grade_level": 10,
+    "academic_year": "2026–27",
+    "class_teacher_id": "fac_001",
+    "sections": [
+      {
+        "id": "sec_g10_a",
+        "name": "Section A",
+        "room": "Room 101",
+        "capacity": 40,
+        "enrolled_count": 38
+      },
+      {
+        "id": "sec_g10_b",
+        "name": "Section B",
+        "room": "Room 102",
+        "capacity": 40,
+        "enrolled_count": 36
+      }
+    ]
+  },
+  {
     "id": "cls_001",
-    "name": "Grade 11 - Computer Science",
-    "code": "G11-CS",
-    "academic_year": "2025-2026",
+    "name": "Grade 11 — Computer Science A",
+    "code": "G11-CSA",
+    "grade_level": 11,
+    "stream": "Computer Science A",
+    "academic_year": "2026–27",
     "class_teacher_id": "fac_001",
     "sections": [
       {
         "id": "sec_001",
-        "name": "Section A",
+        "name": "Section A1",
         "room": "Room 201",
         "capacity": 35,
-        "enrolled_count": 28
+        "enrolled_count": 32
       },
       {
         "id": "sec_002",
-        "name": "Section B",
+        "name": "Section A2",
         "room": "Room 202",
+        "capacity": 35,
+        "enrolled_count": 30
+      },
+      {
+        "id": "sec_003",
+        "name": "Section A3",
+        "room": "Room 203",
+        "capacity": 35,
+        "enrolled_count": 28
+      }
+    ]
+  },
+  {
+    "id": "cls_002",
+    "name": "Grade 11 — Bio-Maths B",
+    "code": "G11-BMB",
+    "grade_level": 11,
+    "stream": "Bio-Maths B",
+    "academic_year": "2026–27",
+    "class_teacher_id": "fac_002",
+    "sections": [
+      {
+        "id": "sec_004",
+        "name": "Section B1",
+        "room": "Room 204",
+        "capacity": 35,
+        "enrolled_count": 34
+      },
+      {
+        "id": "sec_005",
+        "name": "Section B2",
+        "room": "Room 205",
+        "capacity": 35,
+        "enrolled_count": 33
+      },
+      {
+        "id": "sec_006",
+        "name": "Section B3",
+        "room": "Room 206",
+        "capacity": 35,
+        "enrolled_count": 29
+      }
+    ]
+  },
+  {
+    "id": "cls_003",
+    "name": "Grade 11 — Commerce C",
+    "code": "G11-COMC",
+    "grade_level": 11,
+    "stream": "Commerce C",
+    "academic_year": "2026–27",
+    "class_teacher_id": null,
+    "sections": [
+      {
+        "id": "sec_007",
+        "name": "Section C1",
+        "room": "Room 207",
+        "capacity": 35,
+        "enrolled_count": 35
+      },
+      {
+        "id": "sec_008",
+        "name": "Section C2",
+        "room": "Room 208",
+        "capacity": 35,
+        "enrolled_count": 31
+      },
+      {
+        "id": "sec_009",
+        "name": "Section C3",
+        "room": "Room 209",
         "capacity": 35,
         "enrolled_count": 30
       }
     ]
   },
   {
-    "id": "cls_002",
-    "name": "Grade 12 - Computer Science",
-    "code": "G12-CS",
-    "academic_year": "2025-2026",
+    "id": "cls_004",
+    "name": "Grade 11 — Pure Science D",
+    "code": "G11-PSD",
+    "grade_level": 11,
+    "stream": "Pure Science D",
+    "academic_year": "2026–27",
+    "class_teacher_id": null,
+    "sections": [
+      {
+        "id": "sec_010",
+        "name": "Section D1",
+        "room": "Room 210",
+        "capacity": 35,
+        "enrolled_count": 30
+      },
+      {
+        "id": "sec_011",
+        "name": "Section D2",
+        "room": "Room 211",
+        "capacity": 35,
+        "enrolled_count": 27
+      },
+      {
+        "id": "sec_012",
+        "name": "Section D3",
+        "room": "Room 212",
+        "capacity": 35,
+        "enrolled_count": 26
+      }
+    ]
+  },
+  {
+    "id": "cls_005",
+    "name": "Grade 12 — Computer Science A",
+    "code": "G12-CSA",
+    "grade_level": 12,
+    "stream": "Computer Science A",
+    "academic_year": "2026–27",
     "class_teacher_id": "fac_002",
     "sections": [
       {
-        "id": "sec_003",
-        "name": "Section A",
-        "room": "Room 203",
+        "id": "sec_013",
+        "name": "Section A1",
+        "room": "Room 301",
         "capacity": 35,
-        "enrolled_count": 25
+        "enrolled_count": 31
+      },
+      {
+        "id": "sec_014",
+        "name": "Section A2",
+        "room": "Room 302",
+        "capacity": 35,
+        "enrolled_count": 29
       }
     ]
   }

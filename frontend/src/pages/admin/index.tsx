@@ -37,6 +37,7 @@ import {
   CartesianGrid, 
   Tooltip 
 } from 'recharts';
+import { getGradeBadgeClass } from '@/utils/grading';
 
 // ==========================================
 // 1. ADMIN DASHBOARD
@@ -66,19 +67,19 @@ export const AdminDashboardPage: React.FC = () => {
   return (
     <PageContainer>
       {/* Admin Executive Header */}
-      <div className="p-6 md:p-8 rounded-2xl bg-gradient-to-r from-amber-600 via-orange-600 to-amber-800 text-white shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-6 md:p-7 rounded-xl bg-blue-900 text-white shadow-sm border border-blue-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-medium backdrop-blur-sm border border-white/20">
+          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded bg-blue-800 text-blue-100 text-xs font-medium">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Central Administrative Console • Session 2025-2026</span>
+            <span>School Administration Office • Academic Year 2026–27</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Institutional Operations Center</h1>
-          <p className="text-amber-100 text-xs md:text-sm">
-            School-wide registrar control, resource allocation, and academic governance
+          <h1 className="text-2xl font-bold tracking-tight">Vidya Mandir School Administration</h1>
+          <p className="text-blue-200 text-xs md:text-sm">
+            Institutional admissions, faculty records, student allocation, and academic governance
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" className="bg-white text-amber-900 hover:bg-amber-50 text-xs">
+          <Button variant="secondary" className="bg-white text-blue-950 hover:bg-blue-50 text-xs font-semibold">
             <Plus className="w-3.5 h-3.5 mr-1" /> New Student Admission
           </Button>
         </div>
@@ -86,25 +87,33 @@ export const AdminDashboardPage: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-4 bg-white dark:bg-slate-900">
+        <Card className="p-4 bg-white dark:bg-slate-900 border-l-4 border-l-blue-600">
           <span className="text-xs text-slate-500 font-semibold uppercase">Total Enrollment</span>
-          <span className="text-2xl font-black text-slate-900 dark:text-slate-100 block mt-1">{kpis.total_students}</span>
-          <span className="text-[11px] text-emerald-600 font-medium">99.4% Capacity Reached</span>
+          <span className="text-2xl font-black text-slate-900 dark:text-slate-100 block mt-1">
+            {kpis.total_students}
+          </span>
+          <span className="text-[11px] text-emerald-600 font-medium">Grades 9 through 12</span>
         </Card>
-        <Card className="p-4 bg-white dark:bg-slate-900">
+        <Card className="p-4 bg-white dark:bg-slate-900 border-l-4 border-l-indigo-600">
           <span className="text-xs text-slate-500 font-semibold uppercase">Teaching Faculty</span>
-          <span className="text-2xl font-black text-amber-600 block mt-1">{kpis.total_faculty}</span>
-          <span className="text-[11px] text-slate-400">Ratio: {kpis.student_teacher_ratio}</span>
+          <span className="text-2xl font-black text-indigo-700 dark:text-indigo-400 block mt-1">
+            {kpis.total_faculty}
+          </span>
+          <span className="text-[11px] text-slate-500">Student-Teacher: {kpis.student_teacher_ratio}</span>
         </Card>
-        <Card className="p-4 bg-white dark:bg-slate-900">
-          <span className="text-xs text-slate-500 font-semibold uppercase">Active Classrooms</span>
-          <span className="text-2xl font-black text-blue-600 block mt-1">{kpis.active_classes}</span>
-          <span className="text-[11px] text-slate-400">Grades 9 through 12</span>
+        <Card className="p-4 bg-white dark:bg-slate-900 border-l-4 border-l-teal-600">
+          <span className="text-xs text-slate-500 font-semibold uppercase">Active Classes & Sections</span>
+          <span className="text-2xl font-black text-teal-700 dark:text-teal-400 block mt-1">
+            {kpis.active_classes}
+          </span>
+          <span className="text-[11px] text-slate-400">4 Approved Senior Streams</span>
         </Card>
-        <Card className="p-4 bg-white dark:bg-slate-900">
-          <span className="text-xs text-slate-500 font-semibold uppercase">Institution Attendance</span>
-          <span className="text-2xl font-black text-emerald-600 block mt-1">{kpis.overall_attendance_rate}%</span>
-          <span className="text-[11px] text-emerald-600 font-medium">Above 90% Target</span>
+        <Card className="p-4 bg-white dark:bg-slate-900 border-l-4 border-l-emerald-600">
+          <span className="text-xs text-slate-500 font-semibold uppercase">School Attendance Today</span>
+          <span className="text-2xl font-black text-emerald-600 block mt-1">
+            {kpis.overall_attendance_rate}%
+          </span>
+          <span className="text-[11px] text-emerald-600 font-medium">Above 90% School Target</span>
         </Card>
       </div>
 
@@ -112,8 +121,8 @@ export const AdminDashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-base">Institutional Attendance Trend</CardTitle>
-            <CardDescription>Aggregate student presence across all grades</CardDescription>
+            <CardTitle className="text-base">Institutional Attendance Pattern</CardTitle>
+            <CardDescription>Aggregate student presence across all grades (P + OD verified)</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[220px] w-full">
@@ -121,9 +130,9 @@ export const AdminDashboardPage: React.FC = () => {
                 <AreaChart data={attendanceTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                   <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} />
-                  <YAxis domain={[75, 100]} stroke="#94a3b8" fontSize={11} />
-                  <Tooltip />
-                  <Area type="monotone" dataKey="attendance" name="School Attendance %" stroke="#d97706" strokeWidth={2.5} fill="#fde68a" fillOpacity={0.4} />
+                  <YAxis domain={[75, 100]} stroke="#94a3b8" fontSize={11} unit="%" />
+                  <Tooltip formatter={(val) => [`${val}%`, 'School Attendance']} />
+                  <Area type="monotone" dataKey="attendance" name="School Attendance %" stroke="#1d4ed8" strokeWidth={2.5} fill="#bfdbfe" fillOpacity={0.4} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -133,27 +142,27 @@ export const AdminDashboardPage: React.FC = () => {
         {/* System Health Card */}
         <Card className="lg:col-span-1 p-5 space-y-4">
           <CardTitle className="text-base flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-amber-600" /> Operational Health
+            <ShieldCheck className="w-4 h-4 text-blue-700" /> Operational Overview
           </CardTitle>
           <div className="space-y-3 text-xs">
             <div className="flex items-center justify-between p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300">
               <span className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" /> System State
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Academic Term State
               </span>
-              <strong className="font-semibold">Healthy</strong>
+              <strong className="font-semibold">Term 1 Active</strong>
             </div>
             <div className="flex items-center justify-between p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300">
-              <span>Section Allocation</span>
-              <strong>Simulated Ready</strong>
+              <span>Grade 11 Stream Allocation</span>
+              <strong>Committed (4 Streams)</strong>
             </div>
             <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
               <span>Next Examination Period</span>
-              <strong className="text-slate-700 dark:text-slate-300">March 15, 2026</strong>
+              <strong className="text-slate-700 dark:text-slate-300">Quarterly (15/10/2026)</strong>
             </div>
           </div>
           <div className="pt-2">
             <Button variant="outline" className="w-full text-xs">
-              <FileText className="w-3.5 h-3.5 mr-1" /> View Audit Telemetry
+              <FileText className="w-3.5 h-3.5 mr-1" /> View Institutional Audit Log
             </Button>
           </div>
         </Card>
@@ -176,6 +185,7 @@ export const AdminStudentsPage: React.FC = () => {
   const filtered = students.filter(s => 
     s.name.toLowerCase().includes(search.toLowerCase()) || 
     s.admission_number.toLowerCase().includes(search.toLowerCase()) ||
+    s.student_id.toLowerCase().includes(search.toLowerCase()) ||
     s.roll_number.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -183,27 +193,27 @@ export const AdminStudentsPage: React.FC = () => {
     <PageContainer>
       <SectionHeader 
         title="Student Master Directory" 
-        description="Search, inspect, and manage student enrollments across all academic grades"
+        description="Search, inspect, and manage student enrollments, Student IDs, and academic records"
         actions={
           <div className="flex gap-2">
             <Button variant="outline" size="sm" className="text-xs">
-              <Download className="w-3.5 h-3.5 mr-1" /> Export Registry
+              <Download className="w-3.5 h-3.5 mr-1" /> Export Registry (CSV)
             </Button>
-            <Button variant="default" size="sm" className="text-xs bg-amber-600 hover:bg-amber-700">
-              <Plus className="w-3.5 h-3.5 mr-1" /> Enroll Student
+            <Button variant="default" size="sm" className="text-xs bg-blue-900 hover:bg-blue-800">
+              <Plus className="w-3.5 h-3.5 mr-1" /> Enroll New Student
             </Button>
           </div>
         }
       />
 
       {/* Filter / Search Bar */}
-      <div className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+      <div className="flex items-center gap-3 p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
         <Search className="w-4 h-4 text-slate-400" />
         <input 
           type="text" 
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by student name, roll number, or admission ID..."
+          placeholder="Search by student name, Student ID (e.g. STU202600001), roll number, or admission ID..."
           className="w-full bg-transparent text-xs outline-none text-slate-800 dark:text-slate-200" 
         />
       </div>
@@ -214,25 +224,35 @@ export const AdminStudentsPage: React.FC = () => {
             <table className="w-full text-xs text-left">
               <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-semibold border-b border-slate-200 dark:border-slate-800">
                 <tr>
-                  <th className="py-2.5 px-3">Admission ID</th>
+                  <th className="py-2.5 px-3">Student ID</th>
                   <th className="py-2.5 px-3">Roll No</th>
+                  <th className="py-2.5 px-3">Admission No</th>
                   <th className="py-2.5 px-3">Student Name</th>
                   <th className="py-2.5 px-3">Class & Section</th>
+                  <th className="py-2.5 px-3">Stream</th>
                   <th className="py-2.5 px-3">Attendance %</th>
-                  <th className="py-2.5 px-3">Cumulative GPA</th>
-                  <th className="py-2.5 px-3">Guardian Name</th>
+                  <th className="py-2.5 px-3">Academic %</th>
+                  <th className="py-2.5 px-3">Grade</th>
+                  <th className="py-2.5 px-3">Parent / Guardian</th>
                   <th className="py-2.5 px-3">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {filtered.map((s) => (
                   <tr key={s.id} className="hover:bg-slate-50/50">
-                    <td className="py-2.5 px-3 font-mono text-slate-500">{s.admission_number}</td>
+                    <td className="py-2.5 px-3 font-mono font-bold text-blue-700 dark:text-blue-400">{s.student_id}</td>
                     <td className="py-2.5 px-3 font-mono font-bold text-slate-700 dark:text-slate-300">{s.roll_number}</td>
+                    <td className="py-2.5 px-3 font-mono text-slate-500">{s.admission_number}</td>
                     <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-slate-100">{s.name}</td>
-                    <td className="py-2.5 px-3 text-slate-600">{s.class_name}</td>
-                    <td className="py-2.5 px-3 font-mono font-bold text-emerald-600">{s.attendance_rate}%</td>
-                    <td className="py-2.5 px-3 font-mono font-bold">{s.gpa}</td>
+                    <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">{s.class_name}</td>
+                    <td className="py-2.5 px-3 text-slate-500">{s.stream || '—'}</td>
+                    <td className="py-2.5 px-3 font-mono font-bold text-blue-700 dark:text-blue-400">{s.attendance_rate}%</td>
+                    <td className="py-2.5 px-3 font-mono font-bold text-emerald-600">{s.percentage}%</td>
+                    <td className="py-2.5 px-3">
+                      <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold border ${getGradeBadgeClass(s.grade)}`}>
+                        {s.grade}
+                      </span>
+                    </td>
                     <td className="py-2.5 px-3 text-slate-600">{s.parent_name}</td>
                     <td className="py-2.5 px-3">
                       <Badge variant="success" className="text-[10px]">{s.status}</Badge>
@@ -262,7 +282,7 @@ export const AdminParentsPage: React.FC = () => {
     <PageContainer>
       <SectionHeader 
         title="Parent & Guardian Directory" 
-        description="Family contact directory with linked student mappings and communications history"
+        description="Parent contact directory with linked student IDs and school communication records"
       />
 
       <Card>
@@ -274,7 +294,7 @@ export const AdminParentsPage: React.FC = () => {
                   <th className="py-2.5 px-3">Guardian Name</th>
                   <th className="py-2.5 px-3">Email Address</th>
                   <th className="py-2.5 px-3">Phone Number</th>
-                  <th className="py-2.5 px-3">Linked Children</th>
+                  <th className="py-2.5 px-3">Linked Wards / Students</th>
                   <th className="py-2.5 px-3">Residential Address</th>
                   <th className="py-2.5 px-3">Account Status</th>
                 </tr>
@@ -287,7 +307,9 @@ export const AdminParentsPage: React.FC = () => {
                     <td className="py-2.5 px-3 font-mono">{p.phone}</td>
                     <td className="py-2.5 px-3">
                       {p.children.map((c) => (
-                        <Badge key={c.id} variant="outline" className="text-[10px] mr-1">{c.name} ({c.class_name})</Badge>
+                        <Badge key={c.id} variant="outline" className="text-[10px] mr-1">
+                          {c.name} ({c.class_name})
+                        </Badge>
                       ))}
                     </td>
                     <td className="py-2.5 px-3 text-slate-500">{p.address}</td>
@@ -318,10 +340,10 @@ export const AdminFacultyPage: React.FC = () => {
   return (
     <PageContainer>
       <SectionHeader 
-        title="Faculty & Staff Master Register" 
-        description="Academic personnel directory, department heads, and teaching workloads"
+        title="Faculty & Teaching Staff Register" 
+        description="Academic personnel directory, department designations, and instructional period workloads"
         actions={
-          <Button variant="default" size="sm" className="text-xs bg-amber-600 hover:bg-amber-700">
+          <Button variant="default" size="sm" className="text-xs bg-blue-900 hover:bg-blue-800">
             <Plus className="w-3.5 h-3.5 mr-1" /> Add Faculty Member
           </Button>
         }
@@ -336,9 +358,9 @@ export const AdminFacultyPage: React.FC = () => {
                   <th className="py-2.5 px-3">Faculty Name</th>
                   <th className="py-2.5 px-3">Department</th>
                   <th className="py-2.5 px-3">Designation</th>
-                  <th className="py-2.5 px-3">Assigned Classes</th>
-                  <th className="py-2.5 px-3">Weekly Hours</th>
-                  <th className="py-2.5 px-3">Evaluation Rating</th>
+                  <th className="py-2.5 px-3">Assigned Classes & Sections</th>
+                  <th className="py-2.5 px-3">Weekly Workload</th>
+                  <th className="py-2.5 px-3">Official Email</th>
                   <th className="py-2.5 px-3">Status</th>
                 </tr>
               </thead>
@@ -353,8 +375,8 @@ export const AdminFacultyPage: React.FC = () => {
                         <Badge key={c} variant="outline" className="text-[10px] mr-1">{c}</Badge>
                       ))}
                     </td>
-                    <td className="py-2.5 px-3 font-mono">{f.workload_hours} hrs/wk</td>
-                    <td className="py-2.5 px-3 font-bold text-amber-600">{f.rating} / 5.0</td>
+                    <td className="py-2.5 px-3 font-mono font-medium">{f.workload_hours} Periods / wk</td>
+                    <td className="py-2.5 px-3 text-slate-500 font-mono">{f.email}</td>
                     <td className="py-2.5 px-3">
                       <Badge variant="success" className="text-[10px]">{f.status}</Badge>
                     </td>
@@ -382,10 +404,10 @@ export const AdminClassesPage: React.FC = () => {
   return (
     <PageContainer>
       <SectionHeader 
-        title="Classrooms & Academic Sections" 
-        description="Section assignments, capacity limits, and assigned class coordinators"
+        title="Classrooms, Streams & Academic Sections" 
+        description="Class section management, stream allocations (Grades 11–12), and assigned class teachers"
         actions={
-          <Button variant="default" size="sm" className="text-xs bg-amber-600 hover:bg-amber-700">
+          <Button variant="default" size="sm" className="text-xs bg-blue-900 hover:bg-blue-800">
             <Plus className="w-3.5 h-3.5 mr-1" /> Add New Section
           </Button>
         }
@@ -399,16 +421,16 @@ export const AdminClassesPage: React.FC = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">{cls.name}</h3>
-                  <p className="text-xs text-slate-500">{cls.stream}</p>
+                  <p className="text-xs text-blue-700 dark:text-blue-400 font-medium">{cls.stream}</p>
                 </div>
                 <Badge variant={utilPct >= 95 ? 'warning' : 'outline'} className="text-[10px]">
-                  {utilPct}% Full
+                  {utilPct}% Enrolled
                 </Badge>
               </div>
 
               <div className="space-y-1 text-xs text-slate-600 dark:text-slate-400">
                 <p>Class Teacher: <strong className="text-slate-800 dark:text-slate-200">{cls.teacher}</strong></p>
-                <p>Location: <strong className="text-slate-800 dark:text-slate-200">{cls.room}</strong></p>
+                <p>Room: <strong className="text-slate-800 dark:text-slate-200">{cls.room}</strong></p>
               </div>
 
               <div className="space-y-1">
@@ -417,7 +439,7 @@ export const AdminClassesPage: React.FC = () => {
                   <span>Max: {cls.capacity}</span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                  <div className="h-full bg-amber-500 rounded-full" style={{ width: `${utilPct}%` }} />
+                  <div className="h-full bg-blue-600 rounded-full" style={{ width: `${utilPct}%` }} />
                 </div>
               </div>
             </Card>
@@ -441,8 +463,8 @@ export const AdminSubjectsPage: React.FC = () => {
   return (
     <PageContainer>
       <SectionHeader 
-        title="Curriculum & Course Catalog" 
-        description="Departmental course offerings, credit frameworks, and syllabus management"
+        title="Academic Subjects & Curriculum Register" 
+        description="Departmental subject offerings, weekly period framework, and syllabus management"
       />
 
       <Card>
@@ -451,22 +473,22 @@ export const AdminSubjectsPage: React.FC = () => {
             <table className="w-full text-xs text-left">
               <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-semibold">
                 <tr>
-                  <th className="py-2.5 px-3">Course Code</th>
+                  <th className="py-2.5 px-3">Subject Code</th>
                   <th className="py-2.5 px-3">Subject Name</th>
                   <th className="py-2.5 px-3">Department</th>
-                  <th className="py-2.5 px-3">Credit Hours</th>
+                  <th className="py-2.5 px-3">Weekly Periods</th>
                   <th className="py-2.5 px-3">Faculty Assigned</th>
-                  <th className="py-2.5 px-3">Status</th>
+                  <th className="py-2.5 px-3">Curriculum Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {subjects.map((sub) => (
                   <tr key={sub.code} className="hover:bg-slate-50/50">
-                    <td className="py-2.5 px-3 font-mono font-bold text-amber-700 dark:text-amber-400">{sub.code}</td>
+                    <td className="py-2.5 px-3 font-mono font-bold text-blue-700 dark:text-blue-400">{sub.code}</td>
                     <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-slate-100">{sub.name}</td>
                     <td className="py-2.5 px-3 text-slate-600">{sub.department}</td>
-                    <td className="py-2.5 px-3 font-mono">{sub.credits} Credits</td>
-                    <td className="py-2.5 px-3">{sub.facultyCount} Instructors</td>
+                    <td className="py-2.5 px-3 font-mono font-medium">{sub.weekly_periods} Periods / wk</td>
+                    <td className="py-2.5 px-3">{sub.facultyCount} Teachers</td>
                     <td className="py-2.5 px-3"><Badge variant="success" className="text-[10px]">{sub.status}</Badge></td>
                   </tr>
                 ))}
@@ -503,7 +525,7 @@ export const AdminAttendancePage: React.FC = () => {
     <PageContainer>
       <SectionHeader 
         title="Institutional Attendance Audit" 
-        description="School-wide presence telemetry, absenteeism reports, and Master Plan Amendment 2 status reconciliation"
+        description="School-wide presence audit, absenteeism records, and canonical 4-status reconciliation"
       />
 
       {/* Institutional KPI Summary */}
@@ -511,17 +533,17 @@ export const AdminAttendancePage: React.FC = () => {
         <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-emerald-500">
           <span className="text-xs text-slate-500 font-medium">Total Present</span>
           <span className="text-xl font-black text-emerald-600 block mt-0.5">{totalPresent}</span>
-          <span className="text-[10px] text-slate-400">Regular lecture presence</span>
+          <span className="text-[10px] text-slate-400">Classroom presence</span>
         </Card>
         <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-blue-500">
           <span className="text-xs text-slate-500 font-medium">On Duty</span>
           <span className="text-xl font-black text-blue-600 block mt-0.5">{totalOnDuty}</span>
-          <span className="text-[10px] text-slate-400">Institutional duty (Present)</span>
+          <span className="text-[10px] text-slate-400">School activity (Present)</span>
         </Card>
-        <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-purple-500">
+        <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-amber-500">
           <span className="text-xs text-slate-500 font-medium">Approved Leave</span>
-          <span className="text-xl font-black text-purple-600 block mt-0.5">{totalLeave}</span>
-          <span className="text-[10px] text-slate-400">Faculty approved (Absence)</span>
+          <span className="text-xl font-black text-amber-600 block mt-0.5">{totalLeave}</span>
+          <span className="text-[10px] text-slate-400">Faculty-approved (Absence)</span>
         </Card>
         <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-rose-500">
           <span className="text-xs text-slate-500 font-medium">Unapproved Absent</span>
@@ -529,7 +551,7 @@ export const AdminAttendancePage: React.FC = () => {
           <span className="text-[10px] text-slate-400">Unjustified absence</span>
         </Card>
         <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-indigo-500 col-span-2 sm:col-span-1">
-          <span className="text-xs text-slate-500 font-medium">Effective Presence %</span>
+          <span className="text-xs text-slate-500 font-medium">Attendance Rate</span>
           <span className="text-xl font-black text-indigo-600 block mt-0.5">{aggregateRate}%</span>
           <span className="text-[10px] text-slate-400">([P + OD] / Total)</span>
         </Card>
@@ -539,7 +561,7 @@ export const AdminAttendancePage: React.FC = () => {
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Section Attendance Audit Ledger</CardTitle>
           <CardDescription className="text-xs">
-            Calculated per Master Plan Amendment 2 formula: <code>Attendance % = (Present + On Duty) / (Present + Absent + On Duty + Leave) × 100</code>
+            Calculated per approved school formula: <code>Attendance % = (Present + On Duty) / (Present + Absent + On Duty + Leave) × 100</code>
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -548,13 +570,13 @@ export const AdminAttendancePage: React.FC = () => {
               <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-semibold border-b border-slate-200 dark:border-slate-800">
                 <tr>
                   <th className="py-2.5 px-3">Audit Date</th>
-                  <th className="py-2.5 px-3">Class Section</th>
+                  <th className="py-2.5 px-3">Class & Section</th>
                   <th className="py-2.5 px-3">Enrolled</th>
                   <th className="py-2.5 px-3">Present</th>
                   <th className="py-2.5 px-3">On Duty</th>
-                  <th className="py-2.5 px-3">Leave</th>
+                  <th className="py-2.5 px-3">Approved Leave</th>
                   <th className="py-2.5 px-3">Absent</th>
-                  <th className="py-2.5 px-3">Attendance %</th>
+                  <th className="py-2.5 px-3">Attendance Rate</th>
                   <th className="py-2.5 px-3">Verified Faculty</th>
                 </tr>
               </thead>
@@ -566,7 +588,7 @@ export const AdminAttendancePage: React.FC = () => {
                     <td className="py-2.5 px-3 font-medium">{log.total}</td>
                     <td className="py-2.5 px-3 text-emerald-600 font-bold">{log.present}</td>
                     <td className="py-2.5 px-3 text-blue-600 font-bold">{log.onDuty}</td>
-                    <td className="py-2.5 px-3 text-purple-600 font-bold">{log.leave}</td>
+                    <td className="py-2.5 px-3 text-amber-600 font-bold">{log.leave}</td>
                     <td className="py-2.5 px-3 text-rose-600 font-bold">{log.absent}</td>
                     <td className="py-2.5 px-3 font-bold font-mono text-indigo-600">{log.rate}</td>
                     <td className="py-2.5 px-3 text-slate-500">{log.verifiedBy}</td>
@@ -594,8 +616,8 @@ export const AdminMarksPage: React.FC = () => {
   return (
     <PageContainer>
       <SectionHeader 
-        title="Examination & Grade Audit Registry" 
-        description="Term examination benchmarks, grade moderation, and institutional pass rates"
+        title="Examination & Marks Audit Registry" 
+        description="School examination series benchmarks, section average marks, and pass percentages"
       />
 
       <Card>
@@ -604,11 +626,11 @@ export const AdminMarksPage: React.FC = () => {
             <table className="w-full text-xs text-left">
               <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-semibold">
                 <tr>
-                  <th className="py-2.5 px-3">Class Section</th>
+                  <th className="py-2.5 px-3">Class & Section</th>
                   <th className="py-2.5 px-3">Examination Series</th>
                   <th className="py-2.5 px-3">Evaluated Students</th>
-                  <th className="py-2.5 px-3">Section Average</th>
-                  <th className="py-2.5 px-3">Top Score</th>
+                  <th className="py-2.5 px-3">Section Average %</th>
+                  <th className="py-2.5 px-3">Highest Score</th>
                   <th className="py-2.5 px-3">Pass Percentage</th>
                 </tr>
               </thead>
@@ -618,9 +640,9 @@ export const AdminMarksPage: React.FC = () => {
                     <td className="py-2.5 px-3 font-semibold">{ex.class}</td>
                     <td className="py-2.5 px-3 text-slate-500">{ex.exam}</td>
                     <td className="py-2.5 px-3 font-mono">{ex.students}</td>
-                    <td className="py-2.5 px-3 font-bold font-mono text-amber-600">{ex.avg}</td>
+                    <td className="py-2.5 px-3 font-bold font-mono text-blue-700 dark:text-blue-400">{ex.avg}</td>
                     <td className="py-2.5 px-3 font-bold text-emerald-600">{ex.highest}</td>
-                    <td className="py-2.5 px-3 font-bold text-blue-600">{ex.passRate}</td>
+                    <td className="py-2.5 px-3 font-bold text-indigo-600">{ex.passRate}</td>
                   </tr>
                 ))}
               </tbody>
@@ -645,8 +667,8 @@ export const AdminTimetablePage: React.FC = () => {
   return (
     <PageContainer>
       <SectionHeader 
-        title="Master Institutional Timetable" 
-        description="Facility allocation, scheduling matrix, and instructor collision detection"
+        title="Master School Timetable" 
+        description="Facility allocation, period scheduling matrix, and instructor collision detection"
         actions={
           <Button variant="outline" size="sm" className="text-xs">
             <Download className="w-3.5 h-3.5 mr-1" /> Export Master PDF
@@ -654,9 +676,9 @@ export const AdminTimetablePage: React.FC = () => {
         }
       />
 
-      <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+      <div className="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
         <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-        <span>Collision Detection Active: <strong>Zero scheduling conflicts</strong> identified across 24 classrooms and 78 instructors.</span>
+        <span>Collision Detection Active: <strong>Zero scheduling conflicts</strong> identified across 48 classrooms and 86 faculty members.</span>
       </div>
 
       <Card>
@@ -668,11 +690,11 @@ export const AdminTimetablePage: React.FC = () => {
             <table className="w-full text-xs text-left">
               <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-semibold">
                 <tr>
-                  <th className="py-2.5 px-3">Class</th>
+                  <th className="py-2.5 px-3">Class & Section</th>
                   <th className="py-2.5 px-3">Period 1 (08:30)</th>
-                  <th className="py-2.5 px-3">Period 2 (09:30)</th>
-                  <th className="py-2.5 px-3">Period 3 (10:40)</th>
-                  <th className="py-2.5 px-3">Period 4 (11:40)</th>
+                  <th className="py-2.5 px-3">Period 2 (09:15)</th>
+                  <th className="py-2.5 px-3">Period 3 (10:15)</th>
+                  <th className="py-2.5 px-3">Period 4 (11:00)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -707,10 +729,10 @@ export const AdminCalendarPage: React.FC = () => {
   return (
     <PageContainer>
       <SectionHeader 
-        title="Academic Calendar Publisher" 
-        description="Publish institutional events, exam periods, campus holidays, and notice bulletins"
+        title="Academic Calendar & Event Notices" 
+        description="Publish institutional events, examinations, parent-teacher meetings, and school holidays"
         actions={
-          <Button variant="default" size="sm" className="text-xs bg-amber-600 hover:bg-amber-700">
+          <Button variant="default" size="sm" className="text-xs bg-blue-900 hover:bg-blue-800">
             <Plus className="w-3.5 h-3.5 mr-1" /> Publish New Notice
           </Button>
         }
@@ -720,7 +742,9 @@ export const AdminCalendarPage: React.FC = () => {
         {notices.map((n, i) => (
           <Card key={i} className="p-5 space-y-2">
             <div className="flex justify-between items-center">
-              <Badge variant={n.category === 'Examination' ? 'destructive' : 'warning'} className="text-[10px]">{n.category}</Badge>
+              <Badge variant={n.category === 'Examination' ? 'destructive' : n.category === 'PTM' ? 'default' : 'warning'} className="text-[10px]">
+                {n.category}
+              </Badge>
               <span className="text-xs font-mono text-slate-500">{n.date}</span>
             </div>
             <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">{n.title}</h3>
@@ -747,8 +771,8 @@ export const AdminAllocationPage: React.FC = () => {
   return (
     <PageContainer>
       <SectionHeader 
-        title="Automated Section Allocation Engine" 
-        description="Merit-based and quota-balanced student section distribution preview"
+        title="Senior Secondary Stream & Section Allocation" 
+        description="Merit-based Grade 11 stream allocation across Computer Science A, Bio-Maths B, Commerce C, and Pure Science D"
         actions={
           <div className="flex gap-2">
             <Button 
@@ -757,30 +781,30 @@ export const AdminAllocationPage: React.FC = () => {
               onClick={() => setRanSimulation(true)}
               className="text-xs"
             >
-              <Play className="w-3.5 h-3.5 mr-1" /> Re-run Algorithm
+              <Play className="w-3.5 h-3.5 mr-1" /> Re-run Stream Allocation
             </Button>
             <Button 
               variant="default" 
               size="sm" 
               onClick={() => setPublished(true)}
-              className="text-xs bg-amber-600 hover:bg-amber-700"
+              className="text-xs bg-blue-900 hover:bg-blue-800"
             >
-              <Check className="w-3.5 h-3.5 mr-1" /> Commit & Publish Allocation
+              <Check className="w-3.5 h-3.5 mr-1" /> Commit & Publish Allocations
             </Button>
           </div>
         }
       />
 
       {ranSimulation && (
-        <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 text-xs text-blue-800 dark:text-blue-300 flex items-center justify-between">
-          <span>Allocation algorithm re-calculated across 32 candidates using merit score ranking.</span>
+        <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 text-xs text-blue-800 dark:text-blue-300 flex items-center justify-between">
+          <span>Allocation algorithm re-calculated across Grade 11 applicants using board exam merit marks.</span>
           <Button variant="ghost" size="sm" onClick={() => setRanSimulation(false)} className="text-xs h-7">Dismiss</Button>
         </div>
       )}
 
       {published && (
-        <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
-          <span>Allocations committed. Student portal rosters and timetable assignments updated.</span>
+        <div className="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
+          <span>Allocations committed. Student portal rosters, stream assignments, and timetables updated.</span>
           <Button variant="ghost" size="sm" onClick={() => setPublished(false)} className="text-xs h-7">Dismiss</Button>
         </div>
       )}
@@ -788,28 +812,30 @@ export const AdminAllocationPage: React.FC = () => {
       {/* Allocation Parameters Card */}
       <Card className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div>
-          <span className="text-slate-500 font-medium">Target Stream</span>
+          <span className="text-slate-500 font-medium">Target Academic Level</span>
           <strong className="block text-slate-800 dark:text-slate-200 font-bold mt-0.5">Grade 11 Admissions</strong>
         </div>
         <div>
-          <span className="text-slate-500 font-medium">Allocation Rule</span>
-          <strong className="block text-slate-800 dark:text-slate-200 font-bold mt-0.5">Merit Rank + Balance</strong>
+          <span className="text-slate-500 font-medium">Allocation Criteria</span>
+          <strong className="block text-slate-800 dark:text-slate-200 font-bold mt-0.5">Merit Marks + Stream Pref</strong>
         </div>
         <div>
           <span className="text-slate-500 font-medium">Section Capacity</span>
-          <strong className="block text-slate-800 dark:text-slate-200 font-bold mt-0.5">35 Max / Section</strong>
+          <strong className="block text-slate-800 dark:text-slate-200 font-bold mt-0.5">35 Students / Section</strong>
         </div>
         <div>
-          <span className="text-slate-500 font-medium">Engine Status</span>
-          <strong className="block text-emerald-600 font-bold mt-0.5">Preview Verified</strong>
+          <span className="text-slate-500 font-medium">Stream Structure</span>
+          <strong className="block text-blue-700 dark:text-blue-400 font-bold mt-0.5">4 Approved Streams</strong>
         </div>
       </Card>
 
       {/* Allocation Results Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Proposed Section Distribution Register</CardTitle>
-          <CardDescription>Generated based on entrance test scores and gender quota balancing</CardDescription>
+          <CardTitle className="text-base">Proposed Stream & Section Allocation Register</CardTitle>
+          <CardDescription>
+            Grades 11–12 support exactly one stream and one section within that stream (e.g. Computer Science A, Bio-Maths B, Commerce C, Pure Science D)
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -817,10 +843,11 @@ export const AdminAllocationPage: React.FC = () => {
               <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-semibold">
                 <tr>
                   <th className="py-2.5 px-3">Merit Rank</th>
+                  <th className="py-2.5 px-3">Student ID</th>
                   <th className="py-2.5 px-3">Student Name</th>
-                  <th className="py-2.5 px-3">Score</th>
+                  <th className="py-2.5 px-3">Marks Obtained (%)</th>
                   <th className="py-2.5 px-3">Gender</th>
-                  <th className="py-2.5 px-3">Proposed Section Allocation</th>
+                  <th className="py-2.5 px-3">Allocated Stream & Section</th>
                   <th className="py-2.5 px-3">Allocation Status</th>
                 </tr>
               </thead>
@@ -828,10 +855,11 @@ export const AdminAllocationPage: React.FC = () => {
                 {allocations.map((a) => (
                   <tr key={a.student_id} className="hover:bg-slate-50/50">
                     <td className="py-2.5 px-3 font-mono font-bold">#{a.merit_rank}</td>
+                    <td className="py-2.5 px-3 font-mono font-bold text-blue-700 dark:text-blue-400">{a.student_id}</td>
                     <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-slate-100">{a.student_name}</td>
-                    <td className="py-2.5 px-3 font-bold font-mono text-amber-600">{a.score}%</td>
+                    <td className="py-2.5 px-3 font-bold font-mono text-emerald-600">{a.score}%</td>
                     <td className="py-2.5 px-3 text-slate-500">{a.gender}</td>
-                    <td className="py-2.5 px-3 font-semibold text-indigo-600 dark:text-indigo-400">{a.allocated_section}</td>
+                    <td className="py-2.5 px-3 font-semibold text-blue-900 dark:text-blue-300">{a.allocated_section}</td>
                     <td className="py-2.5 px-3">
                       <Badge variant={a.status === 'Allocated' ? 'success' : 'warning'} className="text-[10px]">
                         {a.status}

@@ -51,7 +51,7 @@ export const ROLE_NAVIGATION: Record<UserRole, NavItem[]> = {
       title: 'Marks & Grades',
       href: '/student/marks',
       icon: Award,
-      description: 'Exam marks, GPA & report cards',
+      description: 'Exam marks, percentage & report cards',
     },
     {
       title: 'Timetable',
@@ -174,7 +174,7 @@ export const ROLE_NAVIGATION: Record<UserRole, NavItem[]> = {
       title: 'Subjects & Curriculum',
       href: '/admin/subjects',
       icon: BookMarked,
-      description: 'Course catalog & academic credits',
+      description: 'Subject catalog & curriculum outlines',
     },
     {
       title: 'Attendance Records',
@@ -234,10 +234,10 @@ export const ROLE_NAVIGATION: Record<UserRole, NavItem[]> = {
       description: 'Staff allocation & workload review',
     },
     {
-      title: 'Reports & Transcripts',
+      title: 'School Reports & Dossiers',
       href: '/principal/reports',
       icon: FileSpreadsheet,
-      description: 'Accreditation summaries & sign-offs',
+      description: 'Institutional reports & board sign-offs',
     },
   ],
 };

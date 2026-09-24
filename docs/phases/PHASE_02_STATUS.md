@@ -44,6 +44,16 @@ Build a complete, responsive, role-tailored presentation layer that demonstrates
   - Updated synthetic mock dataset (`mock-data/attendance.json`) with canonical statuses and `approved_by_faculty_id` audit attributes.
   - Upgraded all 5 role portals with distinct visual badges for `LEAVE` (Violet/Purple), faculty approval controls, 5-column institutional audit views, and executive Recharts 4-status distribution.
   - Implemented 15 Vitest automated unit tests in `frontend/tests/attendance.test.ts` (15/15 passing).
+- [x] **Indian School ERP Frontend-Wide Reconciliation (CBSE/ICSE Model)**:
+  - Purged all university concepts (GPA, CGPA, credits, credit hours, degree/major/minor, faculty ratings/rankings) from active types, services, mock datasets, and pages.
+  - Established canonical Indian School Academic Model: Marks out of 100 (0–100 or 'AB'), cumulative marks, overall percentage, and standard 8-tier letter grades (`A1` to `E`) in `src/utils/grading.ts`.
+  - Added Indian date and currency formatters (`src/utils/dateFormat.ts`).
+  - Added 19 Vitest unit tests in `frontend/tests/grading.test.ts` verifying all 8 tiers, mandatory boundary conditions (`32.99`, `33`, `40.99`, `41`, `90.99`, `91`, `100`), absent assessments (`'AB'`), and formatting helpers (34/34 total suite tests passing).
+  - Configurable Indian school identity in `src/config/schoolConfig.ts`: "Vidya Mandir Senior Secondary School", Academic Year `2026–27`.
+  - Updated synthetic datasets with authentic Indian personas (Arun Kumar, R. Suresh, Dr. K. Radhakrishnan, S. Ramanathan).
+  - Indian school class structure: Grade 10 (no stream) and Grades 11–12 with 4 approved streams (`Computer Science A`, `Bio-Maths B`, `Commerce C`, `Pure Science D`) and stream-specific sections (`A1..A3`, `B1..B3`, `C1..C3`, `D1..D3`).
+  - Faculty module strictly non-evaluative: zero ratings, reviews, rankings, or leaderboards.
+  - Reconciled all role portals (Student, Parent, Faculty, Admin, Principal) to enterprise school UI standard (`bg-blue-900`, clean bordered cards, WCAG AA compliance).
 - [x] **TanStack Query Integration**: Initialized `QueryClientProvider` at application root.
 
 ---

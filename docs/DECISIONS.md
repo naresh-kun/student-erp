@@ -99,3 +99,44 @@
   - Student and Parent portals display approved leave breakdowns without distorting the canonical absence calculation.
   - Admin and Principal oversight metrics aggregate 4 statuses with complete mathematical consistency.
 
+---
+
+## ADR 008: Indian School ERP Reconciliation & CBSE/ICSE Academic Model
+
+- **Status**: ACCEPTED / AUTHORITATIVE
+- **Context**: 
+  - The Student ERP is specifically designed for Indian schools (CBSE / ICSE Senior Secondary model, synthetic identity "Vidya Mandir Senior Secondary School").
+  - Previous scaffolds inherited university/college concepts (GPA, CGPA, Credits, Credit Hours, Semester GPA, college-style transcripts, degree/major/minor, faculty appraisal ratings/leaderboards), which conflict with Indian school administration practices and user workflows.
+- **Decision**:
+  1. **Complete Removal of University Concepts**: Purge all GPA, CGPA, credits, credit hours, degree/major/minor, and faculty performance ratings/rankings from active types, services, mock data, components, dashboards, tables, filters, and reports.
+  2. **Canonical Indian School Academic Model**:
+     - Marks out of 100 (0–100 numeric, or `'AB'` for absent assessments).
+     - Cumulative marks out of Total Maximum Marks (e.g. 435 / 500).
+     - Overall percentage (rounded to 2 decimal places, e.g. 87.00%).
+     - Standard 8-tier letter grade scale:
+       - `A1` = 91–100
+       - `A2` = 81–<91
+       - `B1` = 71–<81
+       - `B2` = 61–<71
+       - `C1` = 51–<61
+       - `C2` = 41–<51
+       - `D`  = 33–<41
+       - `E`  = <33
+     - Shared single source of truth for grade evaluation: `frontend/src/utils/grading.ts`.
+  3. **Student Information Model**:
+     - Permanent, unique, system-generated Student ID (e.g. `STU202600001`), Admission Number (`ADM20240091`), Roll Number (`11-A2-04`), Date of Birth (`14/05/2009`), Class & Section, Stream, Academic Year (`2026–27`).
+     - Parent Portal authentication uses child's Student ID as the username with parent credentials.
+  4. **Indian School Class & Stream Structure**:
+     - Grades below 11: General Secondary curriculum (no stream).
+     - Grades 11–12: Exactly one stream (`Computer Science A`, `Bio-Maths B`, `Commerce C`, `Pure Science D`) and stream-specific sections (`A1..A3`, `B1..B3`, `C1..C3`, `D1..D3`).
+  5. **Faculty Non-Evaluative Principle**:
+     - Faculty information is strictly descriptive (Name, Designation, Assigned Classes, Workload in periods/week, Timetable).
+     - Prohibited: Faculty ratings, performance rankings, leaderboards, teacher scorecards, or attributing class marks to teacher appraisals.
+  6. **UI & Design Language**:
+     - Enterprise school visual design: Light theme default, white/slate surfaces, deep navy blue primary (`bg-blue-900`), flat bordered panels, minimal shadows, WCAG AA compliance.
+     - Prohibited: Glowing gradients, neon accents, glassmorphism, floating cards, 3D blobs, AI sparkle icons.
+- **Consequences**:
+  - Authentic, natural workflow for Indian school administrators, principals, teachers, parents, and students.
+  - Complete mathematical consistency across marks, percentage, and 8-tier letter grades in all 5 user roles.
+  - Full adherence to Master Plan Amendment 2 four-status attendance model (`PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`).
+

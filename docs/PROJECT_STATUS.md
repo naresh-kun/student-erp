@@ -34,30 +34,31 @@ To ensure strict engineering honesty, features and modules are classified into e
 ### 2.2 Datasets & Prototyping
 | Component / Area | Status | Notes |
 | :--- | :--- | :--- |
-| **Users Mock Data** | `MOCKED` | 8 synthetic accounts covering all 5 roles (`mock-data/users.json`) |
-| **Students Mock Data** | `MOCKED` | 2 student records with admission, class, section, parent links |
-| **Parents Mock Data** | `MOCKED` | 2 parent records linked to student IDs |
-| **Faculty Mock Data** | `MOCKED` | 2 faculty records with departments and subject assignments |
-| **Classes & Sections Mock Data** | `MOCKED` | Grade 11 & 12 with sections, rooms, capacities |
-| **Subjects Mock Data** | `MOCKED` | 4 subjects with department codes and credits |
-| **Attendance Mock Data** | `MOCKED` | Session attendance records with canonical 4-status model (PRESENT, ABSENT, ON_DUTY, LEAVE per Master Plan Amendment 2) |
-| **Marks Mock Data** | `MOCKED` | 4 exam evaluation records with grades and evaluator references |
-| **Timetable Mock Data** | `MOCKED` | 5 scheduled period slots across subjects and rooms |
-| **Calendar Events Mock Data** | `MOCKED` | 4 institutional events (exams, holidays, conferences) |
+| **Users Mock Data** | `MOCKED` | Synthetic Indian personnel & students across all 5 roles (`mock-data/users.json`) |
+| **Students Mock Data** | `MOCKED` | Indian student records with permanent Student ID (`STU202600001`), admission no, roll no, class, section, stream |
+| **Parents Mock Data** | `MOCKED` | Indian guardian records linked to student IDs for parent authentication |
+| **Faculty Mock Data** | `MOCKED` | Indian academic staff records (e.g. R. Suresh) with departments, subjects, weekly period workloads (no appraisal ratings) |
+| **Classes & Sections Mock Data** | `MOCKED` | Grade 10 (no stream) and Grades 11–12 with 4 approved streams (`Computer Science A`, `Bio-Maths B`, `Commerce C`, `Pure Science D`) |
+| **Subjects Mock Data** | `MOCKED` | Indian school subjects with weekly period allocations (credits purged) |
+| **Attendance Mock Data** | `MOCKED` | Multi-period attendance logs with canonical 4-status model (PRESENT, ABSENT, ON_DUTY, LEAVE per Master Plan Amendment 2) |
+| **Marks Mock Data** | `MOCKED` | Examination evaluations with marks out of 100, cumulative totals, percentages, and 8-tier letter grades (A1 to E) |
+| **Timetable Mock Data** | `MOCKED` | 5 scheduled daily school periods mapping classes, subjects, classrooms, and faculty |
+| **Calendar Events Mock Data** | `MOCKED` | Indian school events (Half-Yearly Exams, PTM, Science Exhibition, Diwali Holidays) |
 
 ### 2.3 Presentation Layer (Frontend)
 | Component / Area | Status | Notes |
 | :--- | :--- | :--- |
-| **Frontend Directory Skeleton** | `IMPLEMENTED` | Modular layout (`app`, `components`, `features`, `layouts`, `pages`, `hooks`, `services`, `types`) |
-| **Build & Tooling Configuration** | `IMPLEMENTED` | Vite, TypeScript (`tsconfig.json`), Tailwind CSS, PostCSS configured & runtime verified |
+| **Frontend Directory Skeleton** | `IMPLEMENTED` | Modular layout (`app`, `components`, `features`, `layouts`, `pages`, `hooks`, `services`, `types`, `utils`) |
+| **Build & Tooling Configuration** | `IMPLEMENTED` | Vite, TypeScript (`tsconfig.json`), Tailwind CSS, PostCSS configured & runtime verified (`npm run build` passes 100%) |
 | **Service Layer Abstraction Setup** | `IMPLEMENTED` | Dual-mode static/async mock service interfaces defined in `services/mockService.ts`; all contextual prototype data is service-backed with zero raw JSON imports in UI pages |
-| **TypeScript Domain Interfaces** | `IMPLEMENTED` | Core domain types defined in `src/types/index.ts` alongside service domain schemas |
+| **TypeScript Domain Interfaces** | `IMPLEMENTED` | Core domain types defined in `src/types/index.ts`; university concepts purged; Indian school models implemented |
+| **Indian School Academic Model & Grading** | `IMPLEMENTED` | Marks out of 100, cumulative marks, percentage, and 8-tier letter grades (`A1`–`E`) via pure utility `src/utils/grading.ts`; verified by 19 Vitest unit tests |
 | **Attendance Calculation & 4-Status UI** | `IMPLEMENTED` | Canonical 4-status model (`PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`), pure calculation utility (`src/utils/attendance.ts`), formula adherence, distinct visual styling across all 5 roles, verified by 15 Vitest tests (Master Plan Amendment 2) |
 | **Application Router & 34 Routes (+ 404)** | `IMPLEMENTED` | Fixed contract of 34 application routes + catch-all 404 route fully wired with React Router in `src/app/router.tsx` |
-| **Role-Aware Layouts & Navigation** | `IMPLEMENTED` | `DashboardLayout`, `AuthLayout`, `<RoleRoute>`, dynamic sidebar in `src/layouts/` |
-| **Institutional Mock Authentication** | `MOCKED` | Credential-based login (User ID / Email + Password), synthetic user record lookup, role derived from record, client `localStorage` session; 1-click role buttons and header switcher removed from normal UI. Real JWT/OAuth authentication `PLANNED` for Phase 4 |
+| **Role-Aware Layouts & Navigation** | `IMPLEMENTED` | `DashboardLayout`, `AuthLayout`, `<RoleRoute>`, dynamic sidebar with enterprise navy school design (`bg-blue-900`) and header showing school identity & academic year |
+| **Institutional Mock Authentication** | `MOCKED` | Credential-based login (User ID / Student ID / Email + Password), synthetic user record lookup, role derived from record, client `localStorage` session; parent login with child's Student ID. Real JWT/OAuth authentication `PLANNED` for Phase 4 |
 | **Shared UI Component Primitives** | `IMPLEMENTED` | `Card`, `Button`, `Badge`, `PageContainer`, `SectionHeader`, `States` |
-| **Role-Specific Presentation Surfaces** | `IMPLEMENTED` | All 34 application routes have demo-ready visual surfaces with Recharts analytics backed by `MockDataService` |
+| **Role-Specific Presentation Surfaces** | `IMPLEMENTED` | All 34 application routes reconciled to Indian school ERP model with Recharts analytics backed by `MockDataService` |
 | **Domain Feature Modules & Mutation Forms** | `PLANNED` | Granular CRUD workflows, Zod validation schemas, mutation hooks scheduled across Tasks 2.2–2.6 |
 
 ### 2.4 Application Layer (Backend)

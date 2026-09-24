@@ -1,38 +1,47 @@
 [
   {
     "id": "sub_001",
-    "name": "Advanced Calculus & Linear Algebra",
-    "code": "MATH-301",
+    "name": "Mathematics",
+    "code": "MATH-041",
     "department": "Mathematics",
-    "credits": 4,
-    "description": "Comprehensive study of vector spaces, matrices, differentiation, and multivariable integration.",
+    "weekly_periods": 6,
+    "description": "Calculus, algebra, vectors, three-dimensional geometry, linear programming, and probability.",
     "faculty_ids": ["fac_001"]
   },
   {
     "id": "sub_002",
-    "name": "Data Structures & Algorithms",
-    "code": "CS-201",
+    "name": "Computer Science",
+    "code": "CS-083",
     "department": "Computer Science",
-    "credits": 4,
-    "description": "Fundamental data representations: trees, graphs, sorting, searching, and algorithmic complexity.",
+    "weekly_periods": 6,
+    "description": "Python programming, object-oriented concepts, computational thinking, data structures, and SQL.",
     "faculty_ids": ["fac_002"]
   },
   {
     "id": "sub_003",
-    "name": "Database Management Systems",
-    "code": "CS-204",
-    "department": "Computer Science",
-    "credits": 3,
-    "description": "Relational schema design, SQL, normalization, ACID transactions, and indexing strategies.",
-    "faculty_ids": ["fac_002"]
+    "name": "Physics",
+    "code": "PHY-042",
+    "department": "Physics",
+    "weekly_periods": 5,
+    "description": "Mechanics, thermodynamics, electrostatics, magnetics, optics, modern physics, and laboratory experiments.",
+    "faculty_ids": []
   },
   {
     "id": "sub_004",
-    "name": "Technical Communication & Ethics",
-    "code": "HUM-102",
-    "department": "Humanities",
-    "credits": 2,
-    "description": "Professional writing, presentation skills, engineering ethics, and digital privacy policies.",
+    "name": "English Core",
+    "code": "ENG-301",
+    "department": "English & Languages",
+    "weekly_periods": 5,
+    "description": "Reading comprehension, advanced writing skills, literature analysis, and linguistic competence.",
+    "faculty_ids": []
+  },
+  {
+    "id": "sub_005",
+    "name": "Chemistry",
+    "code": "CHEM-043",
+    "department": "Chemistry",
+    "weekly_periods": 5,
+    "description": "Physical, inorganic, and organic chemistry, equilibrium, coordination compounds, and lab analysis.",
     "faculty_ids": []
   }
 ]

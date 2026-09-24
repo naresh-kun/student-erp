@@ -21,6 +21,7 @@ export interface User {
 
 export interface Student {
   id: string;
+  student_id: string; // Permanent, unique, system-generated business identifier (e.g. STU202600001)
   user_id: string;
   roll_number: string;
   admission_number: string;
@@ -30,6 +31,7 @@ export interface Student {
   gender: string;
   class_id: string;
   section_id: string;
+  stream?: string; // For Grades 11-12: 'Computer Science A', 'Bio-Maths B', 'Commerce C', 'Pure Science D'
   parent_id?: string;
   academic_year: string;
   enrollment_date: string;
@@ -81,6 +83,8 @@ export interface ClassEntity {
   name: string;
   code: string;
   academic_year: string;
+  grade_level: number; // e.g. 10, 11, 12
+  stream?: string; // Only applicable to Grades 11 & 12
   class_teacher_id?: string;
   sections: Section[];
 }
@@ -90,7 +94,7 @@ export interface Subject {
   name: string;
   code: string;
   department: string;
-  credits: number;
+  weekly_periods: number; // School weekly periods allocation
   description: string;
   faculty_ids: string[];
 }
@@ -122,12 +126,13 @@ export interface MarkRecord {
   id: string;
   student_id: string;
   subject_id: string;
-  exam_type: string;
+  exam_type: string; // 'Cycle Test 1' | 'Unit Test 1' | 'Quarterly Examination' | 'Half-Yearly Examination' | 'Annual Examination'
   academic_year: string;
   term: string;
-  marks_obtained: number;
-  max_marks: number;
-  grade: string;
+  marks_obtained: number | 'AB'; // 0-100 or 'AB' for absent
+  max_marks: number; // Standard 100
+  percentage: number;
+  grade: string; // 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'D' | 'E'
   remarks?: string;
   evaluated_by: string;
   evaluated_at: string;

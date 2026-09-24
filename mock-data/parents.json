@@ -2,25 +2,25 @@
   {
     "id": "par_001",
     "user_id": "usr_007",
-    "first_name": "Robert",
-    "last_name": "Morgan",
+    "first_name": "S.",
+    "last_name": "Ramanathan",
     "relation": "Father",
-    "occupation": "Software Architect",
-    "phone": "+1-555-0106",
-    "email": "robert.morgan@gmail.com",
-    "address": "742 Evergreen Terrace, Springfield",
-    "children_student_ids": ["stu_001"]
+    "occupation": "Senior Technical Director",
+    "phone": "+91-98400-11207",
+    "email": "ramanathan@gmail.com",
+    "address": "No. 42, Temple View Avenue, Sector 12, RK Puram, New Delhi - 110022",
+    "children_student_ids": ["STU202600001"]
   },
   {
     "id": "par_002",
     "user_id": "usr_008",
-    "first_name": "Priya",
-    "last_name": "Patel",
-    "relation": "Mother",
-    "occupation": "Pediatrician",
-    "phone": "+1-555-0107",
-    "email": "priya.patel@gmail.com",
-    "address": "124 Conch Street, Springfield",
-    "children_student_ids": ["stu_002"]
+    "first_name": "M.",
+    "last_name": "Selvam",
+    "relation": "Father",
+    "occupation": "Chief Medical Officer",
+    "phone": "+91-98400-11208",
+    "email": "selvam@gmail.com",
+    "address": "Flat 3B, Shanti Enclave, Vasant Vihar, New Delhi - 110057",
+    "children_student_ids": ["STU202600002"]
   }
 ]

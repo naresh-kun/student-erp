@@ -21,10 +21,10 @@ frontend/
 │   │   ├── students/       # Student directory, profile cards, enrollment views
 │   │   ├── academics/      # Class rosters, subject lists, syllabus views
 │   │   ├── attendance/     # Daily attendance tracker, monthly grids, status badges
-│   │   ├── marks/          # Grade cards, mark submission sheets, GPA calculators
+│   │   ├── marks/          # Report cards, mark entry sheets, percentage/grade utilities
 │   │   ├── timetable/      # Weekly grid scheduler, period blocks
 │   │   ├── calendar/       # Event timeline, academic calendar, holiday highlights
-│   │   ├── reports/        # Analytics dashboards, printable transcripts
+│   │   ├── reports/        # Analytics dashboards, school report card exports
 │   │   └── dashboard/      # Role-specific dashboard layouts and widgets
 │   ├── layouts/            # Page frames: DashboardLayout (Sidebar+Topbar), AuthLayout, PublicLayout
 │   ├── pages/              # Thin routing page containers mapping features to routes
@@ -144,3 +144,46 @@ In Phase 2, the frontend simulates institutional access via credential-based moc
 
 1. **Mobile-First Responsive Grid**: Breakpoints follow Tailwind standards (`sm`, `md`, `lg`, `xl`, `2xl`).
 2. **Accessible Primitives**: Keyboard navigability (`Tab`, `Esc`, arrow keys), ARIA labels on all icon-only buttons, and WCAG AA contrast compliance across all themes.
+
+---
+
+## 9. Indian School Academic & Operational Model
+
+The frontend is strictly reconciled to the Indian senior secondary school model (CBSE / ICSE pattern, "Vidya Mandir Senior Secondary School"):
+
+### 9.1 Academic Evaluation System
+- **Marks Out of 100**: All assessments accept numeric marks (0–100) or `'AB'` for absent candidates.
+- **Cumulative Marks & Percentage**: Displayed as aggregate marks obtained over maximum marks (e.g. 435 / 500) and overall percentage rounded to 2 decimal places (87.00%).
+- **Standard 8-Tier Letter Grade Scale**: Centralized in `src/utils/grading.ts`:
+  - `A1`: 91–100% (Outstanding)
+  - `A2`: 81–<91% (Very Good)
+  - `B1`: 71–<81% (Good)
+  - `B2`: 61–<71% (Above Average)
+  - `C1`: 51–<61% (Average)
+  - `C2`: 41–<51% (Fair)
+  - `D`: 33–<41% (Passing)
+  - `E`: <33% (Needs Improvement / Essential Repeat)
+- **Zero University Traces**: University GPA, CGPA, credits, credit hours, and degree terminology are completely purged.
+
+### 9.2 Indian School Hierarchy & Senior Streams
+- **Class Structure**: Academic Year → Grade/Class → Stream (Grades 11–12) → Section → Students.
+- **Grades below 11**: General secondary core curriculum (Sections A and B).
+- **Grades 11–12**: Exactly 4 approved streams with stream-specific sections:
+  1. *Computer Science A* (Sections A1, A2, A3)
+  2. *Bio-Maths B* (Sections B1, B2, B3)
+  3. *Commerce C* (Sections C1, C2, C3)
+  4. *Pure Science D* (Sections D1, D2, D3)
+
+### 9.3 Four-Status Attendance Model (Master Plan Amendment 2)
+- Canonical statuses: `PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`.
+- Formula: $\text{Attendance \%} = \frac{\text{PRESENT} + \text{ON\_DUTY}}{\text{PRESENT} + \text{ABSENT} + \text{ON\_DUTY} + \text{LEAVE}} \times 100$.
+- `LEAVE` is faculty-approved and counts as an absence in attendance percentage calculations.
+
+### 9.4 Non-Evaluative Faculty Architecture
+- Faculty information is strictly descriptive: Name, Designation, Department, Assigned Classes, Workload in periods/week, and Timetable.
+- Zero faculty performance ratings, review scores, or teacher leaderboards.
+
+### 9.5 Enterprise School Design Standards
+- Palette: Deep navy primary (`bg-blue-900`), clean white/slate surfaces, flat bordered panels, minimal shadows.
+- Global Header shows School Name, Academic Year (`2026–27`), User Name, and Role.
+- All glowing/neon/sci-fi effects, 3D blobs, and AI sparkle icons are prohibited.

@@ -1,6 +1,6 @@
 /**
  * Student ERP — Mock Authentication Service
- * Simulates user sessions, credentials, and role switching using synthetic mock data.
+ * Simulates user sessions, credentials, and role verification using synthetic Indian school data.
  * All state is persisted to localStorage for consistent user experience.
  */
 
@@ -66,7 +66,13 @@ export class MockAuthService {
     return selectedUser;
   }
 
-  // Authenticate user using institutional credentials (User ID / Email + Password)
+  /**
+   * Authenticate user using institutional credentials (User ID / Email + Password).
+   * Indian School Authentication Logic:
+   * - Student ID (e.g. STU202600001) + Student password -> Authenticates Student
+   * - Student ID (e.g. STU202600001) + Parent password ('parent123' / 'demo123-parent') -> Authenticates linked Parent
+   * - Staff / Faculty / Admin / Principal email/username + Password -> Authenticates respective role
+   */
   static async loginWithCredentials(identifier: string, password?: string): Promise<User> {
     const trimmedId = (identifier || '').trim().toLowerCase();
     const trimmedPass = (password || '').trim();
@@ -80,33 +86,54 @@ export class MockAuthService {
     }
 
     const users = this.getMockUsers();
-    // Match against email, username, or institutional demonstration aliases
-    const user = users.find((u) => {
+
+    // Check if parent is logging in with child's Student ID
+    const isParentIntent = 
+      trimmedPass === 'parent123' || 
+      trimmedPass === 'demo123-parent' || 
+      trimmedId.startsWith('p-') || 
+      trimmedId.includes('parent');
+
+    if (isParentIntent) {
+      const parentUser = users.find((u) => u.role === 'Parent');
+      if (parentUser) {
+        this.setCurrentUser(parentUser);
+        return parentUser;
+      }
+    }
+
+    // Match against email, username, Student ID, or institutional demonstration aliases
+    let user = users.find((u) => {
       const emailMatch = u.email.toLowerCase() === trimmedId;
       const usernameMatch = u.username.toLowerCase() === trimmedId;
       if (emailMatch || usernameMatch) return true;
 
       // Common institutional aliases for evaluation & demonstration
-      if ((trimmedId === 'admin' || trimmedId === 'admin@studenterp.edu') && u.role === 'Admin') return true;
-      if ((trimmedId === 'principal' || trimmedId === 'principal@studenterp.edu') && u.role === 'Principal') return true;
-      if ((trimmedId === 'student' || trimmedId === 'student@studenterp.edu') && u.role === 'Student') return true;
-      if ((trimmedId === 'faculty' || trimmedId === 'faculty@studenterp.edu' || trimmedId === 'teacher') && u.role === 'Faculty') return true;
-      if ((trimmedId === 'parent' || trimmedId === 'parent@studenterp.edu' || trimmedId === 'robert.morgan@studenterp.edu') && u.role === 'Parent') return true;
+      if ((trimmedId === 'admin' || trimmedId === 'admin@vidyamandir.edu.in' || trimmedId === 'admin@studenterp.edu') && u.role === 'Admin') return true;
+      if ((trimmedId === 'principal' || trimmedId === 'principal@vidyamandir.edu.in' || trimmedId === 'principal@studenterp.edu') && u.role === 'Principal') return true;
+      if ((trimmedId === 'student' || trimmedId === 'student@vidyamandir.edu.in' || trimmedId === 'student@studenterp.edu') && u.role === 'Student') return true;
+      if ((trimmedId === 'faculty' || trimmedId === 'teacher' || trimmedId === 'faculty@vidyamandir.edu.in' || trimmedId === 'faculty@studenterp.edu') && u.role === 'Faculty') return true;
+      if ((trimmedId === 'parent' || trimmedId === 'parent@vidyamandir.edu.in' || trimmedId === 'parent@studenterp.edu') && u.role === 'Parent') return true;
 
       return false;
     });
 
+    // If identifier is a known Student ID (e.g. STU202600001)
+    if (!user && (trimmedId.includes('stu') || trimmedId === 'stu202600001' || trimmedId === 'stu202600002')) {
+      user = users.find((u) => u.role === 'Student');
+    }
+
     if (!user) {
-      throw new Error('Invalid User ID or institutional email. Account not found in institutional directory.');
+      throw new Error('Invalid User ID or institutional email. Account not found in school directory.');
     }
 
     if (!user.is_active) {
-      throw new Error('This account is deactivated. Please contact your ERP administrator.');
+      throw new Error('This account is deactivated. Please contact the school office administrator.');
     }
 
     // Check password against synthetic record or accepted demo password
     const validPassword = user.password || 'demo123';
-    if (trimmedPass !== validPassword && trimmedPass !== 'demo123' && trimmedPass !== 'password123') {
+    if (trimmedPass !== validPassword && trimmedPass !== 'demo123' && trimmedPass !== 'password123' && trimmedPass !== 'student123' && trimmedPass !== 'parent123') {
       throw new Error('Invalid password. Please check your credentials.');
     }
 
@@ -120,7 +147,7 @@ export class MockAuthService {
     const users = this.getMockUsers();
     const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
     if (!user) {
-      throw new Error('Invalid email or user not found in mock directory');
+      throw new Error('Invalid email or user not found in school directory');
     }
     this.setCurrentUser(user);
     return user;
@@ -145,47 +172,47 @@ export interface SyntheticDemoAccount {
 export const SYNTHETIC_DEMO_ACCOUNTS: SyntheticDemoAccount[] = [
   {
     role: 'Student',
-    identifier: 'alex.morgan@studenterp.edu',
-    email: 'alex.morgan@studenterp.edu',
-    username: 'alex.morgan',
+    identifier: 'STU202600001',
+    email: 'arun.kumar@vidyamandir.edu.in',
+    username: 'STU202600001',
     password: 'demo123',
-    name: 'Alex Morgan',
-    description: 'Enrolled Grade 11 Student (Roll #STU-11A-001)',
+    name: 'Arun Kumar',
+    description: 'Enrolled Class 11 Student (Stream: Computer Science A, Sec: A2)',
   },
   {
     role: 'Parent',
-    identifier: 'robert.morgan@gmail.com',
-    email: 'robert.morgan@gmail.com',
-    username: 'robert.morgan',
+    identifier: 'ramanathan@gmail.com',
+    email: 'ramanathan@gmail.com',
+    username: 'ramanathan.s',
     password: 'demo123',
-    name: 'Robert Morgan',
-    description: 'Guardian of Alex Morgan (stu_001)',
+    name: 'S. Ramanathan',
+    description: 'Father / Guardian of Arun Kumar (Student ID: STU202600001)',
   },
   {
     role: 'Faculty',
-    identifier: 'sarah.jenkins@studenterp.edu',
-    email: 'sarah.jenkins@studenterp.edu',
-    username: 'sarah.jenkins',
+    identifier: 'suresh.r@vidyamandir.edu.in',
+    email: 'suresh.r@vidyamandir.edu.in',
+    username: 'suresh.r',
     password: 'demo123',
-    name: 'Sarah Jenkins',
-    description: 'Senior Mathematics Faculty & Section 11-A Coordinator',
+    name: 'R. Suresh',
+    description: 'Senior PGT & Department Head (Mathematics), Class Teacher XI-A2',
   },
   {
     role: 'Admin',
-    identifier: 'admin@studenterp.edu',
-    email: 'admin@studenterp.edu',
-    username: 'superadmin',
+    identifier: 'admin@vidyamandir.edu.in',
+    email: 'admin@vidyamandir.edu.in',
+    username: 'admin',
     password: 'demo123',
-    name: 'Eleanor Vance',
-    description: 'System Administrator & Master Registrar',
+    name: 'K. Narayanan',
+    description: 'School Administrative Officer & Office Superintendent',
   },
   {
     role: 'Principal',
-    identifier: 'principal.sharma@studenterp.edu',
-    email: 'principal.sharma@studenterp.edu',
-    username: 'principal.sharma',
+    identifier: 'principal@vidyamandir.edu.in',
+    email: 'principal@vidyamandir.edu.in',
+    username: 'principal',
     password: 'demo123',
-    name: 'Arthur Sharma',
-    description: 'Head of Institution / Executive Leadership',
+    name: 'Dr. K. Radhakrishnan',
+    description: 'Principal & Head of Institution (Executive Leadership)',
   },
 ];

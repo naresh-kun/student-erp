@@ -164,3 +164,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Automated Unit Testing**:
   - Added 15 Vitest unit tests in `frontend/tests/attendance.test.ts` verifying calculation accuracy, edge cases, predicate classifications, and visual color assignments. All tests pass with zero regressions.
 
+### Changed (Indian School ERP Frontend-Wide Reconciliation — CBSE/ICSE Model)
+- **Purge of University / College Concepts**:
+  - Completely purged all traces of GPA, CGPA, Credits, Credit Hours, Semester GPA, college-style transcripts, degree/major/minor, and faculty appraisal ratings/leaderboards across all active types, interfaces, mock data, services, utilities, components, pages, tables, forms, filters, and reports.
+- **Canonical Indian School Academic Evaluation Model**:
+  - Replaced GPA/credits with Marks out of 100 (numeric 0–100, or `'AB'` for absent assessments), Cumulative Marks (e.g. 435 / 500), Overall Percentage (87.00%), and standard 8-tier letter grades:
+    - `A1` (91–100), `A2` (81–<91), `B1` (71–<81), `B2` (61–<71), `C1` (51–<61), `C2` (41–<51), `D` (33–<41), `E` (<33).
+  - Implemented shared utility `frontend/src/utils/grading.ts` as the single source of truth for grading. Percentage and letter grades are guaranteed to agree across all 5 roles.
+  - Implemented pure date and currency utilities `frontend/src/utils/dateFormat.ts` for Indian format `DD/MM/YYYY`, Academic Year `2026–27`, and marks formatting.
+  - Created 19 comprehensive Vitest unit tests in `frontend/tests/grading.test.ts` verifying all 8 tiers, mandatory boundary conditions (`32.99`, `33`, `40.99`, `41`, `90.99`, `91`, `100`), absent assessments (`'AB'`), and formatting helpers (34/34 total suite tests passing).
+- **Synthetic Indian School Identity & Personnel**:
+  - Configurable school identity centralized in `frontend/src/config/schoolConfig.ts`: "Vidya Mandir Senior Secondary School", Academic Year 2026–27, affiliated to CBSE / ICSE Senior Secondary pattern.
+  - Realistic synthetic Indian personas in `mock-data/users.json`, `students.json`, `faculty.json`, `parents.json`:
+    - Student: Arun Kumar (`STU202600001`, Adm No: `ADM20240091`, Roll: `11-A2-04`, Grade 11, Computer Science A, DOB: 14/05/2009).
+    - Faculty: R. Suresh (Senior PGT Mathematics & Department Head, Class Teacher XI-A2), Priya Krishnan (PGT Computer Science), Karthik Raman (PGT Physics), Meena Devi (PGT English), Anitha Joseph (PGT Chemistry).
+    - Principal: Dr. K. Radhakrishnan.
+    - Parents: S. Ramanathan (linked to Arun Kumar via Student ID `STU202600001`), M. Selvam.
+- **Indian Senior Secondary Class & Stream Architecture**:
+  - Structure: Academic Year → Grade/Class → Stream (Grades 11–12) → Section → Students.
+  - Grade 10: General Secondary Core, Sections A and B.
+  - Grades 11–12: Exactly 4 approved streams with stream-specific sections:
+    - Computer Science A (Sections A1, A2, A3)
+    - Bio-Maths B (Sections B1, B2, B3)
+    - Commerce C (Sections C1, C2, C3)
+    - Pure Science D (Sections D1, D2, D3)
+- **School Assessment Terminology**:
+  - Terminology aligned with Indian school examinations: Cycle Test, Unit Test, Quarterly Examination, Half-Yearly Examination, Annual Examination.
+  - Timetable organized around Periods (Period 1 to Period 5, 08:30 AM to 02:45 PM), Subjects, Classrooms (`Room XI-A2`, `Comp Lab 2`, `Physics Lab`), and Faculty.
+  - Subjects defined by weekly instructional periods (e.g. 6 Periods / wk) rather than university credit hours.
+- **Faculty Non-Evaluative Architecture**:
+  - Removed all faculty appraisal ratings, review scores, performance leaderboards, and teacher scoring columns from Admin and Principal portals.
+  - Faculty directory displays descriptive data only: Name, Designation, Department, Assigned Classes, Weekly Period Workload, and Status.
+- **Enterprise School Design System**:
+  - Replaced glowing gradients, neon accents, and dark tech styling with enterprise Indian school design: Deep Navy primary (`bg-blue-900`), clean white/slate surfaces, flat bordered cards, minimal shadows, clear data tables, and WCAG AA contrast.
+  - Global Header displays School Name, Academic Year (2026–27), User Name, and Role.
+- **Role Portals Reconciled**:
+  - Student Portal: Prominent Student ID, Class & Section, Stream, 4-status attendance (94.30%), Cumulative Marks (435/500), Percentage (87.00%), Grade A2, official report card.
+  - Parent Portal: Authenticates with child's Student ID (`STU202600001`), synchronized child performance, absence leave submissions, teacher contact.
+  - Faculty Portal: Class Teacher XI-A2 workflow, 4-status attendance roll call with "Mark All Present", marks entry (0–100 or 'AB'), 8-tier grade distribution chart snapshot.
+  - Admin Portal: Enrolled students registry with Student IDs, 4 streams, class sections, subjects catalog with weekly periods, attendance audit, and stream allocation preview.
+  - Principal Portal: Institutional overview (Overall Academic Average 81.7%, Attendance 94.2%, 1,248 students, 86 faculty), grade-by-grade academic average %, and school report dossiers.
+
