@@ -174,7 +174,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Implemented pure date and currency utilities `frontend/src/utils/dateFormat.ts` for Indian format `DD/MM/YYYY`, Academic Year `2026–27`, and marks formatting.
   - Created 19 comprehensive Vitest unit tests in `frontend/tests/grading.test.ts` verifying all 8 tiers, mandatory boundary conditions (`32.99`, `33`, `40.99`, `41`, `90.99`, `91`, `100`), absent assessments (`'AB'`), and formatting helpers (34/34 total suite tests passing).
 - **Synthetic Indian School Identity & Personnel**:
-  - Configurable school identity centralized in `frontend/src/config/schoolConfig.ts`: "Vidya Mandir Senior Secondary School", Academic Year 2026–27, affiliated to CBSE / ICSE Senior Secondary pattern.
+  - Configurable school identity centralized in `frontend/src/config/schoolConfig.ts`: "School ERP", Academic Year 2026–27, affiliated to CBSE / ICSE Senior Secondary pattern.
   - Realistic synthetic Indian personas in `mock-data/users.json`, `students.json`, `faculty.json`, `parents.json`:
     - Student: Arun Kumar (`STU202600001`, Adm No: `ADM20240091`, Roll: `11-A2-04`, Grade 11, Computer Science A, DOB: 14/05/2009).
     - Faculty: R. Suresh (Senior PGT Mathematics & Department Head, Class Teacher XI-A2), Priya Krishnan (PGT Computer Science), Karthik Raman (PGT Physics), Meena Devi (PGT English), Anitha Joseph (PGT Chemistry).
@@ -204,4 +204,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Faculty Portal: Class Teacher XI-A2 workflow, 4-status attendance roll call with "Mark All Present", marks entry (0–100 or 'AB'), 8-tier grade distribution chart snapshot.
   - Admin Portal: Enrolled students registry with Student IDs, 4 streams, class sections, subjects catalog with weekly periods, attendance audit, and stream allocation preview.
   - Principal Portal: Institutional overview (Overall Academic Average 81.7%, Attendance 94.2%, 1,248 students, 86 faculty), grade-by-grade academic average %, and school report dossiers.
+
+### Changed (Corrective Task — Canonical "School ERP" Branding Reconciliation)
+- **Elimination of "Vidya Mandir" Branding**:
+  - Removed all occurrences of "Vidya Mandir", "Vidya Mandir Senior Secondary School", and "Vidya Mandir School Administration" across the entire repository.
+  - Set canonical application branding in `frontend/src/config/schoolConfig.ts`:
+    - `name: 'School ERP'`
+    - `shortName: 'School ERP'`
+    - `campusLocation: 'K.K. Nagar'`
+    - `city: 'Madurai'`
+    - `state: 'Tamil Nadu'`
+    - `pinCode: '625001'`
+    - `contactEmail: 'office@schoolerp.edu.in'`
+    - `contactPhone: '+91-452-2618-4001'`
+  - Updated Admin Hero header in `frontend/src/pages/admin/index.tsx` to dynamically bind to `{SCHOOL_CONFIG.name} Administration`.
+  - Updated Principal Hero header in `frontend/src/pages/principal/index.tsx` to dynamically bind to `{SCHOOL_CONFIG.name} Institutional Oversight`.
+  - Updated all mock user and faculty emails from `@vidyamandir.edu.in` to `@schoolerp.edu.in` across `mock-data/users.json`, `mockService.ts`, and `authService.ts`.
+  - Updated HTML page title in `frontend/index.html` to `School ERP — Enterprise Educational Management`.
+
+---
+
+## [Phase 2: Task 2.2 — Deep Student Role Experience] - 2026-09-24
+
+### Added
+- **Student Domain Feature Module (`frontend/src/features/students/`)**:
+  - Organized modular domain architecture with dedicated subdirectories: `types/`, `schemas/`, `services/`, `hooks/`, and `components/`.
+  - Exported unified API from `frontend/src/features/students/index.ts`.
+  - Decomposed student pages (`/student/*`) to consume reusable domain components rather than growing monolithic page code.
+- **Authoritative Student Profile Component & Immutability Protection**:
+  - Implemented `StudentProfileCard` and `StudentProfileEditModal` rendering permanent, unique, and immutable Student ID (`STU202600001`), Admission Number (`ADM20240091`), Roll Number (`11-A2-04`), Full Name (`Arun Kumar`), Indian-formatted Date of Birth (`14/05/2009`), Class 11, Section A2, Stream (`Computer Science A`), Academic Year (`2026–27`), Guardian (`S. Ramanathan`), and Emergency Contact.
+  - Implemented strict immutability: Student ID is explicitly locked and identified as the Parent Portal username; academic attributes cannot be edited.
+  - Contact information updates (phone, emergency contact, residential address) are governed by Zod validation schema (`studentProfileSchema.ts`).
+- **Canonical Four-Status Student Attendance Experience**:
+  - Enhanced `StudentAttendanceSummary` with 5 dedicated metric cards: Overall Attendance (94.25%), Present (78 sessions), On Duty (4 sessions), Approved Leave (3 sessions), and Absent (2 sessions).
+  - Adhered strictly to Master Plan Amendment 2 calculation: $(P + OD) / Total \times 100$.
+  - Visually differentiated `LEAVE` (purple tokens) from `ABSENT` (rose tokens).
+  - Rendered subject-wise attendance clearance bars against the 85% board exam hall ticket eligibility requirement.
+- **Institutional Student Leave Request Workflow**:
+  - Implemented `StudentLeaveApplicationModal` and `StudentLeaveHistoryCard`.
+  - Enforced business policy: Submissions are created strictly in `PENDING` state; students cannot self-approve. Faculty/Class Teacher (`R. Suresh`) is the sole sanctioning authority.
+  - Added Zod validation schema (`leaveRequestSchema.ts`) validating leave categories, ISO dates (conclusion $\ge$ commencement), and reason justification length (10–300 characters).
+- **Indian School Marks & Academic Score Register**:
+  - Maintained Marks out of 100, Cumulative Marks (`435 / 500`), Overall Percentage (`87.00%`), and 8-tier letter grade (`A2`) using shared `src/utils/grading.ts`. Zero GPA, CGPA, or credits.
+  - Rendered official CBSE/ICSE-oriented Score Register table with downloadable PDF action and standard 8-tier letter grade reference scale.
+- **Refined Student Dashboard**:
+  - Displays Student Identity & ID, Class / Section / Stream, KPI cards with attendance integration, Today's Class Schedule (5 periods), Attendance Progression Trend, Half-Yearly marks comparison, and new `StudentUpcomingEventsCard` for upcoming examinations and academic events.
+- **Automated Vitest Test Suite**:
+  - Created 25 automated unit tests in `frontend/tests/student.test.ts` covering profile immutability, Zod schemas, leave request workflow, canonical attendance calculations, grading presentations, and visual QA contracts.
+  - Total test suite now stands at **59/59 passing unit tests** across the project with zero regressions.
 

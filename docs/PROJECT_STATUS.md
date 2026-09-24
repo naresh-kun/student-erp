@@ -1,7 +1,7 @@
 # Project Status & Milestone Ledger
 
 > **Current Phase**: Phase 2 (Frontend Core + Role Dashboards + Mock Data Integration)  
-> **Authoritative State**: Active Phase 2 — Task 2.1 (Foundation & Shell Complete; Phase IN PROGRESS)  
+> **Authoritative State**: Active Phase 2 — Task 2.2 Complete (Student Role Experience Implemented; Phase IN PROGRESS)  
 > **Last Updated**: 2026-09-24
 
 ---
@@ -58,8 +58,8 @@ To ensure strict engineering honesty, features and modules are classified into e
 | **Role-Aware Layouts & Navigation** | `IMPLEMENTED` | `DashboardLayout`, `AuthLayout`, `<RoleRoute>`, dynamic sidebar with enterprise navy school design (`bg-blue-900`) and header showing school identity & academic year |
 | **Institutional Mock Authentication** | `MOCKED` | Credential-based login (User ID / Student ID / Email + Password), synthetic user record lookup, role derived from record, client `localStorage` session; parent login with child's Student ID. Real JWT/OAuth authentication `PLANNED` for Phase 4 |
 | **Shared UI Component Primitives** | `IMPLEMENTED` | `Card`, `Button`, `Badge`, `PageContainer`, `SectionHeader`, `States` |
-| **Role-Specific Presentation Surfaces** | `IMPLEMENTED` | All 34 application routes reconciled to Indian school ERP model with Recharts analytics backed by `MockDataService` |
-| **Domain Feature Modules & Mutation Forms** | `PLANNED` | Granular CRUD workflows, Zod validation schemas, mutation hooks scheduled across Tasks 2.2–2.6 |
+| **Student Domain Feature Module (`features/students`)** | `IMPLEMENTED` | Complete student domain module: permanent/immutable Student ID profile, 4-status attendance summary, Zod validation schemas, PENDING leave application workflow (no self-approval), marks/percentage/8-tier grade register, timetable schedule, upcoming events, 25 Vitest tests |
+| **Domain Feature Modules & Mutation Forms (Remaining Roles)** | `PLANNED` | Granular CRUD workflows, Zod validation schemas, mutation hooks scheduled across Tasks 2.3–2.6 |
 
 ### 2.4 Application Layer (Backend)
 | Component / Area | Status | Notes |

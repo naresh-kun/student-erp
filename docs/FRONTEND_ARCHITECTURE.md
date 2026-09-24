@@ -149,7 +149,7 @@ In Phase 2, the frontend simulates institutional access via credential-based moc
 
 ## 9. Indian School Academic & Operational Model
 
-The frontend is strictly reconciled to the Indian senior secondary school model (CBSE / ICSE pattern, "Vidya Mandir Senior Secondary School"):
+The frontend is strictly reconciled to the Indian senior secondary school model (CBSE / ICSE pattern, canonical identity "School ERP"):
 
 ### 9.1 Academic Evaluation System
 - **Marks Out of 100**: All assessments accept numeric marks (0–100) or `'AB'` for absent candidates.

@@ -607,7 +607,7 @@ export class MockDataService {
       {
         id: 'fac_001',
         name: 'R. Suresh',
-        email: 'suresh.r@vidyamandir.edu.in',
+        email: 'suresh.r@schoolerp.edu.in',
         phone: '+91-98400-11203',
         department: 'Mathematics',
         designation: 'Senior PGT & Department Head',
@@ -618,7 +618,7 @@ export class MockDataService {
       {
         id: 'fac_002',
         name: 'Priya Krishnan',
-        email: 'priya.k@vidyamandir.edu.in',
+        email: 'priya.k@schoolerp.edu.in',
         phone: '+91-98400-11204',
         department: 'Computer Science',
         designation: 'PGT Computer Science',
@@ -629,7 +629,7 @@ export class MockDataService {
       {
         id: 'fac_003',
         name: 'Karthik Raman',
-        email: 'karthik.r@vidyamandir.edu.in',
+        email: 'karthik.r@schoolerp.edu.in',
         phone: '+91-98400-11214',
         department: 'Physics',
         designation: 'PGT Physics',
@@ -640,7 +640,7 @@ export class MockDataService {
       {
         id: 'fac_004',
         name: 'Meena Devi',
-        email: 'meena.d@vidyamandir.edu.in',
+        email: 'meena.d@schoolerp.edu.in',
         phone: '+91-98400-11218',
         department: 'English & Languages',
         designation: 'Senior PGT English',
@@ -651,7 +651,7 @@ export class MockDataService {
       {
         id: 'fac_005',
         name: 'Anitha Joseph',
-        email: 'anitha.j@vidyamandir.edu.in',
+        email: 'anitha.j@schoolerp.edu.in',
         phone: '+91-98400-11222',
         department: 'Chemistry',
         designation: 'PGT Chemistry',

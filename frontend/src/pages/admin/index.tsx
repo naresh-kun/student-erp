@@ -28,6 +28,7 @@ import {
   Check, 
   FileText
 } from 'lucide-react';
+import { SCHOOL_CONFIG } from '@/config/schoolConfig';
 import { 
   ResponsiveContainer, 
   AreaChart, 
@@ -71,9 +72,9 @@ export const AdminDashboardPage: React.FC = () => {
         <div className="space-y-1">
           <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded bg-blue-800 text-blue-100 text-xs font-medium">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>School Administration Office • Academic Year 2026–27</span>
+            <span>School Administration Office • Academic Year {SCHOOL_CONFIG.academicYear}</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Vidya Mandir School Administration</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{SCHOOL_CONFIG.name} Administration</h1>
           <p className="text-blue-200 text-xs md:text-sm">
             Institutional admissions, faculty records, student allocation, and academic governance
           </p>

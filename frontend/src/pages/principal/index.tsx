@@ -19,6 +19,7 @@ import {
   Download, 
   ShieldCheck
 } from 'lucide-react';
+import { SCHOOL_CONFIG } from '@/config/schoolConfig';
 import { 
   ResponsiveContainer, 
   BarChart, 
@@ -65,9 +66,9 @@ export const PrincipalDashboardPage: React.FC = () => {
         <div className="space-y-1">
           <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded bg-blue-800 text-blue-100 text-xs font-medium">
             <Award className="w-3.5 h-3.5" />
-            <span>Office of the Principal • Academic Year 2026–27</span>
+            <span>Office of the Principal • Academic Year {SCHOOL_CONFIG.academicYear}</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Vidya Mandir Institutional Oversight</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{SCHOOL_CONFIG.name} Institutional Oversight</h1>
           <p className="text-blue-200 text-xs md:text-sm">
             Institutional governance, CBSE/ICSE curriculum compliance, and school performance oversight
           </p>

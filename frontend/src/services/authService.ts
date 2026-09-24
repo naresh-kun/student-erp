@@ -109,11 +109,11 @@ export class MockAuthService {
       if (emailMatch || usernameMatch) return true;
 
       // Common institutional aliases for evaluation & demonstration
-      if ((trimmedId === 'admin' || trimmedId === 'admin@vidyamandir.edu.in' || trimmedId === 'admin@studenterp.edu') && u.role === 'Admin') return true;
-      if ((trimmedId === 'principal' || trimmedId === 'principal@vidyamandir.edu.in' || trimmedId === 'principal@studenterp.edu') && u.role === 'Principal') return true;
-      if ((trimmedId === 'student' || trimmedId === 'student@vidyamandir.edu.in' || trimmedId === 'student@studenterp.edu') && u.role === 'Student') return true;
-      if ((trimmedId === 'faculty' || trimmedId === 'teacher' || trimmedId === 'faculty@vidyamandir.edu.in' || trimmedId === 'faculty@studenterp.edu') && u.role === 'Faculty') return true;
-      if ((trimmedId === 'parent' || trimmedId === 'parent@vidyamandir.edu.in' || trimmedId === 'parent@studenterp.edu') && u.role === 'Parent') return true;
+      if ((trimmedId === 'admin' || trimmedId === 'admin@schoolerp.edu.in' || trimmedId === 'admin@studenterp.edu') && u.role === 'Admin') return true;
+      if ((trimmedId === 'principal' || trimmedId === 'principal@schoolerp.edu.in' || trimmedId === 'principal@studenterp.edu') && u.role === 'Principal') return true;
+      if ((trimmedId === 'student' || trimmedId === 'student@schoolerp.edu.in' || trimmedId === 'student@studenterp.edu') && u.role === 'Student') return true;
+      if ((trimmedId === 'faculty' || trimmedId === 'teacher' || trimmedId === 'faculty@schoolerp.edu.in' || trimmedId === 'faculty@studenterp.edu') && u.role === 'Faculty') return true;
+      if ((trimmedId === 'parent' || trimmedId === 'parent@schoolerp.edu.in' || trimmedId === 'parent@studenterp.edu') && u.role === 'Parent') return true;
 
       return false;
     });
@@ -173,7 +173,7 @@ export const SYNTHETIC_DEMO_ACCOUNTS: SyntheticDemoAccount[] = [
   {
     role: 'Student',
     identifier: 'STU202600001',
-    email: 'arun.kumar@vidyamandir.edu.in',
+    email: 'arun.kumar@schoolerp.edu.in',
     username: 'STU202600001',
     password: 'demo123',
     name: 'Arun Kumar',
@@ -190,8 +190,8 @@ export const SYNTHETIC_DEMO_ACCOUNTS: SyntheticDemoAccount[] = [
   },
   {
     role: 'Faculty',
-    identifier: 'suresh.r@vidyamandir.edu.in',
-    email: 'suresh.r@vidyamandir.edu.in',
+    identifier: 'suresh.r@schoolerp.edu.in',
+    email: 'suresh.r@schoolerp.edu.in',
     username: 'suresh.r',
     password: 'demo123',
     name: 'R. Suresh',
@@ -199,8 +199,8 @@ export const SYNTHETIC_DEMO_ACCOUNTS: SyntheticDemoAccount[] = [
   },
   {
     role: 'Admin',
-    identifier: 'admin@vidyamandir.edu.in',
-    email: 'admin@vidyamandir.edu.in',
+    identifier: 'admin@schoolerp.edu.in',
+    email: 'admin@schoolerp.edu.in',
     username: 'admin',
     password: 'demo123',
     name: 'K. Narayanan',
@@ -208,8 +208,8 @@ export const SYNTHETIC_DEMO_ACCOUNTS: SyntheticDemoAccount[] = [
   },
   {
     role: 'Principal',
-    identifier: 'principal@vidyamandir.edu.in',
-    email: 'principal@vidyamandir.edu.in',
+    identifier: 'principal@schoolerp.edu.in',
+    email: 'principal@schoolerp.edu.in',
     username: 'principal',
     password: 'demo123',
     name: 'Dr. K. Radhakrishnan',

@@ -142,7 +142,7 @@ export const LoginPage: React.FC = () => {
                   id="identifier"
                   type="text"
                   autoComplete="username"
-                  placeholder="e.g. STU202600001 or suresh.r@vidyamandir.edu.in"
+                  placeholder="e.g. STU202600001 or suresh.r@schoolerp.edu.in"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   disabled={loading}

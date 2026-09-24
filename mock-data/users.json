@@ -2,7 +2,7 @@
   {
     "id": "usr_001",
     "username": "admin",
-    "email": "admin@vidyamandir.edu.in",
+    "email": "admin@schoolerp.edu.in",
     "password": "demo123",
     "first_name": "K.",
     "last_name": "Narayanan",
@@ -15,7 +15,7 @@
   {
     "id": "usr_002",
     "username": "principal",
-    "email": "principal@vidyamandir.edu.in",
+    "email": "principal@schoolerp.edu.in",
     "password": "demo123",
     "first_name": "Dr. K.",
     "last_name": "Radhakrishnan",
@@ -28,7 +28,7 @@
   {
     "id": "usr_003",
     "username": "suresh.r",
-    "email": "suresh.r@vidyamandir.edu.in",
+    "email": "suresh.r@schoolerp.edu.in",
     "password": "demo123",
     "first_name": "R.",
     "last_name": "Suresh",
@@ -41,7 +41,7 @@
   {
     "id": "usr_004",
     "username": "priya.k",
-    "email": "priya.k@vidyamandir.edu.in",
+    "email": "priya.k@schoolerp.edu.in",
     "password": "demo123",
     "first_name": "Priya",
     "last_name": "Krishnan",
@@ -54,7 +54,7 @@
   {
     "id": "usr_005",
     "username": "STU202600001",
-    "email": "arun.kumar@vidyamandir.edu.in",
+    "email": "arun.kumar@schoolerp.edu.in",
     "password": "demo123",
     "first_name": "Arun",
     "last_name": "Kumar",
@@ -67,7 +67,7 @@
   {
     "id": "usr_006",
     "username": "STU202600002",
-    "email": "priya.s@vidyamandir.edu.in",
+    "email": "priya.s@schoolerp.edu.in",
     "password": "demo123",
     "first_name": "Priya",
     "last_name": "S",

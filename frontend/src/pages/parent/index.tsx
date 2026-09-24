@@ -216,7 +216,7 @@ export const ParentDashboardPage: React.FC = () => {
               </p>
               <p className="flex items-center gap-2">
                 <Mail className="w-3.5 h-3.5 text-slate-400" />
-                {isArun ? 'r.suresh@vidyamandir.edu.in' : 'meena.devi@vidyamandir.edu.in'}
+                {isArun ? 'r.suresh@schoolerp.edu.in' : 'meena.devi@schoolerp.edu.in'}
               </p>
             </div>
           </div>

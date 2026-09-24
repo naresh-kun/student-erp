@@ -105,7 +105,7 @@
 
 - **Status**: ACCEPTED / AUTHORITATIVE
 - **Context**: 
-  - The Student ERP is specifically designed for Indian schools (CBSE / ICSE Senior Secondary model, synthetic identity "Vidya Mandir Senior Secondary School").
+  - The Student ERP is specifically designed for Indian schools (CBSE / ICSE Senior Secondary model, canonical application identity "School ERP").
   - Previous scaffolds inherited university/college concepts (GPA, CGPA, Credits, Credit Hours, Semester GPA, college-style transcripts, degree/major/minor, faculty appraisal ratings/leaderboards), which conflict with Indian school administration practices and user workflows.
 - **Decision**:
   1. **Complete Removal of University Concepts**: Purge all GPA, CGPA, credits, credit hours, degree/major/minor, and faculty performance ratings/rankings from active types, services, mock data, components, dashboards, tables, filters, and reports.
