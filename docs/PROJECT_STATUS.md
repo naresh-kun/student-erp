@@ -1,8 +1,8 @@
 # Project Status & Milestone Ledger
 
 > **Current Phase**: Phase 2 (Frontend Core + Role Dashboards + Mock Data Integration)  
-> **Authoritative State**: Active Phase 2 — Task 2.2 Complete (Student Role Experience Implemented; Phase IN PROGRESS)  
-> **Last Updated**: 2026-09-24
+> **Authoritative State**: Active Phase 2 — Task 2.3 Complete (Parent Role Experience Implemented; Phase IN PROGRESS)  
+> **Last Updated**: 2026-09-25
 
 ---
 
@@ -59,7 +59,8 @@ To ensure strict engineering honesty, features and modules are classified into e
 | **Institutional Mock Authentication** | `MOCKED` | Credential-based login (User ID / Student ID / Email + Password), synthetic user record lookup, role derived from record, client `localStorage` session; parent login with child's Student ID. Real JWT/OAuth authentication `PLANNED` for Phase 4 |
 | **Shared UI Component Primitives** | `IMPLEMENTED` | `Card`, `Button`, `Badge`, `PageContainer`, `SectionHeader`, `States` |
 | **Student Domain Feature Module (`features/students`)** | `IMPLEMENTED` | Complete student domain module: permanent/immutable Student ID profile, 4-status attendance summary, Zod validation schemas, PENDING leave application workflow (no self-approval), marks/percentage/8-tier grade register, timetable schedule, upcoming events, 25 Vitest tests |
-| **Domain Feature Modules & Mutation Forms (Remaining Roles)** | `PLANNED` | Granular CRUD workflows, Zod validation schemas, mutation hooks scheduled across Tasks 2.3–2.6 |
+| **Parent Domain Feature Module (`features/parents`)** | `IMPLEMENTED` | Complete parent domain module: Student ID authentication login, linked child scoped access, multi-child support, 4-status attendance cards & formula adherence, subject attendance with 85% clearance benchmark, absence audit log, absence notice workflow (PENDING status), report cards with marks / 100, 8-tier grades, Recharts visualizations, 19 Vitest tests |
+| **Domain Feature Modules & Mutation Forms (Remaining Roles)** | `PLANNED` | Granular CRUD workflows, Zod validation schemas, mutation hooks scheduled across Tasks 2.4–2.6 (Faculty, Admin, Principal) |
 
 ### 2.4 Application Layer (Backend)
 | Component / Area | Status | Notes |

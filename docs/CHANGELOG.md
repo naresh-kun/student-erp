@@ -253,3 +253,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Created 25 automated unit tests in `frontend/tests/student.test.ts` covering profile immutability, Zod schemas, leave request workflow, canonical attendance calculations, grading presentations, and visual QA contracts.
   - Total test suite now stands at **59/59 passing unit tests** across the project with zero regressions.
 
+---
+
+## [Phase 2: Task 2.3 — Deep Parent Role Experience] - 2026-09-25
+
+### Added
+- **Parent Domain Feature Module (`frontend/src/features/parents/`)**:
+  - Organized modular domain architecture with dedicated subdirectories: `types/`, `schemas/`, `services/`, `hooks/`, and `components/`.
+  - Re-exported domain module via barrel export `frontend/src/features/parents/index.ts`.
+  - Refactored all 6 Parent routes (`/parent/*`) into thin page views consuming domain hooks and components.
+- **Student ID Parent Login Rule Implementation**:
+  - Enforced permanent Student ID (`STU202600001` or `STU202600002`) as the Parent login username, consistently presented across login interfaces and portal banners with copy utility.
+  - Enhanced `MockAuthService.loginWithCredentials` to map child Student IDs to authenticated Parent records (`usr_007`, `usr_008`).
+  - Updated synthetic demo accounts in `authService.ts` to showcase `STU202600001` with `parent123`.
+- **Multi-Child Scoped Access & Security Boundaries**:
+  - Scoped parent visibility strictly to children listed in the authenticated record's `children_student_ids` (`S. Ramanathan` -> `Arun Kumar STU202600001`).
+  - Added security helper `isChildLinkedToParent` preventing inspection of unrelated students (`STU202600002`, `STU202600004`).
+  - Created `useActiveChild` hook providing clean multi-child switching across all parent pages when multiple children are linked.
+- **Canonical Four-Status Parent Attendance Experience**:
+  - Implemented `ParentAttendanceCards` displaying 5 dedicated cards: Overall Attendance (94.3% / 94.25%), Present (78), On Duty (4), Approved Leave (3), and Absent (2).
+  - Adhered strictly to Master Plan Amendment 2 formula: $(P + OD) / (P + A + OD + L) \times 100$.
+  - Visually distinguished `LEAVE` (purple/violet tokens) from `ABSENT` (rose tokens) and correctly counted `LEAVE` as absence in the denominator.
+  - Implemented `ParentSubjectAttendanceTable` with individual subject percentages, progress bars, and board clearance threshold tags (85% benchmark).
+  - Implemented `ParentAttendanceTrendChart` with Recharts AreaChart visualizing monthly verified attendance progression.
+  - Implemented `ParentAbsenceLogTable` showing official session logs with faculty sanctioning details.
+- **Parent Absence Notification Workflow**:
+  - Implemented `ParentAbsenceNoticeCard` utilizing `react-hook-form` and Zod validation (`parentAbsenceNoticeSchema`).
+  - Submissions are created strictly in `PENDING_FACULTY_REVIEW` state; parents cannot self-approve. Class Teacher (`R. Suresh`) is the sole sanctioning authority for converting absences to `LEAVE`.
+- **Indian School Academic Model & Report Cards**:
+  - Displayed Marks out of 100, Cumulative Marks (`435 / 500`), Overall Percentage (`87.00%`), and 8-tier letter grade (`A2`) using shared `src/utils/grading.ts`.
+  - Zero university concepts: GPA, CGPA, credits, credit hours completely purged.
+  - Implemented `ParentReportCardTable` with official Score Register, teacher remarks, downloadable PDF action, and standard 8-tier letter grade reference scale.
+  - Implemented `ParentMarksComparisonChart` comparing child's marks out of 100 against section averages across all subjects.
+- **Timetable, Calendar & Deterministic Advisories**:
+  - Implemented `ParentTimetableSchedule` with 5 scheduled daily periods (08:30 AM – 01:15 PM / 02:45 PM), room assignments, and Monday–Friday navigation.
+  - Implemented `ParentCalendarEventsList` rendering school events (PTM on Nov 14, 2026, Half-Yearly Exams, Diwali break, Science Exhibition).
+  - Implemented `ParentAdvisoryCard` generating deterministic observations based on actual mock data (94%+ standing, Chemistry focus recommendation, PTM consultation notice).
+  - Implemented `ParentTeacherContactCard` with Class Teacher `R. Suresh` contact details.
+- **Automated Vitest Test Suite**:
+  - Created 19 automated unit tests in `frontend/tests/parent.test.ts` validating parent profile handling, child linking, Student ID login, unrelated student access protection, 4-status attendance calculations, report cards, absence workflow, Zod schema, and deterministic advisories.
+  - Total test suite now stands at **78/78 passing unit tests** across 4 test suites with zero regressions.
+
+

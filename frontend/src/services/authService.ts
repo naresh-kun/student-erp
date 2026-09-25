@@ -28,9 +28,11 @@ export class MockAuthService {
   // Get currently authenticated mock user from localStorage
   static getCurrentUser(): User | null {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        return JSON.parse(stored) as User;
+      if (typeof window !== 'undefined' && typeof window.localStorage !== 'undefined') {
+        const stored = window.localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          return JSON.parse(stored) as User;
+        }
       }
     } catch (e) {
       console.warn('Failed to parse active user session:', e);
@@ -40,10 +42,16 @@ export class MockAuthService {
 
   // Set currently active user session
   static setCurrentUser(user: User | null): void {
-    if (user) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
+    try {
+      if (typeof window !== 'undefined' && typeof window.localStorage !== 'undefined') {
+        if (user) {
+          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+        } else {
+          window.localStorage.removeItem(STORAGE_KEY);
+        }
+      }
+    } catch {
+      // Ignored in non-browser environments
     }
   }
 
@@ -92,10 +100,27 @@ export class MockAuthService {
       trimmedPass === 'parent123' || 
       trimmedPass === 'demo123-parent' || 
       trimmedId.startsWith('p-') || 
-      trimmedId.includes('parent');
+      trimmedId.includes('parent') ||
+      trimmedId === 'ramanathan@gmail.com' ||
+      trimmedId === 'ramanathan.s' ||
+      trimmedId === 'selvam@gmail.com' ||
+      trimmedId === 'selvam.m';
 
     if (isParentIntent) {
-      const parentUser = users.find((u) => u.role === 'Parent');
+      let parentUser: User | undefined;
+
+      // Map child's Student ID to the corresponding parent user record
+      const upperId = trimmedId.toUpperCase();
+      if (upperId === 'STU202600001') {
+        parentUser = users.find((u) => u.id === 'usr_007'); // S. Ramanathan
+      } else if (upperId === 'STU202600002') {
+        parentUser = users.find((u) => u.id === 'usr_008'); // M. Selvam
+      } else if (trimmedId === 'selvam@gmail.com' || trimmedId === 'selvam.m') {
+        parentUser = users.find((u) => u.id === 'usr_008');
+      } else {
+        parentUser = users.find((u) => u.role === 'Parent');
+      }
+
       if (parentUser) {
         this.setCurrentUser(parentUser);
         return parentUser;
@@ -181,12 +206,12 @@ export const SYNTHETIC_DEMO_ACCOUNTS: SyntheticDemoAccount[] = [
   },
   {
     role: 'Parent',
-    identifier: 'ramanathan@gmail.com',
+    identifier: 'STU202600001',
     email: 'ramanathan@gmail.com',
     username: 'ramanathan.s',
-    password: 'demo123',
+    password: 'parent123',
     name: 'S. Ramanathan',
-    description: 'Father / Guardian of Arun Kumar (Student ID: STU202600001)',
+    description: 'Father / Guardian of Arun Kumar (Logged in via Child Student ID: STU202600001)',
   },
   {
     role: 'Faculty',
