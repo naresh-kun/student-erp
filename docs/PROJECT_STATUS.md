@@ -1,7 +1,7 @@
 # Project Status & Milestone Ledger
 
 > **Current Phase**: Phase 2 (Frontend Core + Role Dashboards + Mock Data Integration)  
-> **Authoritative State**: Active Phase 2 — Task 2.3 Complete (Parent Role Experience Implemented; Phase IN PROGRESS)  
+> **Authoritative State**: Active Phase 2 — Demo Credentials Updated (TEMPORARY PHASE 2 DEMO CREDENTIALS deployed; Phase IN PROGRESS)  
 > **Last Updated**: 2026-09-25
 
 ---
@@ -56,11 +56,12 @@ To ensure strict engineering honesty, features and modules are classified into e
 | **Attendance Calculation & 4-Status UI** | `IMPLEMENTED` | Canonical 4-status model (`PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`), pure calculation utility (`src/utils/attendance.ts`), formula adherence, distinct visual styling across all 5 roles, verified by 15 Vitest tests (Master Plan Amendment 2) |
 | **Application Router & 34 Routes (+ 404)** | `IMPLEMENTED` | Fixed contract of 34 application routes + catch-all 404 route fully wired with React Router in `src/app/router.tsx` |
 | **Role-Aware Layouts & Navigation** | `IMPLEMENTED` | `DashboardLayout`, `AuthLayout`, `<RoleRoute>`, dynamic sidebar with enterprise navy school design (`bg-blue-900`) and header showing school identity & academic year |
-| **Institutional Mock Authentication** | `MOCKED` | Credential-based login (User ID / Student ID / Email + Password), synthetic user record lookup, role derived from record, client `localStorage` session; parent login with child's Student ID. Real JWT/OAuth authentication `PLANNED` for Phase 4 |
+| **Institutional Mock Authentication** | `MOCKED` | **TEMPORARY PHASE 2 DEMO CREDENTIALS** deployed: `Student01` / `Parent01` / `Faculty01` / `Admin` / `Principal` — all `demo123`. Credential-based login (User ID + Password), role derived from matched record, client `localStorage` session. Real JWT/OAuth authentication `PLANNED` for Phase 4. Student-Parent domain relationship preserved independently via `ParentService`. |
 | **Shared UI Component Primitives** | `IMPLEMENTED` | `Card`, `Button`, `Badge`, `PageContainer`, `SectionHeader`, `States` |
 | **Student Domain Feature Module (`features/students`)** | `IMPLEMENTED` | Complete student domain module: permanent/immutable Student ID profile, 4-status attendance summary, Zod validation schemas, PENDING leave application workflow (no self-approval), marks/percentage/8-tier grade register, timetable schedule, upcoming events, 25 Vitest tests |
 | **Parent Domain Feature Module (`features/parents`)** | `IMPLEMENTED` | Complete parent domain module: Student ID authentication login, linked child scoped access, multi-child support, 4-status attendance cards & formula adherence, subject attendance with 85% clearance benchmark, absence audit log, absence notice workflow (PENDING status), report cards with marks / 100, 8-tier grades, Recharts visualizations, 19 Vitest tests |
-| **Domain Feature Modules & Mutation Forms (Remaining Roles)** | `PLANNED` | Granular CRUD workflows, Zod validation schemas, mutation hooks scheduled across Tasks 2.4–2.6 (Faculty, Admin, Principal) |
+| **Faculty Domain Feature Module (`features/faculty`)** | `IMPLEMENTED` | Complete faculty domain module: R. Suresh profile, Class Teacher assignment (XI-A2), assigned class & student scoping, 4-status attendance roll call with "Mark All Present", Class Teacher LEAVE approval workflow, examination marks entry out of 100 or 'AB', CBSE 8-tier grade distribution chart, 24 periods/wk timetable, 22 Vitest tests |
+| **Domain Feature Modules & Mutation Forms (Remaining Roles)** | `PLANNED` | Granular CRUD workflows, Zod validation schemas, mutation hooks scheduled across Tasks 2.5–2.6 (Admin, Principal) |
 
 ### 2.4 Application Layer (Backend)
 | Component / Area | Status | Notes |

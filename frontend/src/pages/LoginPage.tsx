@@ -108,7 +108,7 @@ export const LoginPage: React.FC = () => {
             Sign In
           </CardTitle>
           <CardDescription className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-            Enter your Student ID (e.g. STU202600001) or school email and password to access your dashboard.
+            Enter your User ID (e.g. <span className="font-mono">Student01</span>, <span className="font-mono">Faculty01</span>) and password to access your dashboard.
           </CardDescription>
         </CardHeader>
 
@@ -131,8 +131,8 @@ export const LoginPage: React.FC = () => {
                 htmlFor="identifier" 
                 className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between"
               >
-                <span>Student ID / User ID / School Email</span>
-                <span className="text-[11px] text-slate-400 font-normal">Parents use Child's Student ID</span>
+                <span>User ID / School Email</span>
+                <span className="text-[11px] text-slate-400 font-normal">e.g. Student01, Faculty01, Admin</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -142,7 +142,7 @@ export const LoginPage: React.FC = () => {
                   id="identifier"
                   type="text"
                   autoComplete="username"
-                  placeholder="e.g. STU202600001 or suresh.r@schoolerp.edu.in"
+                  placeholder="e.g. Student01, Faculty01, Admin, Principal"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   disabled={loading}
@@ -220,7 +220,7 @@ export const LoginPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-200">
               <KeyRound className="w-3.5 h-3.5 text-amber-600" />
-              <span>Developer Testing Tool — Synthetic Credentials</span>
+              <span>TEMPORARY PHASE 2 DEMO CREDENTIALS</span>
             </div>
             <button
               onClick={() => setIsDevMode(false)}

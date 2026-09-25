@@ -72,9 +72,11 @@ describe('Parent Domain — Profile & Linked Children Filtering', () => {
 });
 
 describe('Parent Domain — Student ID Login Identifier', () => {
-  it('authenticates Parent using child permanent Student ID as username', async () => {
-    // Child: Arun Kumar -> Student ID: STU202600001
-    const parentUser = await MockAuthService.loginWithCredentials('STU202600001', 'parent123');
+  it('authenticates Parent using TEMPORARY PHASE 2 DEMO credentials (Parent01 / demo123)', async () => {
+    // TEMPORARY PHASE 2 DEMO CREDENTIALS: Parent01 / demo123
+    // The Student-Parent relationship (Parent linked to STU202600001) is preserved
+    // in the domain model (ParentService.isChildLinkedToParent) — independent of login mechanism.
+    const parentUser = await MockAuthService.loginWithCredentials('Parent01', 'demo123');
 
     expect(parentUser).toBeDefined();
     expect(parentUser.role).toBe('Parent');
@@ -83,9 +85,9 @@ describe('Parent Domain — Student ID Login Identifier', () => {
     expect(parentUser.last_name).toBe('Ramanathan');
   });
 
-  it('authenticates Parent of another student using their respective Student ID', async () => {
-    // Child: Priya S -> Student ID: STU202600002
-    const parentUser = await MockAuthService.loginWithCredentials('STU202600002', 'parent123');
+  it('authenticates second Parent using username and demo password', async () => {
+    // Secondary parent (M. Selvam) authenticated via username selvam.m / demo123
+    const parentUser = await MockAuthService.loginWithCredentials('selvam.m', 'demo123');
 
     expect(parentUser).toBeDefined();
     expect(parentUser.role).toBe('Parent');

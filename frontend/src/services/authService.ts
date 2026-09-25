@@ -76,10 +76,24 @@ export class MockAuthService {
 
   /**
    * Authenticate user using institutional credentials (User ID / Email + Password).
+   *
+   * TEMPORARY PHASE 2 DEMO CREDENTIALS:
+   * ┌───────────────┬─────────────────┬──────────┐
+   * │ Role          │ User ID         │ Password │
+   * ├───────────────┼─────────────────┼──────────┤
+   * │ Student       │ Student01       │ demo123  │
+   * │ Parent        │ Parent01        │ demo123  │
+   * │ Faculty       │ Faculty01       │ demo123  │
+   * │ Admin         │ Admin           │ demo123  │
+   * │ Principal     │ Principal       │ demo123  │
+   * └───────────────┴─────────────────┴──────────┘
+   *
    * Indian School Authentication Logic:
-   * - Student ID (e.g. STU202600001) + Student password -> Authenticates Student
-   * - Student ID (e.g. STU202600001) + Parent password ('parent123' / 'demo123-parent') -> Authenticates linked Parent
-   * - Staff / Faculty / Admin / Principal email/username + Password -> Authenticates respective role
+   * - Student username (e.g. Student01) + password -> Authenticates Student
+   * - Parent username (e.g. Parent01) + password -> Authenticates Parent
+   *   NOTE: The Student-Parent ID relationship is preserved in the domain model.
+   *         The 'Parent01' username is a DEMO ALIAS only — not a Student ID.
+   * - Staff / Faculty / Admin / Principal username or email + password -> Authenticates respective role
    */
   static async loginWithCredentials(identifier: string, password?: string): Promise<User> {
     const trimmedId = (identifier || '').trim().toLowerCase();
@@ -95,58 +109,34 @@ export class MockAuthService {
 
     const users = this.getMockUsers();
 
-    // Check if parent is logging in with child's Student ID
-    const isParentIntent = 
-      trimmedPass === 'parent123' || 
-      trimmedPass === 'demo123-parent' || 
-      trimmedId.startsWith('p-') || 
-      trimmedId.includes('parent') ||
-      trimmedId === 'ramanathan@gmail.com' ||
-      trimmedId === 'ramanathan.s' ||
-      trimmedId === 'selvam@gmail.com' ||
-      trimmedId === 'selvam.m';
-
-    if (isParentIntent) {
-      let parentUser: User | undefined;
-
-      // Map child's Student ID to the corresponding parent user record
-      const upperId = trimmedId.toUpperCase();
-      if (upperId === 'STU202600001') {
-        parentUser = users.find((u) => u.id === 'usr_007'); // S. Ramanathan
-      } else if (upperId === 'STU202600002') {
-        parentUser = users.find((u) => u.id === 'usr_008'); // M. Selvam
-      } else if (trimmedId === 'selvam@gmail.com' || trimmedId === 'selvam.m') {
-        parentUser = users.find((u) => u.id === 'usr_008');
-      } else {
-        parentUser = users.find((u) => u.role === 'Parent');
-      }
-
-      if (parentUser) {
-        this.setCurrentUser(parentUser);
-        return parentUser;
-      }
-    }
-
-    // Match against email, username, Student ID, or institutional demonstration aliases
+    // Match against email or username (case-insensitive)
     let user = users.find((u) => {
       const emailMatch = u.email.toLowerCase() === trimmedId;
       const usernameMatch = u.username.toLowerCase() === trimmedId;
       if (emailMatch || usernameMatch) return true;
 
-      // Common institutional aliases for evaluation & demonstration
-      if ((trimmedId === 'admin' || trimmedId === 'admin@schoolerp.edu.in' || trimmedId === 'admin@studenterp.edu') && u.role === 'Admin') return true;
-      if ((trimmedId === 'principal' || trimmedId === 'principal@schoolerp.edu.in' || trimmedId === 'principal@studenterp.edu') && u.role === 'Principal') return true;
+      // ── TEMPORARY PHASE 2 DEMO CREDENTIAL ALIASES ──────────────────────────
+      // These short aliases map to the five required demo accounts for presentation.
+      // They are NOT the underlying institutional identifiers; see mock-data/users.json.
+      if (trimmedId === 'student01' && u.role === 'Student' && u.id === 'usr_005') return true;
+      if (trimmedId === 'parent01'  && u.role === 'Parent'  && u.id === 'usr_007') return true;
+      if (trimmedId === 'faculty01' && u.role === 'Faculty' && u.id === 'usr_003') return true;
+      if (trimmedId === 'admin'     && u.role === 'Admin') return true;
+      if (trimmedId === 'principal' && u.role === 'Principal') return true;
+
+      // ── Legacy / Fallback Institutional Aliases ─────────────────────────────
+      if ((trimmedId === 'admin@schoolerp.edu.in' || trimmedId === 'admin@studenterp.edu') && u.role === 'Admin') return true;
+      if ((trimmedId === 'principal@schoolerp.edu.in' || trimmedId === 'principal@studenterp.edu') && u.role === 'Principal') return true;
       if ((trimmedId === 'student' || trimmedId === 'student@schoolerp.edu.in' || trimmedId === 'student@studenterp.edu') && u.role === 'Student') return true;
       if ((trimmedId === 'faculty' || trimmedId === 'teacher' || trimmedId === 'faculty@schoolerp.edu.in' || trimmedId === 'faculty@studenterp.edu') && u.role === 'Faculty') return true;
       if ((trimmedId === 'parent' || trimmedId === 'parent@schoolerp.edu.in' || trimmedId === 'parent@studenterp.edu') && u.role === 'Parent') return true;
 
+      // Legacy Student ID format support (STU202600001, STU202600002)
+      if ((trimmedId === 'stu202600001') && u.id === 'usr_005') return true;
+      if ((trimmedId === 'stu202600002') && u.id === 'usr_006') return true;
+
       return false;
     });
-
-    // If identifier is a known Student ID (e.g. STU202600001)
-    if (!user && (trimmedId.includes('stu') || trimmedId === 'stu202600001' || trimmedId === 'stu202600002')) {
-      user = users.find((u) => u.role === 'Student');
-    }
 
     if (!user) {
       throw new Error('Invalid User ID or institutional email. Account not found in school directory.');
@@ -156,9 +146,9 @@ export class MockAuthService {
       throw new Error('This account is deactivated. Please contact the school office administrator.');
     }
 
-    // Check password against synthetic record or accepted demo password
+    // Password verification: accept stored password or universal demo fallback
     const validPassword = user.password || 'demo123';
-    if (trimmedPass !== validPassword && trimmedPass !== 'demo123' && trimmedPass !== 'password123' && trimmedPass !== 'student123' && trimmedPass !== 'parent123') {
+    if (trimmedPass !== validPassword && trimmedPass !== 'demo123') {
       throw new Error('Invalid password. Please check your credentials.');
     }
 
@@ -194,48 +184,55 @@ export interface SyntheticDemoAccount {
   description: string;
 }
 
+/**
+ * TEMPORARY PHASE 2 DEMO CREDENTIALS
+ * For presentation / demonstration purposes only.
+ * These will be replaced by real authentication in Phase 4.
+ */
 export const SYNTHETIC_DEMO_ACCOUNTS: SyntheticDemoAccount[] = [
   {
     role: 'Student',
-    identifier: 'STU202600001',
+    identifier: 'Student01',
     email: 'arun.kumar@schoolerp.edu.in',
-    username: 'STU202600001',
+    username: 'Student01',
     password: 'demo123',
     name: 'Arun Kumar',
     description: 'Enrolled Class 11 Student (Stream: Computer Science A, Sec: A2)',
   },
   {
     role: 'Parent',
-    identifier: 'STU202600001',
+    identifier: 'Parent01',
     email: 'ramanathan@gmail.com',
-    username: 'ramanathan.s',
-    password: 'parent123',
+    username: 'Parent01',
+    password: 'demo123',
     name: 'S. Ramanathan',
-    description: 'Father / Guardian of Arun Kumar (Logged in via Child Student ID: STU202600001)',
+    // NOTE: The Student-Parent relationship (Parent linked to STU202600001) is preserved
+    // in the domain model. 'Parent01' is a demo login alias only.
+    description: 'Father / Guardian of Arun Kumar (STU202600001) — Phase 2 Demo Alias',
   },
   {
     role: 'Faculty',
-    identifier: 'suresh.r@schoolerp.edu.in',
+    identifier: 'Faculty01',
     email: 'suresh.r@schoolerp.edu.in',
-    username: 'suresh.r',
+    username: 'Faculty01',
     password: 'demo123',
     name: 'R. Suresh',
     description: 'Senior PGT & Department Head (Mathematics), Class Teacher XI-A2',
   },
   {
     role: 'Admin',
-    identifier: 'admin@schoolerp.edu.in',
+    identifier: 'Admin',
     email: 'admin@schoolerp.edu.in',
-    username: 'admin',
+    username: 'Admin',
     password: 'demo123',
     name: 'K. Narayanan',
     description: 'School Administrative Officer & Office Superintendent',
   },
   {
     role: 'Principal',
-    identifier: 'principal@schoolerp.edu.in',
+    identifier: 'Principal',
     email: 'principal@schoolerp.edu.in',
-    username: 'principal',
+    username: 'Principal',
     password: 'demo123',
     name: 'Dr. K. Radhakrishnan',
     description: 'Principal & Head of Institution (Executive Leadership)',

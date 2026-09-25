@@ -5,7 +5,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Phase 2: Demo Credential Update] - 2026-09-25
+
+### Changed — TEMPORARY PHASE 2 DEMO CREDENTIALS
+
+> ⚠️ These are **temporary Phase 2 demonstration credentials only**. Real authentication (JWT/OAuth) is PLANNED for Phase 4. Do NOT hash or migrate passwords.
+
+| Role      | User ID     | Password  |
+| :-------- | :---------- | :-------- |
+| Student   | `Student01` | `demo123` |
+| Parent    | `Parent01`  | `demo123` |
+| Faculty   | `Faculty01` | `demo123` |
+| Admin     | `Admin`     | `demo123` |
+| Principal | `Principal` | `demo123` |
+
+- **`mock-data/users.json`**: Updated `username` fields for `usr_001` (Admin), `usr_002` (Principal), `usr_003` (Faculty), `usr_005` (Student), `usr_007` (Parent) to match the required presentation identifiers.
+- **`frontend/src/services/authService.ts`**: Rewrote `loginWithCredentials` to resolve the five new demo aliases (`Student01`, `Parent01`, `Faculty01`, `Admin`, `Principal`) with explicit user-ID binding. Removed old `parent123`/`demo123-parent` password-sniffing heuristic. Added inline credential table in JSDoc comment. Updated `SYNTHETIC_DEMO_ACCOUNTS` array to publish the new identifiers to the dev panel.
+- **`frontend/src/pages/LoginPage.tsx`**: Updated form placeholder text, label hint, and dev panel header to reflect new credential format.
+- **`frontend/tests/parent.test.ts`**: Updated two Parent login tests to use `Parent01`/`demo123` and `selvam.m`/`demo123` instead of legacy `STU202600001`/`parent123` flow; Student-Parent domain relationship assertions preserved via `ParentService.isChildLinkedToParent`.
+- **Test suite**: 100/100 tests passing post-update. Production build: ✓ (`npm run build` exit code 0).
+
+---
+
 ## [Phase 1: Foundation + Documentation + Governance] - 2026-09-23
+
 
 ### Added
 - **Governance & Documentation**:
@@ -293,5 +316,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Automated Vitest Test Suite**:
   - Created 19 automated unit tests in `frontend/tests/parent.test.ts` validating parent profile handling, child linking, Student ID login, unrelated student access protection, 4-status attendance calculations, report cards, absence workflow, Zod schema, and deterministic advisories.
   - Total test suite now stands at **78/78 passing unit tests** across 4 test suites with zero regressions.
+
+---
+
+## [Phase 2: Task 2.4 — Deep Faculty Role Experience] - 2026-09-25
+
+### Added
+- **Faculty Domain Feature Module (`frontend/src/features/faculty/`)**:
+  - Structured domain architecture: `types/`, `schemas/`, `services/`, `hooks/`, `components/`, and barrel export `frontend/src/features/faculty/index.ts`.
+  - Refactored all 5 Faculty routes (`/faculty/dashboard`, `/faculty/classes`, `/faculty/attendance`, `/faculty/marks`, `/faculty/timetable`) into modular page views consuming domain hooks and components.
+- **Authoritative Faculty Profile & Non-Evaluative Governance**:
+  - Modeled senior PGT profile for `R. Suresh` (`usr_003` / `fac_001`), Senior PGT Mathematics & Department Head, Class Teacher of `Grade 11 — Section A2`.
+  - Displayed qualifications, specialization (Algebra, Calculus, 3D Geometry), office room (`Staff Room B, Ramanujan Block`), and employee code (`FAC-MATH-012`).
+  - Strictly enforced non-evaluative governance: zero faculty ratings, reviews, rankings, appraisal scores, or teacher comparison metrics.
+- **Assigned Class & Student Scoping**:
+  - Scoped faculty access strictly to authorized assigned classes: `Grade 11 — Computer Science A (Sec A2)`, `Grade 12 — Computer Science A (Sec A1)`, `Grade 10 — Section A`. Unrelated school classes are inaccessible.
+  - Enrolled students roster with permanent, immutable Student ID (`STU202600001`, `STU202600002`), roll numbers, admission numbers, attendance rates, academic %, derived 8-tier letter grades, and CSV export.
+- **Session Attendance Roll Call & Canonical 4-Status Model**:
+  - Implemented `FacultyAttendanceRollCallSheet` with 4 canonical statuses: `PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`.
+  - Implemented canonical "Mark All Present" action with immediate live count and percentage updates.
+  - Adhered strictly to Master Plan Amendment 2 calculation via shared utility `src/utils/attendance.ts`: $(P + OD) / (P + A + OD + L) \times 100$.
+  - `LEAVE` strictly counted as absence in the denominator.
+  - Session state tracking (`Not Marked`, `In Progress`, `Marked`).
+- **Class Teacher LEAVE Approval Workflow**:
+  - Empowered Class Teacher `R. Suresh` as the sole sanctioning authority for reviewing pending absence notices from students (`STORAGE_STUDENT_LEAVE_KEY`) and parents (`STORAGE_PARENT_ABSENCE_KEY`).
+  - Actions: `Approve Leave` converts notice status to sanctioned `LEAVE` and records audit data (`approved_by_faculty_id`, `approved_by_name`, `approved_at`); `Reject` converts notice status to `REJECTED`.
+  - Approved leaves automatically populate in the session attendance roll call sheet for that date.
+- **Examination Marks Entry & CBSE 8-Tier Grading**:
+  - Implemented `FacultyMarksEntrySheet` supporting marks out of 100 (0–100) or 'AB' (Absent).
+  - Implemented Zod validation and input parser rejecting negative marks, >100, and malformed text.
+  - Derived standard CBSE 8-tier letter grades (`A1` to `E`) via shared `src/utils/grading.ts`.
+  - Implemented `FacultyGradeDistributionChart` (Recharts BarChart) visualizing class grade distribution.
+  - Zero university concepts: GPA, CGPA, credits, or grade points.
+- **Instructional Timetable Routine**:
+  - Implemented `FacultyTimetableSchedule` with Monday–Friday tabs, period cards (Period 1 to Period 8), room assignments, and 24 periods/week workload.
+- **Automated Vitest Test Suite**:
+  - Created 22 automated unit tests in `frontend/tests/faculty.test.ts` covering faculty profile, class/student scoping, timetable, 4-status roll call, "Mark All Present", leave approval/rejection, marks validation, and 8-tier grade derivation.
+  - Total test suite now stands at **100/100 passing unit tests** across 5 test suites with zero regressions.
+
 
 
