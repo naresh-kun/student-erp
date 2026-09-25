@@ -1,7 +1,7 @@
 # Project Status & Milestone Ledger
 
 > **Current Phase**: Phase 2 (Frontend Core + Role Dashboards + Mock Data Integration)  
-> **Authoritative State**: Active Phase 2 — Demo Credentials Updated (TEMPORARY PHASE 2 DEMO CREDENTIALS deployed; Phase IN PROGRESS)  
+> **Authoritative State**: Active Phase 2 — Task 2.5 Completed (Admin & Principal Deep Role Experiences implemented; 128/128 tests passing; Ready for Task 2.6 Hardening & QA)  
 > **Last Updated**: 2026-09-25
 
 ---
@@ -61,7 +61,9 @@ To ensure strict engineering honesty, features and modules are classified into e
 | **Student Domain Feature Module (`features/students`)** | `IMPLEMENTED` | Complete student domain module: permanent/immutable Student ID profile, 4-status attendance summary, Zod validation schemas, PENDING leave application workflow (no self-approval), marks/percentage/8-tier grade register, timetable schedule, upcoming events, 25 Vitest tests |
 | **Parent Domain Feature Module (`features/parents`)** | `IMPLEMENTED` | Complete parent domain module: Student ID authentication login, linked child scoped access, multi-child support, 4-status attendance cards & formula adherence, subject attendance with 85% clearance benchmark, absence audit log, absence notice workflow (PENDING status), report cards with marks / 100, 8-tier grades, Recharts visualizations, 19 Vitest tests |
 | **Faculty Domain Feature Module (`features/faculty`)** | `IMPLEMENTED` | Complete faculty domain module: R. Suresh profile, Class Teacher assignment (XI-A2), assigned class & student scoping, 4-status attendance roll call with "Mark All Present", Class Teacher LEAVE approval workflow, examination marks entry out of 100 or 'AB', CBSE 8-tier grade distribution chart, 24 periods/wk timetable, 22 Vitest tests |
-| **Domain Feature Modules & Mutation Forms (Remaining Roles)** | `PLANNED` | Granular CRUD workflows, Zod validation schemas, mutation hooks scheduled across Tasks 2.5–2.6 (Admin, Principal) |
+| **Admin Domain Feature Module (`features/admin`)** | `IMPLEMENTED` | Complete admin domain module: Student & Parent master directories with permanent Student ID, non-evaluative faculty staff directory, class capacity & course catalog, 4-status attendance oversight, CBSE 8-tier marks audit register, timetable overview, calendar event publisher, Merit & Random section allocation engine, 18 Vitest tests |
+| **Principal Domain Feature Module (`features/principal`)** | `IMPLEMENTED` | Complete principal domain module: Head of Institution executive console, academic & stream performance analytics, school presence telemetry & cohort curves, non-evaluative faculty roster, statutory report endorsement workflow with approval audit trail, 10 Vitest tests |
+| **Hardening & Quality Assurance (Task 2.6)** | `PLANNED` | Automated WCAG AA accessibility audit, responsive polish across viewport breakpoints, and final Phase 2 sign-off |
 
 ### 2.4 Application Layer (Backend)
 | Component / Area | Status | Notes |

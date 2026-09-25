@@ -1,8 +1,8 @@
 # Phase 2 Execution Status: Frontend Core + Role Dashboards + Mock Data
 
 > **Phase**: Phase 2 (Frontend Demonstration & Role Dashboards)  
-> **Current Task**: **Demo Credentials Update (TEMPORARY PHASE 2 DEMO CREDENTIALS)**  
-> **Status**: **IN PROGRESS (Task 2.4 COMPLETED; Demo Credentials Updated; Ready for Task 2.5)**  
+> **Current Task**: **Task 2.5 Completed (Deep Admin & Principal Role Experiences)**  
+> **Status**: **IN PROGRESS (Task 2.5 COMPLETED; Ready for Task 2.6 Hardening & QA)**  
 > **Date**: 2026-09-25
 
 ---
@@ -21,7 +21,7 @@ Build a complete, responsive, role-tailored presentation layer that demonstrates
 | **Task 2.2** | **Student Role Experience** | Student domain module, profile, attendance, leave application, marks register, timetable, calendar | **COMPLETED** |
 | **Task 2.3** | **Parent Role Experience** | Parent dashboard, children overview, progress cards, child timetable/calendar | **COMPLETED** |
 | **Task 2.4** | **Faculty Role Experience** | Faculty dashboard, assigned classes, attendance recording, grading sheets | **COMPLETED** |
-| **Task 2.5** | **Admin & Principal Roles** | Admin directory & allocation tools; Principal executive analytics & approvals | `PLANNED` |
+| **Task 2.5** | **Admin & Principal Roles** | Admin directory & allocation tools; Principal executive analytics & approvals | **COMPLETED** |
 | **Task 2.6** | **Hardening & Quality Assurance** | Vitest unit test suite, accessibility audit, responsive polish, final sign-off | `PLANNED` |
 
 ---
@@ -141,45 +141,88 @@ Build a complete, responsive, role-tailored presentation layer that demonstrates
   - **Automated Vitest Test Suite**:
     - Created 22 automated unit tests in `frontend/tests/faculty.test.ts`. Total test suite now stands at **100/100 passing unit tests** across 5 test suites.
 
+- [x] **Deep Admin Role Experience (Task 2.5)**:
+  - **Structured Admin Feature Domain (`frontend/src/features/admin/`)**:
+    - Complete modular architecture: `types/`, `schemas/`, `services/`, `hooks/`, `components/`, and barrel export `index.ts`.
+    - Decomposed all 11 Admin routes (`/admin/dashboard`, `/admin/students`, `/admin/parents`, `/admin/faculty`, `/admin/classes`, `/admin/subjects`, `/admin/attendance`, `/admin/marks`, `/admin/timetable`, `/admin/calendar`, `/admin/allocation`) into thin page views consuming domain components and hooks.
+  - **Authoritative Student & Parent Master Directories**:
+    - Permanent, immutable Student ID (`STU2026...`) enforcement with profile inspection modal and direct CSV export.
+    - Parent directory linking guardian records to wards' permanent Student IDs.
+    - Grade 10 no stream, Grades 11–12 stream designations (`Computer Science A`, `Bio-Maths B`, `Commerce C`, `Pure Science D`).
+  - **Non-Evaluative Faculty Staff Directory**:
+    - Descriptive staff profiles with departments, designations, qualifications, weekly periods (e.g. 24 Periods / wk), and assigned classes.
+    - Strictly non-evaluative: zero faculty ratings, reviews, rankings, or appraisal scores.
+  - **Classes, Sections, Subjects & Timetable Overview**:
+    - Class hierarchy and room capacity management across all sections.
+    - Course catalog with weekly periods (credits purged).
+    - School master timetable grid mapping periods 1–8 across days and rooms.
+  - **Institutional Attendance & Marks Oversight**:
+    - 4-status institutional attendance audit registers (`PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`) adhering to $(P + OD) / Total \times 100$.
+    - Marks register scored out of 100 with CBSE 8-tier letter grades (`A1`–`E`) and pass rate audits.
+  - **Calendar Event Publishing**:
+    - Institutional event scheduler with Zod schema validation (`eventSchema.ts`) and On Duty (`od_eligible`) credit flags.
+  - **Class & Section Allocation Engine**:
+    - Dual allocation algorithms: Merit-based (qualifying score ranking) and Seeded Random.
+    - Strict senior secondary stream boundary enforcement.
+    - Interactive preview modal (`AllocationPreviewModal.tsx`) before publication and historical allocation logs.
+  - **Automated Vitest Test Suite**:
+    - 18 automated unit tests in `frontend/tests/admin.test.ts`.
+
+- [x] **Deep Principal Role Experience (Task 2.5)**:
+  - **Structured Principal Feature Domain (`frontend/src/features/principal/`)**:
+    - Complete modular architecture: `types/`, `schemas/`, `services/`, `hooks/`, `components/`, and barrel export `index.ts`.
+    - Decomposed all 5 Principal routes (`/principal/dashboard`, `/principal/academics`, `/principal/attendance`, `/principal/faculty`, `/principal/reports`) into modular page views.
+  - **Head of Institution Executive Console**:
+    - High-level KPI cards (Total Students 1,248, Faculty 86, Student-Teacher Ratio 15:1, Attendance Rate, Academic Quality Avg).
+    - Visual analytics: CBSE 8-tier letter grade distribution (Recharts BarChart) and longitudinal attendance progression.
+  - **Academic & Cohort Analytics**:
+    - Grade-level averages and pass rates; stream performance breakdown across the 4 senior secondary streams.
+    - Zero university metrics (GPA, CGPA, credits).
+  - **Attendance Telemetry & Longitudinal Cohort Trends**:
+    - 4-status institutional presence telemetry; cohort progression curves across Grades 9–12.
+  - **Departmental Faculty Roster & Workload Oversight**:
+    - Non-evaluative staff directory showing designations, qualifications, and weekly periods.
+  - **Statutory Report Endorsement Workflow**:
+    - Official reports registry across Academic, Attendance, Faculty, and Governance categories.
+    - Endorsement workflow (`ReportReviewModal.tsx`): Status transition from `Draft` / `Review` to `Approved` with principal signature (`Dr. K. Radhakrishnan (Principal)`), timestamp, and official review remarks.
+    - Downloadable official dossier text file generation.
+  - **Automated Vitest Test Suite**:
+    - 10 automated unit tests in `frontend/tests/principal.test.ts`.
+
 ---
 
 ## 4. Incomplete Work & Functional Boundaries
 
-While all 34 routes possess functional **demo presentation surfaces** for evaluation, full domain functionality remains scheduled for upcoming Phase 2 tasks:
-- **Task 2.5 (Admin & Principal Experience)**: Full directory CRUD management, interactive class capacity editors, algorithmic allocation simulation engine, and report PDF export generation.
-- **Task 2.6 (Hardening & QA)**: Comprehensive Vitest unit test suite, automated WCAG AA accessibility audit, and final Phase 2 sign-off.
+While all 34 routes possess functional **demo presentation surfaces** and fully realized domain feature modules, remaining Phase 2 scope covers:
+- **Task 2.6 (Hardening & QA)**: Final Phase 2 sign-off, comprehensive responsive audit, and accessibility hardening.
 - **Phase 3 (Backend Integration)**: Real Django REST API endpoints (`/api/v1/`), PostgreSQL persistence, and Redis caching.
 - **Phase 4 (Live Security & Production Auth)**: Cryptographic JWT authentication, token rotation/revocation, password hashing (Argon2/bcrypt), and authoritative backend RBAC permission classes.
 
 ---
 
-## 5. Files Changed in Task 2.4
+## 5. Files Changed in Task 2.5
 
-- `frontend/src/features/faculty/types/index.ts` (Domain models for FacultyProfile, FacultyAssignedClass, FacultyAssignedStudent, FacultyTimetableEntry, AttendanceRollCallItem, AttendanceSessionContext, FacultyPendingLeaveNotice, FacultyMarkEntryItem, FacultyExamSummary)
-- `frontend/src/features/faculty/schemas/marksSchema.ts` (Zod validation schema and score input validator for marks 0–100 or 'AB')
-- `frontend/src/features/faculty/schemas/attendanceSchema.ts` (Zod validation schema enforcing 4 canonical attendance statuses)
-- `frontend/src/features/faculty/schemas/leaveReviewSchema.ts` (Zod validation schema for Class Teacher leave approval/rejection)
-- `frontend/src/features/faculty/services/facultyService.ts` (Domain service adapter managing faculty state, classes, roll call, leave reviews, and marks)
-- `frontend/src/features/faculty/hooks/` (7 custom hooks: useFacultyProfile, useAssignedClasses, useAssignedStudents, useFacultyTimetable, useFacultyAttendanceSession, useFacultyMarksEntry, usePendingLeaveReviews, and index.ts)
-- `frontend/src/features/faculty/components/` (10 presentation components: FacultyHeroBanner, FacultyKPIOverview, FacultyTodayScheduleCard, FacultyPendingLeaveCard, FacultyAssignedClassesGrid, FacultyStudentRosterTable, FacultyAttendanceRollCallSheet, FacultyMarksEntrySheet, FacultyGradeDistributionChart, FacultyTimetableSchedule, and index.ts)
-- `frontend/src/features/faculty/index.ts` (Faculty feature module barrel export)
-- `frontend/src/pages/faculty/` (5 decomposed pages: FacultyDashboardPage, FacultyClassesPage, FacultyAttendancePage, FacultyMarksPage, FacultyTimetablePage, and barrel index.tsx)
-- `frontend/tests/faculty.test.ts` (22 automated Vitest unit tests covering profile, class/student scoping, timetable, 4-status roll call, "Mark All Present", leave approval/rejection, marks validation, and 8-tier grade derivation)
+- `docs/phase_prompts/Phase_2_Task_2.5.md` (Authoritative Task 2.5 specification)
+- `frontend/src/features/admin/` (Complete Admin feature module: types, schemas, services, 11 hooks, 12 components, barrel export)
+- `frontend/src/features/principal/` (Complete Principal feature module: types, schemas, services, 5 hooks, 6 components, barrel export)
+- `frontend/src/pages/admin/` (11 decomposed route pages + barrel export)
+- `frontend/src/pages/principal/` (5 decomposed route pages + barrel export)
+- `frontend/tests/admin.test.ts` (18 automated unit tests for Admin domain)
+- `frontend/tests/principal.test.ts` (10 automated unit tests for Principal domain)
 - `docs/PROJECT_STATUS.md` (Updated status matrix)
 - `docs/phases/PHASE_02_STATUS.md` (Updated phase execution ledger)
-- `docs/CHANGELOG.md` (Logged Task 2.4 release notes)
+- `docs/CHANGELOG.md` (Logged Task 2.5 release notes)
 
 ---
 
 ## 6. Testing & Validation Status
 
-- `npm run test:run`: **100/100 unit tests passing** across 5 test suites (`attendance.test.ts`, `grading.test.ts`, `student.test.ts`, `parent.test.ts`, `faculty.test.ts`).
+- `npm run test:run`: **128/128 unit tests passing** across 7 test suites (`attendance.test.ts`, `grading.test.ts`, `student.test.ts`, `parent.test.ts`, `faculty.test.ts`, `admin.test.ts`, `principal.test.ts`).
 - `npm run build`: Validated clean compilation with **zero TypeScript errors** and exit code 0.
-- `npm run dev`: Local Vite server responsive on `http://127.0.0.1:5173/` (HTTP 200 OK).
-- Visual QA: Verified all 5 Faculty routes (`/faculty/dashboard`, `/faculty/classes`, `/faculty/attendance`, `/faculty/marks`, `/faculty/timetable`), plus verified existing Student and Parent dashboards without regressions.
+- Browser Verification: Full end-to-end browser walkthrough conducted with zero console errors or visual defects across Admin and Principal portals.
 
 ---
 
 ## 7. Next Task
 
-**Task 2.5: Admin & Principal Role Experiences** (Admin directory & allocation tools; Principal executive analytics & approvals).
+**Task 2.6: Phase 2 Hardening, Polishing, Vitest Suite & Formal Sign-Off**.

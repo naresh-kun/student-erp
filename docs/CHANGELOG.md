@@ -3,6 +3,41 @@
 All notable changes to the Student ERP project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Phase 2: Task 2.5 — Deep Admin & Principal Role Experiences] - 2026-09-25
+
+### Added
+- **Admin Domain Feature Module (`frontend/src/features/admin/`)**:
+  - Structured domain architecture: `types/`, `schemas/`, `services/`, `hooks/`, `components/`, and barrel export `frontend/src/features/admin/index.ts`.
+  - Decomposed all 11 Admin routes (`/admin/dashboard`, `/admin/students`, `/admin/parents`, `/admin/faculty`, `/admin/classes`, `/admin/subjects`, `/admin/attendance`, `/admin/marks`, `/admin/timetable`, `/admin/calendar`, `/admin/allocation`) into thin page views consuming domain components and hooks.
+  - **Student Master Directory**: Real-time search, grade and stream filtering, immutable permanent Student ID (`STU202600001`), student profile inspection modal, and direct CSV register export.
+  - **Parent Master Directory**: Guardian directory with phone, occupation, and verified linked children Student IDs.
+  - **Faculty Master Directory**: Descriptive staff roster with employee codes, departments, designations, qualifications, assigned classes, and weekly period counts (e.g. 24 Periods / wk); strictly non-evaluative (zero ratings, reviews, rankings, or scores).
+  - **Classes & Sections Capacity**: Grade 10 (no stream) and Grades 11–12 stream designations (`Computer Science A`, `Bio-Maths B`, `Commerce C`, `Pure Science D`) with room numbers and enrollment capacity bars.
+  - **Subjects Catalog**: Course catalog with weekly period counts (university credits permanently purged).
+  - **Attendance Oversight**: School-wide 4-status audit registers (`PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`) adhering to $(P + OD) / Total \times 100$.
+  - **Marks Register & Grade Audit**: Exam-wise marks registers scored out of 100 with CBSE 8-tier letter grades (`A1`–`E`) and pass percentages.
+  - **Master Timetable Grid**: 8-period weekly schedule across Monday–Friday mapping classes, subjects, faculty, and room locations.
+  - **Calendar Event Publisher**: Institutional event manager with Zod schema validation (`eventSchema.ts`) and On Duty credit eligibility flags.
+  - **Class & Section Allocation Engine**: Dual allocation methods (Merit-based descending rank and Seeded Random) with stream boundary enforcement, interactive preview modal (`AllocationPreviewModal.tsx`), and historical allocation logs.
+  - **Automated Vitest Test Suite**: 18 automated unit tests in `frontend/tests/admin.test.ts`.
+
+- **Principal Domain Feature Module (`frontend/src/features/principal/`)**:
+  - Structured domain architecture: `types/`, `schemas/`, `services/`, `hooks/`, `components/`, and barrel export `frontend/src/features/principal/index.ts`.
+  - Decomposed all 5 Principal routes (`/principal/dashboard`, `/principal/academics`, `/principal/attendance`, `/principal/faculty`, `/principal/reports`) into modular page views consuming domain components and hooks.
+  - **Head of Institution Executive Console**: Executive institutional branding, high-level KPIs (Enrollment 1,248, Faculty 86, Student-Teacher Ratio 15:1, Attendance Rate, Academic Quality Avg), Recharts CBSE 8-tier grade distribution, and longitudinal attendance curves.
+  - **Academic & Cohort Analytics**: Grade-level comparisons, senior secondary stream comparisons (Grades 11 & 12), subject performance quality assurance, and CBSE 8-tier distribution.
+  - **Attendance Telemetry & Longitudinal Cohort Trends**: 4-status institutional presence telemetry and longitudinal cohort progression curves (Grades 9–12).
+  - **Departmental Faculty Roster & Workload Oversight**: Descriptive staff roster with qualifications and weekly workloads (strictly non-evaluative).
+  - **Statutory Report Endorsement Workflow**: Institutional reports registry across Academic, Attendance, Faculty, and Governance categories. Report review modal (`ReportReviewModal.tsx`) supporting status transitions (`Draft` / `Review` -> `Approved`) with principal signature (`Dr. K. Radhakrishnan (Principal)`), timestamp, and official review remarks, plus downloadable official dossier text file generation.
+  - **Automated Vitest Test Suite**: 10 automated unit tests in `frontend/tests/principal.test.ts`.
+
+- **Authoritative Phase 2 Task 2.5 Specification**:
+  - Authored `docs/phase_prompts/Phase_2_Task_2.5.md` covering all domain rules, constraints, architectural patterns, and acceptance checklists.
+
+- **Test Suite & Build Metrics**:
+  - 128/128 automated Vitest unit tests passing across all 7 test suites (`attendance.test.ts`, `grading.test.ts`, `student.test.ts`, `parent.test.ts`, `faculty.test.ts`, `admin.test.ts`, `principal.test.ts`).
+  - Production build verified with zero TypeScript errors or warnings (`npm run build` exit code 0).
+
 ---
 
 ## [Phase 2: Demo Credential Update] - 2026-09-25
