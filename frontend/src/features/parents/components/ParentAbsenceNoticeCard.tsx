@@ -97,10 +97,12 @@ export const ParentAbsenceNoticeCard: React.FC<ParentAbsenceNoticeCardProps> = (
 
           {/* Date of Absence */}
           <div className="space-y-1">
-            <label className="font-semibold text-slate-700 dark:text-slate-300">
+            <label htmlFor="absence-date-input" className="font-semibold text-slate-700 dark:text-slate-300">
               Date of Absence <span className="text-rose-500">*</span>
             </label>
             <input
+              id="absence-date-input"
+              aria-label="Date of Absence"
               type="date"
               {...register('date')}
               className="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-blue-900 focus:outline-none"
@@ -112,10 +114,12 @@ export const ParentAbsenceNoticeCard: React.FC<ParentAbsenceNoticeCardProps> = (
 
           {/* Category */}
           <div className="space-y-1">
-            <label className="font-semibold text-slate-700 dark:text-slate-300">
+            <label htmlFor="absence-category-select" className="font-semibold text-slate-700 dark:text-slate-300">
               Reason Category <span className="text-rose-500">*</span>
             </label>
             <select
+              id="absence-category-select"
+              aria-label="Reason Category"
               {...register('category')}
               className="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-blue-900 focus:outline-none"
             >
@@ -134,10 +138,12 @@ export const ParentAbsenceNoticeCard: React.FC<ParentAbsenceNoticeCardProps> = (
 
           {/* Explanation / Notes */}
           <div className="space-y-1">
-            <label className="font-semibold text-slate-700 dark:text-slate-300">
+            <label htmlFor="absence-explanation-textarea" className="font-semibold text-slate-700 dark:text-slate-300">
               Detailed Explanation / Physician Advice <span className="text-rose-500">*</span>
             </label>
             <textarea
+              id="absence-explanation-textarea"
+              aria-label="Detailed Explanation / Physician Advice"
               rows={3}
               {...register('explanation')}
               placeholder="e.g. Arun has severe viral fever and physician has advised rest for 2 days. Prescription attached."

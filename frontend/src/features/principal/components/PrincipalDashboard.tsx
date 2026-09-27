@@ -279,7 +279,7 @@ export const PrincipalDashboard: React.FC = () => {
               <span>Oversight & Sign-Off</span>
             </CardTitle>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Official annual dossiers and examination returns requiring Head of Institution endorsement before statutory submission.
+              Institutional annual dossiers and examination returns requiring Head of Institution review and formal approval.
             </p>
             <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200">
               <span className="font-semibold block">Pending Principal Sign-Off:</span>

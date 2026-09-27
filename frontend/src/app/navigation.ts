@@ -239,6 +239,12 @@ export const ROLE_NAVIGATION: Record<UserRole, NavItem[]> = {
       icon: FileSpreadsheet,
       description: 'Institutional reports & board sign-offs',
     },
+    {
+      title: 'Section & Staff Allocation',
+      href: '/principal/allocation',
+      icon: Sliders,
+      description: 'Student and Class Teacher allocations',
+    },
   ],
 };
 

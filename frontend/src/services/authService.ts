@@ -82,7 +82,7 @@ export class MockAuthService {
    * │ Role          │ User ID         │ Password │
    * ├───────────────┼─────────────────┼──────────┤
    * │ Student       │ Student01       │ demo123  │
-   * │ Parent        │ Parent01        │ demo123  │
+   * │ Parent        │ STU202600001    │ demo123  │ (Alias: Parent01)
    * │ Faculty       │ Faculty01       │ demo123  │
    * │ Admin         │ Admin           │ demo123  │
    * │ Principal     │ Principal       │ demo123  │
@@ -90,9 +90,8 @@ export class MockAuthService {
    *
    * Indian School Authentication Logic:
    * - Student username (e.g. Student01) + password -> Authenticates Student
-   * - Parent username (e.g. Parent01) + password -> Authenticates Parent
-   *   NOTE: The Student-Parent ID relationship is preserved in the domain model.
-   *         The 'Parent01' username is a DEMO ALIAS only — not a Student ID.
+   * - Parent username = linked child's Student ID (e.g. STU202600001) + password -> Authenticates Parent
+   *   NOTE: 'Parent01' is preserved as a backward-compatible demo alias for presentation.
    * - Staff / Faculty / Admin / Principal username or email + password -> Authenticates respective role
    */
   static async loginWithCredentials(identifier: string, password?: string): Promise<User> {
@@ -116,24 +115,26 @@ export class MockAuthService {
       if (emailMatch || usernameMatch) return true;
 
       // ── TEMPORARY PHASE 2 DEMO CREDENTIAL ALIASES ──────────────────────────
-      // These short aliases map to the five required demo accounts for presentation.
-      // They are NOT the underlying institutional identifiers; see mock-data/users.json.
+      // Student logins
       if (trimmedId === 'student01' && u.role === 'Student' && u.id === 'usr_005') return true;
-      if (trimmedId === 'parent01'  && u.role === 'Parent'  && u.id === 'usr_007') return true;
+      if (trimmedId === 'student02' && u.role === 'Student' && u.id === 'usr_006') return true;
+
+      // Parent logins (Parent username = linked child's Student ID)
+      if (trimmedId === 'stu202600001' && u.role === 'Parent' && u.id === 'usr_007') return true;
+      if (trimmedId === 'stu202600002' && u.role === 'Parent' && u.id === 'usr_008') return true;
+      if (trimmedId === 'parent01'     && u.role === 'Parent' && u.id === 'usr_007') return true;
+
+      // Staff logins
       if (trimmedId === 'faculty01' && u.role === 'Faculty' && u.id === 'usr_003') return true;
       if (trimmedId === 'admin'     && u.role === 'Admin') return true;
       if (trimmedId === 'principal' && u.role === 'Principal') return true;
 
-      // ── Legacy / Fallback Institutional Aliases ─────────────────────────────
-      if ((trimmedId === 'admin@schoolerp.edu.in' || trimmedId === 'admin@studenterp.edu') && u.role === 'Admin') return true;
-      if ((trimmedId === 'principal@schoolerp.edu.in' || trimmedId === 'principal@studenterp.edu') && u.role === 'Principal') return true;
-      if ((trimmedId === 'student' || trimmedId === 'student@schoolerp.edu.in' || trimmedId === 'student@studenterp.edu') && u.role === 'Student') return true;
-      if ((trimmedId === 'faculty' || trimmedId === 'teacher' || trimmedId === 'faculty@schoolerp.edu.in' || trimmedId === 'faculty@studenterp.edu') && u.role === 'Faculty') return true;
-      if ((trimmedId === 'parent' || trimmedId === 'parent@schoolerp.edu.in' || trimmedId === 'parent@studenterp.edu') && u.role === 'Parent') return true;
-
-      // Legacy Student ID format support (STU202600001, STU202600002)
-      if ((trimmedId === 'stu202600001') && u.id === 'usr_005') return true;
-      if ((trimmedId === 'stu202600002') && u.id === 'usr_006') return true;
+      // ── Institutional Email / Shortname Aliases ─────────────────────────────
+      if (trimmedId === 'admin@schoolerp.edu.in' && u.role === 'Admin') return true;
+      if (trimmedId === 'principal@schoolerp.edu.in' && u.role === 'Principal') return true;
+      if ((trimmedId === 'student' || trimmedId === 'student@schoolerp.edu.in') && u.role === 'Student') return true;
+      if ((trimmedId === 'faculty' || trimmedId === 'teacher' || trimmedId === 'faculty@schoolerp.edu.in') && u.role === 'Faculty') return true;
+      if ((trimmedId === 'parent' || trimmedId === 'parent@schoolerp.edu.in') && u.role === 'Parent') return true;
 
       return false;
     });
@@ -201,14 +202,12 @@ export const SYNTHETIC_DEMO_ACCOUNTS: SyntheticDemoAccount[] = [
   },
   {
     role: 'Parent',
-    identifier: 'Parent01',
+    identifier: 'STU202600001',
     email: 'ramanathan@gmail.com',
-    username: 'Parent01',
+    username: 'STU202600001',
     password: 'demo123',
     name: 'S. Ramanathan',
-    // NOTE: The Student-Parent relationship (Parent linked to STU202600001) is preserved
-    // in the domain model. 'Parent01' is a demo login alias only.
-    description: 'Father / Guardian of Arun Kumar (STU202600001) — Phase 2 Demo Alias',
+    description: 'Father / Guardian of Arun Kumar (Child Student ID: STU202600001, Alias: Parent01)',
   },
   {
     role: 'Faculty',

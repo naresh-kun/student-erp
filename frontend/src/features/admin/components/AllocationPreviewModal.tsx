@@ -13,7 +13,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import type { AllocationPreviewRecord, AllocationMethod } from '../types';
-import { Check, X, ArrowRight, Sparkles, ShieldAlert } from 'lucide-react';
+import { Check, X, ArrowRight, SlidersHorizontal, ShieldAlert } from 'lucide-react';
 
 interface AllocationPreviewModalProps {
   isOpen: boolean;
@@ -48,7 +48,7 @@ export const AllocationPreviewModal: React.FC<AllocationPreviewModalProps> = ({
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="p-1 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
-                <Sparkles className="w-4 h-4" />
+                <SlidersHorizontal className="w-4 h-4" />
               </span>
               <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
                 Allocation Review & Verification Preview

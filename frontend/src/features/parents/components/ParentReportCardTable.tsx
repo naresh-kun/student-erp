@@ -6,10 +6,10 @@
  * adhering to the Indian School 8-Tier Grading System.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Download, FileText } from 'lucide-react';
+import { Download, FileText, Check } from 'lucide-react';
 import { getGradeBadgeClass } from '@/utils/grading';
 import type { ParentSubjectMarkRecord, ParentAcademicSummary } from '../types';
 
@@ -25,8 +25,16 @@ export const ParentReportCardTable: React.FC<ParentReportCardTableProps> = ({
   summary,
   childName = 'Arun Kumar',
 }) => {
+  const [downloading, setDownloading] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
+
   const handleDownloadPdf = () => {
-    alert(`Generating official PDF report card for ${childName} (Half-Yearly Examination 2026)...`);
+    setDownloading(true);
+    setTimeout(() => {
+      setDownloading(false);
+      setDownloaded(true);
+      setTimeout(() => setDownloaded(false), 2500);
+    }, 800);
   };
 
   return (
@@ -48,10 +56,22 @@ export const ParentReportCardTable: React.FC<ParentReportCardTableProps> = ({
               variant="default"
               size="sm"
               onClick={handleDownloadPdf}
+              disabled={downloading}
               className="text-xs bg-blue-900 hover:bg-blue-800 text-white self-start sm:self-auto"
             >
-              <Download className="w-3.5 h-3.5 mr-1.5" />
-              <span>Download Report Card (PDF)</span>
+              {downloaded ? (
+                <>
+                  <Check className="w-3.5 h-3.5 mr-1.5 text-emerald-300" />
+                  <span>Report Card Ready</span>
+                </>
+              ) : downloading ? (
+                <span>Generating PDF...</span>
+              ) : (
+                <>
+                  <Download className="w-3.5 h-3.5 mr-1.5" />
+                  <span>Download Report Card (PDF)</span>
+                </>
+              )}
             </Button>
           </div>
         </CardHeader>

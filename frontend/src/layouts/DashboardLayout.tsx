@@ -9,19 +9,19 @@ import {
   Menu, 
   X, 
   LogOut, 
-  Sun, 
-  Moon, 
   CalendarDays,
-  User as UserIcon
+  User as UserIcon,
+  Search
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { GlobalSearchModal } from '@/components/search';
 
 export const DashboardLayout: React.FC = () => {
   const { user, role, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   if (!user || !role) {
     return null;
@@ -29,18 +29,22 @@ export const DashboardLayout: React.FC = () => {
 
   const navItems = ROLE_NAVIGATION[role] || [];
 
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        if (role === 'Admin' || role === 'Principal' || role === 'Faculty') {
+          e.preventDefault();
+          setIsSearchOpen((prev) => !prev);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [role]);
+
   const handleLogout = () => {
     logout();
     navigate('/login');
-  };
-
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    if (!isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
   };
 
   const roleColors: Record<UserRole, string> = {
@@ -88,6 +92,23 @@ export const DashboardLayout: React.FC = () => {
 
         {/* Header Right Controls */}
         <div className="flex items-center gap-3 sm:gap-4">
+          {/* Quick Search Trigger (Admin, Principal, Faculty) */}
+          {(role === 'Admin' || role === 'Principal' || role === 'Faculty') && (
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-medium cursor-pointer transition-colors border border-slate-200 dark:border-slate-700"
+              title="Search institutional directory (Ctrl+K)"
+              aria-label="Search institutional directory"
+            >
+              <Search className="w-3.5 h-3.5 text-slate-500" />
+              <span className="hidden md:inline">Search Directory...</span>
+              <kbd className="hidden lg:inline px-1 py-0.5 text-[9px] font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-400">
+                Ctrl+K
+              </kbd>
+            </button>
+          )}
+
           {/* User & Role Information */}
           <div className="hidden sm:flex items-center gap-2.5 px-3 py-1.5 rounded-md bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
             <UserIcon className="w-3.5 h-3.5 text-slate-400" />
@@ -101,15 +122,7 @@ export const DashboardLayout: React.FC = () => {
             </div>
           </div>
 
-          {/* Theme Toggle Button */}
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors border border-slate-200 dark:border-slate-700"
-            title="Toggle theme"
-            aria-label="Toggle theme"
-          >
-            {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
+          {/* Theme: Light mode only (dark mode out of scope for Phase 2) */}
 
           {/* User Profile Avatar & Logout */}
           <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
@@ -173,7 +186,7 @@ export const DashboardLayout: React.FC = () => {
 
           {/* Footer Info */}
           <div className="pt-3 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-400 text-center">
-            <p className="font-semibold text-slate-600 dark:text-slate-400">{SCHOOL_CONFIG.shortName} ERP</p>
+            <p className="font-semibold text-slate-600 dark:text-slate-400">{SCHOOL_CONFIG.name}</p>
             <p>CBSE / ICSE School Edition</p>
           </div>
         </aside>
@@ -189,7 +202,7 @@ export const DashboardLayout: React.FC = () => {
               <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
                 <div className="flex items-center gap-2">
                   <GraduationCap className="w-5 h-5 text-blue-900 dark:text-blue-400" />
-                  <span className="font-bold text-sm">{SCHOOL_CONFIG.shortName} ERP</span>
+                  <span className="font-bold text-sm">{SCHOOL_CONFIG.name}</span>
                 </div>
                 <button 
                   onClick={() => setMobileMenuOpen(false)}
@@ -250,6 +263,13 @@ export const DashboardLayout: React.FC = () => {
           </div>
         </main>
       </div>
+
+      {/* Global Directory Search Modal (Admin, Principal, Faculty) */}
+      <GlobalSearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        userRole={role}
+      />
     </div>
   );
 };

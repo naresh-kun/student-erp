@@ -169,6 +169,8 @@ export const FacultyMarksEntrySheet: React.FC<FacultyMarksEntrySheetProps> = ({
             {/* Exam Selector & Action Toolbar */}
             <div className="flex flex-wrap items-center gap-2">
               <select
+                id="exam-type-select"
+                aria-label="Examination Assessment Type"
                 value={examName}
                 onChange={(e) => onExamChange?.(e.target.value)}
                 className="text-xs p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-semibold text-slate-800 dark:text-slate-200"
@@ -233,6 +235,8 @@ export const FacultyMarksEntrySheet: React.FC<FacultyMarksEntrySheetProps> = ({
                     <td className="py-2.5 px-3">
                       <div className="space-y-1">
                         <input
+                          id={`mark-input-${entry.student_id}`}
+                          aria-label={`Score for ${entry.student_name} (${entry.student_id})`}
                           type="text"
                           value={entry.score}
                           onChange={(e) => onScoreChange(entry.student_id, e.target.value)}

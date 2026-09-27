@@ -1,15 +1,15 @@
 # Phase 2 Execution Status: Frontend Core + Role Dashboards + Mock Data
 
 > **Phase**: Phase 2 (Frontend Demonstration & Role Dashboards)  
-> **Current Task**: **Task 2.5 Completed (Deep Admin & Principal Role Experiences)**  
-> **Status**: **IN PROGRESS (Task 2.5 COMPLETED; Ready for Task 2.6 Hardening & QA)**  
-> **Date**: 2026-09-25
+> **Current Task**: **Task 2.7 Completed (Operational Allocation, Search & Attendance Visibility Revision)**  
+> **Status**: **COMPLETE (All Phase 2 Tasks 2.1–2.7 DONE; 158/158 tests passing; Build clean; Browser QA passed)**  
+> **Date**: 2026-09-27
 
 ---
 
 ## 1. Phase Objective
 
-Build a complete, responsive, role-tailored presentation layer that demonstrates the Student ERP operating on synthetic mock datasets, adhering to a strict Service Abstraction Layer and covering all 5 system roles (Student, Parent, Faculty, Admin, Principal) across the fixed contract of 34 application routes + catch-all 404 route.
+Build a complete, responsive, role-tailored presentation layer that demonstrates the Student ERP operating on synthetic mock datasets, adhering to a strict Service Abstraction Layer and covering all 5 system roles (Student, Parent, Faculty, Admin, Principal) across the fixed contract of 34 application routes + catch-all 404 route, enhanced by the approved Task 2.7 functional amendment.
 
 ---
 
@@ -22,7 +22,8 @@ Build a complete, responsive, role-tailored presentation layer that demonstrates
 | **Task 2.3** | **Parent Role Experience** | Parent dashboard, children overview, progress cards, child timetable/calendar | **COMPLETED** |
 | **Task 2.4** | **Faculty Role Experience** | Faculty dashboard, assigned classes, attendance recording, grading sheets | **COMPLETED** |
 | **Task 2.5** | **Admin & Principal Roles** | Admin directory & allocation tools; Principal executive analytics & approvals | **COMPLETED** |
-| **Task 2.6** | **Hardening & Quality Assurance** | Vitest unit test suite, accessibility audit, responsive polish, final sign-off | `PLANNED` |
+| **Task 2.6** | **Hardening & Quality Assurance** | Full audit: academic model, attendance model, Student ID, streams, faculty scope, branding, routes, auth, a11y, responsive, mock/service abstraction, test suite, build, browser QA | **COMPLETED** |
+| **Task 2.7** | **Operational Allocation, Search & Attendance Visibility** | Approved amendment: student section allocation, Class Teacher allocation, absentee list (ONLY ABSENT), attendance not entered (unmarked sessions), global search, faculty subject visibility, Admin/Principal update+delete, Faculty view-only | **COMPLETED** |
 
 ---
 
@@ -217,12 +218,88 @@ While all 34 routes possess functional **demo presentation surfaces** and fully 
 
 ## 6. Testing & Validation Status
 
-- `npm run test:run`: **128/128 unit tests passing** across 7 test suites (`attendance.test.ts`, `grading.test.ts`, `student.test.ts`, `parent.test.ts`, `faculty.test.ts`, `admin.test.ts`, `principal.test.ts`).
-- `npm run build`: Validated clean compilation with **zero TypeScript errors** and exit code 0.
-- Browser Verification: Full end-to-end browser walkthrough conducted with zero console errors or visual defects across Admin and Principal portals.
+- `npm run test:run`: **158/158 unit tests passing** across 8 test suites:
+  - `attendance.test.ts` (15 tests)
+  - `grading.test.ts` (19 tests)
+  - `student.test.ts` (25 tests)
+  - `parent.test.ts` (21 tests)
+  - `faculty.test.ts` (22 tests)
+  - `admin.test.ts` (18 tests)
+  - `principal.test.ts` (10 tests)
+  - `task2_7.test.ts` (28 tests)
+- `npm run build`: Validated clean compilation with **zero TypeScript errors** and exit code 0. Bundle: 2543 modules transformed.
+- Browser Verification: Full end-to-end browser QA conducted across all three affected roles (Admin, Principal, Faculty) with zero console errors or visual defects.
 
 ---
 
-## 7. Next Task
+## 7. Task 2.6 Hardening Findings
 
-**Task 2.6: Phase 2 Hardening, Polishing, Vitest Suite & Formal Sign-Off**.
+### Fixed
+- **Dark mode toggle removed** (`DashboardLayout.tsx`): Dark mode is out of scope for Phase 2 (spec §12). The toggle button, `isDarkMode` state, `toggleTheme` function, and `Sun`/`Moon` imports were removed.
+
+### Verified as Conformant
+- Academic Model: Zero active GPA/CGPA/credits in UI code. Marks out of 100, CBSE 8-tier grades A1–E.
+- Attendance Model: Exactly PRESENT/ABSENT/ON_DUTY/LEAVE. No LATE/EXCUSED. Consistent formula.
+- Student ID: `STU202600001` format, immutable, parent login uses Student ID as username.
+- Parent scoping: Strictly child-scoped with `isChildLinkedToParent` guard.
+- Grade 11–12 streams: 4 approved streams, correct section patterns.
+- Faculty scope: Non-evaluative; no ratings/reviews/rankings.
+- `od_eligible` flag: Correctly labeled "On-Duty (OD) Sanction Eligible" — neutral, not a statutory claim.
+- Branding: "School ERP" consistently applied everywhere.
+- Routes: 34 + 404, all role guards functioning correctly.
+- Mock/service abstraction: Intact — page → hook/service → MockDataService → JSON.
+
+---
+
+## 8. Completed Work (Task 2.7 Approved Functional Amendment)
+
+- [x] **Student Section Allocation**:
+  - Implemented `StudentAllocationTable` and `StudentAllocationModal` under `frontend/src/components/allocation/`.
+  - Full operational hierarchy: `Academic Year → Grade → Stream (Grades 11–12) → Section → Student`.
+  - Student ID is permanent, unique, and strictly immutable (locked form field).
+  - Admin and Principal can update Grade, Stream, Section, and Roll Number with non-blocking feedback.
+  - Admin and Principal can delete allocations with explicit confirmation modal: `"Remove [Student Name] ([Student ID]) from [Grade] — [Section]? The student will be marked as Unassigned."`
+  - Faculty view-only access: Faculty can inspect allocations (`FacultyClassesPage.tsx`) but modification controls (`Update`/`Delete`) are completely suppressed (`canManage={false}`).
+- [x] **Class Teacher Allocation Governance**:
+  - Implemented `ClassTeacherAllocationTable` and `ClassTeacherAllocationModal`.
+  - Displays Faculty ID, Name, Designation, and Assigned Subject(s).
+  - Admin and Principal can assign and update Class Teachers across sections.
+  - Admin and Principal can remove Class Teachers with confirmation modal: `"Remove [Faculty Name] as Class Teacher for [Grade] — [Section]?"`
+  - Faculty view-only access in `FacultyClassesPage.tsx` without modification controls.
+- [x] **Faculty Subject Assignment Visibility**:
+  - Prominent subject badges rendered in Faculty Directory (`FacultyDirectory.tsx`), Class Teacher Allocation Table, Global Search results, and staff profiles.
+  - Faculty information remains strictly non-evaluative: zero ratings, leaderboards, or performance scores.
+- [x] **Strict Student Absentees List**:
+  - Dedicated `StudentAbsenteesTable` under `frontend/src/components/attendance/`.
+  - Displays strictly and ONLY students with attendance status `ABSENT`.
+  - Excludes `PRESENT`, `ON_DUTY`, and `LEAVE` (`LEAVE` and `ABSENT` remain distinct).
+  - Integrated into Admin (`AttendanceOversight.tsx`), Principal (`AttendanceAnalytics.tsx`), and Faculty (`FacultyAttendancePage.tsx`).
+  - School-wide visibility for Admin & Principal; scoped strictly to assigned classes/subjects for Faculty.
+- [x] **Attendance Not Entered Visibility**:
+  - Dedicated `AttendanceNotEnteredTable` identifying scheduled timetable periods with unentered roll call.
+  - Displays status `NOT ENTERED`, semantically and visually distinct from student absentees.
+  - Integrated into Admin, Principal, and Faculty attendance views.
+  - School-wide visibility for Admin & Principal; scoped to assigned sessions for Faculty.
+- [x] **Multi-Role Global Directory Search**:
+  - `GlobalSearchModal` accessible via header search trigger or `Ctrl+K` for Admin, Principal, and Faculty.
+  - Supports searching Students (by ID, name, section, roll number) and Faculty (by name, employee code, department, designation, subject).
+  - Results for Admin and Principal include inline `Update` and `Delete` action triggers for allocations.
+  - Results for Faculty are strictly view-only (no modification actions).
+  - Clean empty state on zero results.
+- [x] **Architecture, Invariants & Mock State**:
+  - Preserved CBSE 8-tier grading and Master Plan Amendment 2 attendance formula: $(P + OD) / Total \times 100$.
+  - Preserved Grades 11–12 stream constraints (`Computer Science A`, `Bio-Maths B`, `Commerce C`, `Pure Science D`).
+  - Service abstraction maintained: UI components interact via `AllocationService` with zero raw JSON imports.
+  - Non-blocking UI feedback throughout (zero browser `alert()`).
+  - Changes operate in client-side mock state; real backend persistence remains scheduled for Phase 3.
+- [x] **Automated Test Suite**:
+  - 28 new automated unit tests in `frontend/tests/task2_7.test.ts`. Total test suite: 158/158 passing.
+
+---
+
+## 9. Phase 2 Completion Sign-Off
+
+**Phase 2 is FULLY COMPLETE** including all original tasks (2.1–2.6) and the approved operational amendment (Task 2.7). All functional, testing, build, and browser QA exit criteria are satisfied.
+
+Phase 3 (Backend Integration: Django, DRF, PostgreSQL, Redis) may begin upon formal stakeholder approval.
+

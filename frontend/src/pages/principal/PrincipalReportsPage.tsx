@@ -8,7 +8,7 @@ export const PrincipalReportsPage: React.FC = () => {
     <PageContainer>
       <SectionHeader
         title="Executive Reports & Accreditation Archive"
-        description="Official school performance dossiers, board examination filings, and statutory approval sign-offs"
+        description="Executive school performance dossiers, term examination summaries, and formal approval sign-offs"
       />
       <ReportsOverview />
     </PageContainer>

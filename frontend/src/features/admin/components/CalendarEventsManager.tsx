@@ -213,8 +213,10 @@ export const CalendarEventsManager: React.FC = () => {
 
             <form onSubmit={handleSubmit} className="space-y-3 text-xs">
               <div className="space-y-1">
-                <label className="font-semibold text-slate-700 dark:text-slate-300">Event Title</label>
+                <label htmlFor="event-title-input" className="font-semibold text-slate-700 dark:text-slate-300">Event Title</label>
                 <input
+                  id="event-title-input"
+                  aria-label="Event Title"
                   type="text"
                   placeholder="e.g. Annual Sports Meet 2026"
                   value={formData.title}
@@ -226,8 +228,10 @@ export const CalendarEventsManager: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">Category</label>
+                  <label htmlFor="event-category-select" className="font-semibold text-slate-700 dark:text-slate-300">Category</label>
                   <select
+                    id="event-category-select"
+                    aria-label="Category"
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
                     className="w-full px-3 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
@@ -242,8 +246,10 @@ export const CalendarEventsManager: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">Venue / Location</label>
+                  <label htmlFor="event-location-input" className="font-semibold text-slate-700 dark:text-slate-300">Venue / Location</label>
                   <input
+                    id="event-location-input"
+                    aria-label="Venue / Location"
                     type="text"
                     placeholder="e.g. School Playground"
                     value={formData.location}
@@ -256,8 +262,10 @@ export const CalendarEventsManager: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">Start Date</label>
+                  <label htmlFor="event-start-date-input" className="font-semibold text-slate-700 dark:text-slate-300">Start Date</label>
                   <input
+                    id="event-start-date-input"
+                    aria-label="Start Date"
                     type="date"
                     value={formData.start_date}
                     onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
@@ -267,8 +275,10 @@ export const CalendarEventsManager: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">End Date</label>
+                  <label htmlFor="event-end-date-input" className="font-semibold text-slate-700 dark:text-slate-300">End Date</label>
                   <input
+                    id="event-end-date-input"
+                    aria-label="End Date"
                     type="date"
                     value={formData.end_date}
                     onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
@@ -279,8 +289,10 @@ export const CalendarEventsManager: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="font-semibold text-slate-700 dark:text-slate-300">Description</label>
+                <label htmlFor="event-description-textarea" className="font-semibold text-slate-700 dark:text-slate-300">Description</label>
                 <textarea
+                  id="event-description-textarea"
+                  aria-label="Description"
                   rows={3}
                   placeholder="Official notice and instructions for students, parents, or staff..."
                   value={formData.description}
@@ -291,8 +303,10 @@ export const CalendarEventsManager: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-4 pt-1">
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label htmlFor="event-od-eligible-checkbox" className="flex items-center gap-2 cursor-pointer">
                   <input
+                    id="event-od-eligible-checkbox"
+                    aria-label="On-Duty (OD) Sanction Eligible"
                     type="checkbox"
                     checked={formData.od_eligible}
                     onChange={(e) => setFormData({ ...formData, od_eligible: e.target.checked })}
@@ -301,8 +315,10 @@ export const CalendarEventsManager: React.FC = () => {
                   <span>On-Duty (OD) Sanction Eligible</span>
                 </label>
 
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label htmlFor="event-holiday-checkbox" className="flex items-center gap-2 cursor-pointer">
                   <input
+                    id="event-holiday-checkbox"
+                    aria-label="School Closed (Holiday)"
                     type="checkbox"
                     checked={formData.is_holiday}
                     onChange={(e) => setFormData({ ...formData, is_holiday: e.target.checked })}

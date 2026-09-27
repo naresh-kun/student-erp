@@ -3,6 +3,91 @@
 All notable changes to the Student ERP project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Phase 2: Task 2.7 — Operational Allocation, Search & Attendance Visibility Revision] - 2026-09-27
+
+### Summary
+Approved post-Phase-2 functional and UI amendment implementing operational student section allocation, Class Teacher allocation governance, dedicated student absentees visibility (ONLY status ABSENT), attendance-not-entered visibility (unentered timetable sessions), multi-role directory search (Admin, Principal, Faculty), and prominent faculty subject visibility. Update and Delete actions are strictly restricted to Admin and Principal roles, while Faculty access is strictly view-only.
+
+### Added
+- **Domain Allocation Service (`frontend/src/services/allocationService.ts`)**:
+  - In-memory mock service providing typed async methods for operational student allocations, Class Teacher assignments, absentee records, unentered sessions, and global search.
+  - Zero raw JSON imports; adheres strictly to the existing Service Abstraction Layer.
+- **Student Section Allocation Components (`frontend/src/components/allocation/`)**:
+  - `StudentAllocationTable`: Enterprise table with search, grade filter, stream filter, status badges, and role-based action controls (`canManage` prop).
+  - `StudentAllocationModal`: Real enterprise form for reassigning grade, stream, section, and roll number while strictly locking the immutable Student ID (`STU202600001`).
+  - Confirmation modal for deletion ("Remove [Student Name] ([Student ID]) from [Grade] — [Section]? The student will be marked as Unassigned.") and non-blocking success notices.
+- **Class Teacher Allocation Components (`frontend/src/components/allocation/`)**:
+  - `ClassTeacherAllocationTable`: Displays Faculty ID, Name, Designation, and Assigned Subject(s) with Update and Delete action buttons for Admin & Principal.
+  - `ClassTeacherAllocationModal`: Enterprise dialog to assign designated Class Teachers across academic sections.
+  - Confirmation modal for Class Teacher removal ("Remove [Faculty Name] as Class Teacher for [Grade] — [Section]?").
+- **Strict Student Absentees Visibility (`frontend/src/components/attendance/StudentAbsenteesTable.tsx`)**:
+  - Dedicated table containing strictly students with status `ABSENT`. Excludes `PRESENT`, `ON_DUTY`, and `LEAVE`.
+  - Filterable by grade, date, and text query.
+  - Scoped school-wide for Admin and Principal; scoped strictly to assigned classes for Faculty.
+- **Attendance-Not-Entered Visibility (`frontend/src/components/attendance/AttendanceNotEnteredTable.tsx`)**:
+  - Dedicated table identifying scheduled timetable sessions where roll-call submission remains pending.
+  - Displays session date, grade, section, subject, period, and assigned faculty with status `NOT ENTERED`.
+  - Scoped school-wide for Admin and Principal; scoped strictly to assigned responsibilities for Faculty.
+- **Multi-Role Global Directory Search (`frontend/src/components/search/GlobalSearchModal.tsx`)**:
+  - Header search trigger (`Search Directory...` or `Ctrl+K`) for Admin, Principal, and Faculty.
+  - Real-time search across Students (ID, name, section, roll number) and Faculty (name, employee code, department, designation, subjects).
+  - Direct `Update` and `Delete` action triggers in search results for Admin and Principal.
+  - Search results for Faculty are strictly view-only with all mutation buttons suppressed.
+  - Clean empty state on no results.
+- **Principal Allocation Workspace (`frontend/src/pages/principal/PrincipalAllocationPage.tsx`)**:
+  - Added new route `/principal/allocation` in `frontend/src/app/router.tsx` and sidebar navigation item in `frontend/src/app/navigation.ts`.
+  - Provides executive operational governance over Student Section Allocation and Class Teacher Allocation with full Update/Delete capabilities.
+- **Automated Vitest Test Suite (`frontend/tests/task2_7.test.ts`)**:
+  - 28 automated tests covering student section allocation, Class Teacher allocation, faculty subject visibility, student absentees scoping, attendance not entered scoping, role-tailored search, attendance formula invariants, and CBSE 8-tier grades.
+
+### Security & Governance
+- **Role Invariant**: Update and Delete controls are strictly reserved for Admin and Principal. Faculty UI is guaranteed view-only across all allocation views, search results, and rosters.
+- **Immutable Student ID**: Student ID cannot be modified during section updates.
+- **Faculty Non-Evaluative Architecture**: Staff directories and search results display subject assignments descriptively without ratings, rankings, or performance scores.
+- **Attendance Model**: Preserved canonical 4-status model (`PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`) and calculation formula.
+- **Mock State**: All modifications are maintained in client-side mock memory; real backend persistence remains scheduled for Phase 3.
+
+### Testing & Verification
+- Vitest: 158/158 tests passing across 8 suites.
+- Build: Zero TypeScript errors; clean bundle output.
+- Browser QA: Verified Admin, Principal, and Faculty workflows, modal forms, delete confirmations, non-blocking toasts, search modal, and 404 recovery with zero console errors.
+
+---
+
+## [Phase 2: Task 2.6 — Hardening, Cross-Module Reconciliation, QA & Phase 2 Closure] - 2026-09-26
+
+### Summary
+Final Phase 2 hardening and quality assurance pass across all modules (Tasks 2.1–2.5). Comprehensive audit spanning academic model correctness, attendance status consistency, grading model, Student ID, parent scoping, stream model, faculty scope, Admin/Principal boundaries, branding, route guards, accessibility, and responsive behavior.
+
+### Fixed
+- **Dark mode toggle removed from `DashboardLayout.tsx`**: The `isDarkMode` state, `toggleTheme` function, and Sun/Moon theme toggle button were removed. Dark mode is explicitly out of scope for Phase 2 (spec §12). The button was actively applying `document.documentElement.classList.add('dark')`, which would activate the `dark:` variants present throughout the codebase; removing it keeps the app strictly in its intended light-mode enterprise design.
+
+### Verified (No Changes Required)
+- **Academic Model**: Zero active GPA, CGPA, credit, or semester-credit usage in all active UI files. All marks are out of 100 with CBSE 8-tier letter grades (A1–E) via `src/utils/grading.ts`. Verified edge cases (32.99/33/40.99/41/90.99/91/100) pass in 19 automated grading tests.
+- **Attendance Model**: Confirmed exactly 4 canonical statuses (PRESENT, ABSENT, ON_DUTY, LEAVE) across all role portals. No LATE or EXCUSED status found anywhere in active code or data. Formula `(P + OD) / (P + A + OD + L) × 100` consistently applied via shared `src/utils/attendance.ts`. Verified by 15 automated tests.
+- **Student ID**: Format `STU202600001` (STU + 4-digit year + 5-digit sequence) used consistently. Displayed in student profile, parent portal, admin directory. Student ID is immutable and non-editable in UI. Parent login uses Student ID as username (`STU202600001` / `demo123`).
+- **Parent Child Scoping**: Parent access strictly scoped to linked `children_student_ids`. `isChildLinkedToParent` guard prevents cross-ward access. No administrative or other-user data accessible from parent portal.
+- **Grade 11–12 Streams**: Four streams verified (Computer Science A, Bio-Maths B, Commerce C, Pure Science D) with sections A1–A3, B1–B3, C1–C3, D1–D3. Grade 10 has no stream. Admin allocation respects stream boundaries.
+- **Faculty Scope**: Zero faculty performance ratings, rankings, appraisals, or evaluative reviews found in any active code. Staff directory shows only designations, departments, qualifications, and workload counts.
+- **OD-Eligible Terminology**: `od_eligible` field in calendar events is correctly described as "On-Duty (OD) attendance sanction; strictly NOT academic credit." Label in UI is "On-Duty (OD) Sanction Eligible" — neutral, accurate, and not an unsupported statutory claim.
+- **Report Endorsement Workflow**: Principal reports workflow uses neutral institutional terms (Draft → Review → Approved). No unsupported statutory/board/government certification claims found.
+- **Branding**: "School ERP" consistently applied in browser header, login portal, sidebar, footer, and auth notice. No competing school names, placeholder branding, or university terminology found.
+- **Routes**: All 34 routes + 404 verified. Role guards redirect correctly: Student attempting `/admin/dashboard` is redirected to `/student/dashboard`. Unauthenticated users redirected to `/login`. 404 catch-all route renders correct page.
+- **Authentication**: Login page shows demo credential notice. Dev mode panel hidden behind `?dev=true` or `Alt+Shift+D`. Role is derived strictly from matched synthetic user record.
+- **Mock/Service Abstraction**: All pages consume hooks/services, not raw JSON imports. Mock data flows: `JSON → MockDataService → typed data → React page/component`.
+- **Console**: Zero `console.log` statements in production source code. Two `console.warn` statements preserved for legitimate security/session-parse audit purposes.
+
+### Testing
+- **Test suite**: 130/130 Vitest unit tests passing across 7 suites (2 new parent tests were added in Task 2.5 that were not reflected in the prior count of 128).
+- **Build**: Zero TypeScript errors, zero build errors. `npm run build` exits with code 0. Bundle: 2530 modules, 484 KB main chunk.
+
+### Browser QA
+- Full walkthrough across all 5 role portals (Student, Parent, Faculty, Admin, Principal).
+- All routes verified, logout/login cycle verified, 404 page verified.
+- Zero unhandled JavaScript exceptions or React rendering errors across all tested pages.
+
+---
+
 ## [Phase 2: Task 2.5 — Deep Admin & Principal Role Experiences] - 2026-09-25
 
 ### Added

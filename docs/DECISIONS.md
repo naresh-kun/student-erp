@@ -140,3 +140,49 @@
   - Complete mathematical consistency across marks, percentage, and 8-tier letter grades in all 5 user roles.
   - Full adherence to Master Plan Amendment 2 four-status attendance model (`PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`).
 
+---
+
+## ADR 009: Operational Allocation, Search & Attendance Visibility Revision (Task 2.7 Approved Functional Amendment)
+
+- **Status**: ACCEPTED / AUTHORITATIVE (Approved Post-Phase-2 Functional Amendment)
+- **Context**: 
+  - Following completion of Phase 2 core dashboards, operational amendments were approved under Task 2.7 to support real-world school administrative workflows:
+    1. Operational student section allocation when joining or transferring.
+    2. Class Teacher allocation governance.
+    3. Dedicated visibility for unexcused student absentees (distinct from leave).
+    4. Dedicated visibility for unentered attendance sessions (unmarked timetable slots).
+    5. Multi-role global search for students and faculty across Admin, Principal, and Faculty.
+    6. Prominent faculty subject assignment visibility.
+    7. Delegation of update/delete capabilities on allocation records exclusively to Admin and Principal, strictly excluding Faculty.
+- **Decision**:
+  1. **Operational Student Section Allocation**:
+     - Preserves hierarchy: Academic Year → Grade → Stream (Grades 11–12) → Section → Student.
+     - Student ID is permanent, unique, and immutable. Update forms permit modifying Grade, Stream, Section, and Roll Number, but lock Student ID.
+     - Admin and Principal hold Update/Delete permissions. Faculty access is strictly view-only (no modification controls).
+     - Deletion requires clear confirmation ("Remove [Student Name] ([Student ID]) from [Grade] — [Section]? The student will be marked as Unassigned.") and non-blocking success feedback.
+  2. **Class Teacher Allocation Governance**:
+     - Admin and Principal can assign, update, and remove designated Class Teachers across all grades, streams, and sections.
+     - Faculty records require Faculty ID, Name, Designation, and Assigned Subject(s).
+     - Deletion requires explicit confirmation ("Remove [Faculty Name] as Class Teacher for [Grade] — [Section]?").
+  3. **Faculty Subject Visibility**:
+     - Whenever faculty members appear in directories, allocations, search results, or class rosters, their assigned subject(s) are clearly displayed via compact badges.
+     - Faculty data remains strictly descriptive and non-evaluative (zero ratings, rankings, or performance scores).
+  4. **Strict Student Absentees Visibility**:
+     - Dedicated visibility surfaces display ONLY students whose attendance status is `ABSENT`.
+     - Excludes `PRESENT`, `ON_DUTY`, and `LEAVE` (LEAVE and ABSENT remain strictly distinct).
+     - Admin and Principal view school-wide absentees; Faculty views absentees scoped strictly to assigned classes/subjects.
+  5. **Attendance-Not-Entered Visibility**:
+     - Dedicated visibility surfaces identify scheduled timetable periods where roll call has NOT yet been marked/submitted.
+     - Represents unentered sessions (status `NOT ENTERED`), distinct from student absence.
+     - Admin and Principal view school-wide unentered sessions; Faculty views sessions scoped to assigned responsibilities.
+  6. **Role-Tailored Directory Search**:
+     - Admin and Principal can search students and faculty with allocation management actions directly in results.
+     - Faculty can search students and faculty for reference/lookup; Update/Delete actions are suppressed.
+  7. **Mock State Limitation**:
+     - All mutations operate on client-side in-memory mock state via the domain Service Abstraction Layer (`AllocationService`). Backend REST persistence is strictly deferred to Phase 3.
+- **Consequences**:
+  - Full operational capability for Admin and Principal workflows.
+  - Clean role separation preventing unauthorized faculty mutations.
+  - Zero violation of Phase 2 architectural boundaries or attendance 4-status invariants.
+
+

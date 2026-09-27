@@ -64,6 +64,7 @@ import {
   PrincipalAttendancePage,
   PrincipalFacultyPage,
   PrincipalReportsPage,
+  PrincipalAllocationPage,
 } from '@/pages/principal';
 
 const RootRedirect: React.FC = () => {
@@ -72,7 +73,7 @@ const RootRedirect: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingState message="Initializing Student ERP..." />
+        <LoadingState message="Initializing School ERP..." />
       </div>
     );
   }
@@ -190,6 +191,7 @@ export const router = createBrowserRouter([
           { path: '/principal/attendance', element: <PrincipalAttendancePage /> },
           { path: '/principal/faculty', element: <PrincipalFacultyPage /> },
           { path: '/principal/reports', element: <PrincipalReportsPage /> },
+          { path: '/principal/allocation', element: <PrincipalAllocationPage /> },
         ],
       },
     ],

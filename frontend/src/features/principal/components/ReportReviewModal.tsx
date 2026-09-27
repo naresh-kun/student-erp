@@ -4,12 +4,13 @@
  *
  * CRITICAL GOVERNANCE:
  * - Mock state workflow: Draft -> Review -> Approved.
- * - Head of Institution review and statutory endorsement.
+ * - Head of Institution review and formal approval.
  */
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { SCHOOL_CONFIG } from '@/config/schoolConfig';
 import type { InstitutionalReportItem, ReportApprovalState } from '../types';
 import { X, Download, ShieldCheck, Check } from 'lucide-react';
 
@@ -37,7 +38,7 @@ export const ReportReviewModal: React.FC<ReportReviewModalProps> = ({
     const textContent = `
 ================================================================================
 INSTITUTIONAL GOVERNANCE REPORT
-School: Modern Public Senior Secondary School, New Delhi
+School: ${SCHOOL_CONFIG.name}, ${SCHOOL_CONFIG.city}
 Academic Session: ${report.academic_year}
 Title: ${report.title}
 Category: ${report.category}
@@ -143,12 +144,12 @@ ${report.description}
         {/* Action Controls */}
         <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
           <div className="space-y-1.5">
-            <label htmlFor="endorsement-state-select" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Executive Endorsement Action
+            <label htmlFor="approval-state-select" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              Executive Review & Approval
             </label>
             <select
-              id="endorsement-state-select"
-              aria-label="Executive Endorsement Action"
+              id="approval-state-select"
+              aria-label="Executive Review & Approval"
               value={targetStatus}
               onChange={(e) => setTargetStatus(e.target.value as ReportApprovalState)}
               className="w-full px-3 py-1.5 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-semibold"
@@ -160,13 +161,13 @@ ${report.description}
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="principal-endorsement-remarks" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <label htmlFor="principal-review-remarks" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
               Principal Review Remarks
             </label>
             <input
-              id="principal-endorsement-remarks"
+              id="principal-review-remarks"
               type="text"
-              placeholder="e.g. Endorsed for CBSE Department inspection filing"
+              placeholder="e.g. Approved following executive curriculum review"
               value={remarks}
               onChange={(e) => setRemarks(e.target.value)}
               className="w-full px-3 py-1.5 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
@@ -200,7 +201,7 @@ ${report.description}
               className="text-xs bg-blue-900 hover:bg-blue-800 font-semibold flex items-center gap-1.5"
             >
               <Check className="w-3.5 h-3.5" />
-              <span>Update Endorsement</span>
+              <span>Update Approval Status</span>
             </Button>
           </div>
         </div>

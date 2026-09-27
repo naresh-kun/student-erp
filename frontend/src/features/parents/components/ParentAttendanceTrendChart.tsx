@@ -77,7 +77,7 @@ export const ParentAttendanceTrendChart: React.FC<ParentAttendanceTrendChartProp
                 }}
               />
               <ReferenceLine y={85} stroke="#10b981" strokeDasharray="4 4" label={{ value: '85% Board Target', position: 'insideTopRight', fill: '#059669', fontSize: 10 }} />
-              <ReferenceLine y={75} stroke="#f59e0b" strokeDasharray="3 3" label={{ value: '75% Statutory Min', position: 'insideBottomRight', fill: '#d97706', fontSize: 10 }} />
+              <ReferenceLine y={75} stroke="#f59e0b" strokeDasharray="3 3" label={{ value: '75% Minimum Requirement', position: 'insideBottomRight', fill: '#d97706', fontSize: 10 }} />
               <Area
                 type="monotone"
                 dataKey="attendance"

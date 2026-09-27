@@ -24,7 +24,7 @@ export const NotFoundPage: React.FC = () => {
       </div>
       <h1 className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">404 — Page Not Found</h1>
       <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-md">
-        The requested path does not exist in the Student ERP routing contract or you may lack appropriate permissions.
+        The requested path does not exist in the School ERP routing contract or you may lack appropriate permissions.
       </p>
       <div className="mt-6">
         <Button onClick={handleReturn} className="inline-flex items-center gap-2">

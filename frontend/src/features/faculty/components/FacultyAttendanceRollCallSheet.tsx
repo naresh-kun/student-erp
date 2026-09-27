@@ -58,7 +58,7 @@ export const FacultyAttendanceRollCallSheet: React.FC<FacultyAttendanceRollCallS
   }> = [
     { status: 'PRESENT', label: 'Present', activeClass: 'bg-emerald-600 text-white shadow-sm', badgeVariant: 'success' },
     { status: 'ON_DUTY', label: 'On Duty', activeClass: 'bg-blue-600 text-white shadow-sm', badgeVariant: 'info' },
-    { status: 'LEAVE', label: 'Approved Leave', activeClass: 'bg-amber-600 text-white shadow-sm', badgeVariant: 'warning' },
+    { status: 'LEAVE', label: 'Approved Leave', activeClass: 'bg-purple-600 text-white shadow-sm', badgeVariant: 'warning' },
     { status: 'ABSENT', label: 'Absent', activeClass: 'bg-rose-600 text-white shadow-sm', badgeVariant: 'destructive' },
   ];
 
@@ -209,8 +209,8 @@ export const FacultyAttendanceRollCallSheet: React.FC<FacultyAttendanceRollCallS
                     </td>
                     <td className="py-2.5 px-3">
                       {student.status === 'LEAVE' ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-amber-700 dark:text-amber-400 font-medium">
-                          <AlertCircle className="w-3 h-3 text-amber-500 shrink-0" />
+                        <span className="inline-flex items-center gap-1 text-[11px] text-purple-700 dark:text-purple-400 font-medium">
+                          <AlertCircle className="w-3 h-3 text-purple-500 shrink-0" />
                           <span>{student.leave_reason || 'Approved Medical Leave'}</span>
                         </span>
                       ) : student.status === 'ON_DUTY' ? (

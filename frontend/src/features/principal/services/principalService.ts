@@ -229,7 +229,9 @@ export class PrincipalService {
         (f) =>
           f.name.toLowerCase().includes(q) ||
           f.employee_code.toLowerCase().includes(q) ||
-          f.department.toLowerCase().includes(q)
+          f.department.toLowerCase().includes(q) ||
+          f.designation.toLowerCase().includes(q) ||
+          f.assigned_subjects.some((sub) => sub.toLowerCase().includes(q))
       );
     }
 

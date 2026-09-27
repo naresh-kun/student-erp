@@ -371,10 +371,24 @@ export class AdminService {
   // ==========================================
   // 4. FACULTY DIRECTORY (Non-Evaluative)
   // ==========================================
-  static async getFaculty(search?: string, department?: string): Promise<AdminFacultyItem[]> {
+  static async getFaculty(
+    searchOrOptions?: string | { search?: string; department?: string },
+    department?: string
+  ): Promise<AdminFacultyItem[]> {
     await delay();
     const rawFaculty = await MockDataService.getFaculty();
     const subjects = await MockDataService.getSubjects();
+
+    let searchStr: string | undefined;
+    let deptStr: string | undefined;
+
+    if (typeof searchOrOptions === 'object' && searchOrOptions !== null) {
+      searchStr = searchOrOptions.search;
+      deptStr = searchOrOptions.department;
+    } else {
+      searchStr = searchOrOptions;
+      deptStr = department;
+    }
 
     const facultyItems: AdminFacultyItem[] = rawFaculty.map((f) => {
       const assignedSubjectNames = (f.assigned_subject_ids || []).map((subId) => {
@@ -407,17 +421,18 @@ export class AdminService {
     });
 
     let result = facultyItems;
-    if (department && department !== 'ALL') {
-      result = result.filter((f) => f.department === department);
+    if (deptStr && deptStr !== 'ALL') {
+      result = result.filter((f) => f.department === deptStr);
     }
-    if (search) {
-      const q = search.toLowerCase();
+    if (searchStr) {
+      const q = searchStr.toLowerCase();
       result = result.filter(
         (f) =>
           f.name.toLowerCase().includes(q) ||
           f.employee_code.toLowerCase().includes(q) ||
           f.department.toLowerCase().includes(q) ||
-          f.designation.toLowerCase().includes(q)
+          f.designation.toLowerCase().includes(q) ||
+          f.assigned_subjects.some((sub) => sub.toLowerCase().includes(q))
       );
     }
 

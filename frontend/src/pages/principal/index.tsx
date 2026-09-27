@@ -8,3 +8,4 @@ export * from './PrincipalAcademicsPage';
 export * from './PrincipalAttendancePage';
 export * from './PrincipalFacultyPage';
 export * from './PrincipalReportsPage';
+export * from './PrincipalAllocationPage';

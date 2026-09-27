@@ -17,7 +17,7 @@ import {
   School, 
   CheckCircle2, 
   ArrowRight,
-  Sparkles,
+  SlidersHorizontal,
   ClipboardList,
   Layers
 } from 'lucide-react';
@@ -60,7 +60,7 @@ export const AdminDashboard: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2.5">
           <Link to="/admin/allocation">
             <Button variant="secondary" className="bg-white text-blue-950 hover:bg-blue-50 text-xs font-semibold shadow-sm">
-              <Sparkles className="w-3.5 h-3.5 mr-1.5 text-blue-700" />
+              <SlidersHorizontal className="w-3.5 h-3.5 mr-1.5 text-blue-700" />
               Class Allocation Engine
             </Button>
           </Link>

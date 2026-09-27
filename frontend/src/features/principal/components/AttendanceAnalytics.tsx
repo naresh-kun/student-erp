@@ -11,12 +11,14 @@
  * - STRICTLY NO faculty performance rankings.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingState, ErrorState } from '@/components/ui/States';
+import { StudentAbsenteesTable } from '@/components/attendance/StudentAbsenteesTable';
+import { AttendanceNotEnteredTable } from '@/components/attendance/AttendanceNotEnteredTable';
 import { usePrincipalAttendance } from '../hooks/usePrincipalAttendance';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, BarChart3, UserX, Clock } from 'lucide-react';
 import { 
   ResponsiveContainer, 
   BarChart, 
@@ -32,6 +34,7 @@ import {
 } from 'recharts';
 
 export const AttendanceAnalytics: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'telemetry' | 'absentees' | 'not_entered'>('telemetry');
   const { telemetry, isLoading, error, refresh } = usePrincipalAttendance();
 
   if (isLoading || !telemetry) {
@@ -67,6 +70,48 @@ export const AttendanceAnalytics: React.FC = () => {
         </Badge>
       </Card>
 
+      {/* Tab Switcher */}
+      <div className="flex border-b border-slate-200 dark:border-slate-800 space-x-6">
+        <button
+          type="button"
+          onClick={() => setActiveTab('telemetry')}
+          className={`pb-3 px-1 text-sm font-semibold border-b-2 flex items-center gap-2 transition-colors ${
+            activeTab === 'telemetry'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+          }`}
+        >
+          <BarChart3 className="w-4 h-4" />
+          Presence Telemetry
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('absentees')}
+          className={`pb-3 px-1 text-sm font-semibold border-b-2 flex items-center gap-2 transition-colors ${
+            activeTab === 'absentees'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+          }`}
+        >
+          <UserX className="w-4 h-4" />
+          Student Absentees
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('not_entered')}
+          className={`pb-3 px-1 text-sm font-semibold border-b-2 flex items-center gap-2 transition-colors ${
+            activeTab === 'not_entered'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+          }`}
+        >
+          <Clock className="w-4 h-4" />
+          Attendance Not Entered
+        </button>
+      </div>
+
+      {activeTab === 'telemetry' && (
+        <div className="space-y-6">
       {/* 4-Status Reconciliation KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-blue-600 col-span-2 sm:col-span-1 shadow-sm">
@@ -205,6 +250,16 @@ export const AttendanceAnalytics: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+        </div>
+      )}
+
+      {activeTab === 'absentees' && (
+        <StudentAbsenteesTable userRole="Principal" />
+      )}
+
+      {activeTab === 'not_entered' && (
+        <AttendanceNotEnteredTable userRole="Principal" />
+      )}
     </div>
   );
 };

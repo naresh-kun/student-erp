@@ -96,3 +96,48 @@ The following edge-case rules are marked as **PLANNED FOR REFINEMENT** in future
 1. **Multi-Child Parent Switching**: Mechanism for parents with children in multiple disparate grade levels to toggle active student context in both UI and API queries.
 2. **Substitute Teacher Delegation**: Temporary delegation of attendance/marks entry privileges to a substitute teacher when primary faculty is on leave.
 3. **Dual Role Accounts**: Handling staff members who are simultaneously parents of enrolled students (e.g. active role switching sessions).
+
+---
+
+## 6. Task 2.7 Approved Functional Amendment — Operational Allocation, Search & Attendance Visibility Governance
+
+> **Amendment Status**: APPROVED / AUTHORITATIVE (Post-Phase-2 Functional Amendment)  
+> **Effective Date**: 2026-09-27  
+
+Task 2.7 establishes explicit operational allocation, search, and attendance visibility rules across Admin, Principal, and Faculty roles:
+
+### 6.1 Role Entitlement Matrix (Task 2.7)
+
+| Operational Capability | Admin | Principal | Faculty | Student / Parent |
+| :--- | :--- | :--- | :--- | :--- |
+| **Student Section Allocation** | View, Update, Delete (Full) | View, Update, Delete (Full) | View-Only (Assigned classes/sections) | No Access |
+| **Class Teacher Allocation** | View, Update, Delete (Full) | View, Update, Delete (Full) | View-Only (Directory reference) | No Access |
+| **Global Directory Search** | Students & Faculty (with Update/Delete) | Students & Faculty (with Update/Delete) | Students & Faculty (View-Only; No Update/Delete) | Scoped Profile Only |
+| **Student Absentees List** | School-Wide (Status: `ABSENT` only) | School-Wide (Status: `ABSENT` only) | Scoped (Assigned classes/subjects only) | No Access |
+| **Attendance Not Entered** | School-Wide (`NOT ENTERED` sessions) | School-Wide (`NOT ENTERED` sessions) | Scoped (Assigned teaching sessions only) | No Access |
+| **Faculty Subject Visibility** | Full visibility across all views | Full visibility across all views | Full visibility in directory/search | View assigned teachers |
+
+### 6.2 Specific Permission Invariants
+
+1. **Update and Delete Authority**:
+   - Strictly reserved for **Admin** and **Principal**.
+   - Faculty members **MUST NOT** receive modification controls (buttons, modals, or API endpoints) for student allocations, Class Teacher assignments, or master data.
+   - Principal allocation mutations are explicitly authorized for section and Class Teacher operational governance; this does not generalize Principal into an all-purpose administrative CRUD operator for lower-level infrastructure.
+2. **Student Section Allocation**:
+   - Follows institutional hierarchy: `Academic Year → Grade → Stream (Grades 11–12) → Section → Student`.
+   - The system-generated Student ID (e.g. `STU202600001`) is permanent and immutable; it cannot be modified during section updates.
+   - Deletion requires an explicit confirmation dialog detailing the exact student and section being unassigned, with non-blocking feedback.
+3. **Class Teacher Allocation**:
+   - Displays Faculty ID, Name, Designation, and Assigned Subject(s).
+   - Deletion removes the Class Teacher appointment (status resets to `Unassigned`) with explicit confirmation.
+4. **Attendance Visibility Boundaries**:
+   - **Student Absentees List**: Contains strictly students whose attendance status is `ABSENT`. Excludes `PRESENT`, `ON_DUTY`, and `LEAVE` (`LEAVE` and `ABSENT` are never combined).
+   - **Attendance Not Entered List**: Denotes unentered timetable sessions (status `NOT ENTERED`). Semantically distinct from student absentees.
+   - Faculty visibility in both surfaces is strictly scoped to the authenticated teacher's assigned subjects, classes, and sessions.
+5. **Faculty Non-Evaluative Architecture**:
+   - Faculty information across all search results, allocation views, and directories remains strictly descriptive (Name, Designation, Assigned Subjects, Workload).
+   - Zero ratings, rankings, appraisal scores, or evaluative metrics.
+6. **Phase 2 Mock-State Limitation**:
+   - All mutations in Task 2.7 operate on client-side state via the `AllocationService` domain layer.
+   - Backend persistence (Django/DRF/PostgreSQL) remains scheduled for Phase 3.
+

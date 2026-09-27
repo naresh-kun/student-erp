@@ -11,21 +11,27 @@
  * - Displays complete mock allocation history.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingState } from '@/components/ui/States';
+import { StudentAllocationTable } from '@/components/allocation/StudentAllocationTable';
+import { ClassTeacherAllocationTable } from '@/components/allocation/ClassTeacherAllocationTable';
 import { useAdminAllocation } from '../hooks/useAdminAllocation';
 import { AllocationPreviewModal } from './AllocationPreviewModal';
 import { 
-  Sparkles, 
+  SlidersHorizontal, 
   CheckCircle2, 
   History, 
-  AlertCircle
+  AlertCircle,
+  Users,
+  UserCheck
 } from 'lucide-react';
 
 export const AllocationWorkspace: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'student_sections' | 'class_teachers' | 'batch_engine'>('student_sections');
+
   const {
     grade,
     setGrade,
@@ -58,6 +64,56 @@ export const AllocationWorkspace: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Tab Switcher */}
+      <div className="flex border-b border-slate-200 dark:border-slate-800 space-x-6">
+        <button
+          type="button"
+          onClick={() => setActiveTab('student_sections')}
+          className={`pb-3 px-1 text-sm font-semibold border-b-2 flex items-center gap-2 transition-colors ${
+            activeTab === 'student_sections'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          Student Section Allocation
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('class_teachers')}
+          className={`pb-3 px-1 text-sm font-semibold border-b-2 flex items-center gap-2 transition-colors ${
+            activeTab === 'class_teachers'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+          }`}
+        >
+          <UserCheck className="w-4 h-4" />
+          Class Teacher Allocation
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('batch_engine')}
+          className={`pb-3 px-1 text-sm font-semibold border-b-2 flex items-center gap-2 transition-colors ${
+            activeTab === 'batch_engine'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+          }`}
+        >
+          <SlidersHorizontal className="w-4 h-4" />
+          Batch Allocation Engine
+        </button>
+      </div>
+
+      {activeTab === 'student_sections' && (
+        <StudentAllocationTable canManage={true} />
+      )}
+
+      {activeTab === 'class_teachers' && (
+        <ClassTeacherAllocationTable canManage={true} />
+      )}
+
+      {activeTab === 'batch_engine' && (
+        <div className="space-y-6">
       {/* Success Notification */}
       {publishSuccessMessage && (
         <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between shadow-sm animate-in fade-in">
@@ -92,7 +148,7 @@ export const AllocationWorkspace: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-blue-700" />
+                <SlidersHorizontal className="w-4 h-4 text-blue-700" />
                 <span>Class & Section Allocation Workspace (Session 2026–27)</span>
               </CardTitle>
               <CardDescription className="text-xs">
@@ -240,7 +296,7 @@ export const AllocationWorkspace: React.FC = () => {
             onClick={handleGeneratePreview}
             className="text-xs bg-blue-900 hover:bg-blue-800 font-semibold flex items-center gap-1.5"
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <SlidersHorizontal className="w-3.5 h-3.5" />
             <span>Generate Allocation Preview</span>
           </Button>
         </CardHeader>
@@ -354,6 +410,8 @@ export const AllocationWorkspace: React.FC = () => {
         stream={isSeniorSecondary ? stream : undefined}
         method={method}
       />
+        </div>
+      )}
     </div>
   );
 };

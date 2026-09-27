@@ -24,11 +24,22 @@ export const ParentChildrenOverviewCards: React.FC<ParentChildrenOverviewCardsPr
 }) => {
   const navigate = useNavigate();
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [downloadedId, setDownloadedId] = useState<string | null>(null);
 
   const copyId = (studentId: string) => {
     navigator.clipboard.writeText(studentId);
     setCopiedId(studentId);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleDownloadChildReport = (childId: string) => {
+    setDownloadingId(childId);
+    setTimeout(() => {
+      setDownloadingId(null);
+      setDownloadedId(childId);
+      setTimeout(() => setDownloadedId(null), 2000);
+    }, 700);
   };
 
   return (
@@ -170,12 +181,24 @@ export const ParentChildrenOverviewCards: React.FC<ParentChildrenOverviewCardsPr
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => alert(`Downloading official score card for ${c.full_name}...`)}
+                onClick={() => handleDownloadChildReport(c.student_id)}
+                disabled={downloadingId === c.student_id}
                 className="text-xs"
                 title="Download Report Card"
               >
-                <Download className="w-3.5 h-3.5 mr-1" />
-                <span>PDF</span>
+                {downloadedId === c.student_id ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                    <span>Ready</span>
+                  </>
+                ) : downloadingId === c.student_id ? (
+                  <span>...</span>
+                ) : (
+                  <>
+                    <Download className="w-3.5 h-3.5 mr-1" />
+                    <span>PDF</span>
+                  </>
+                )}
               </Button>
             </div>
           </Card>

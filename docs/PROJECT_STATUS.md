@@ -1,8 +1,8 @@
 # Project Status & Milestone Ledger
 
-> **Current Phase**: Phase 2 (Frontend Core + Role Dashboards + Mock Data Integration)  
-> **Authoritative State**: Active Phase 2 — Task 2.5 Completed (Admin & Principal Deep Role Experiences implemented; 128/128 tests passing; Ready for Task 2.6 Hardening & QA)  
-> **Last Updated**: 2026-09-25
+> **Current Phase**: Phase 2 COMPLETE (Frontend Core + Role Dashboards + Mock Data Integration + Task 2.7 Approved Amendment)  
+> **Authoritative State**: Phase 2 COMPLETE — Task 2.7 Completed (Operational Allocation, Search & Attendance Visibility; 158/158 tests passing; Build clean; Browser QA passed; Ready for Phase 3)  
+> **Last Updated**: 2026-09-27
 
 ---
 
@@ -63,7 +63,8 @@ To ensure strict engineering honesty, features and modules are classified into e
 | **Faculty Domain Feature Module (`features/faculty`)** | `IMPLEMENTED` | Complete faculty domain module: R. Suresh profile, Class Teacher assignment (XI-A2), assigned class & student scoping, 4-status attendance roll call with "Mark All Present", Class Teacher LEAVE approval workflow, examination marks entry out of 100 or 'AB', CBSE 8-tier grade distribution chart, 24 periods/wk timetable, 22 Vitest tests |
 | **Admin Domain Feature Module (`features/admin`)** | `IMPLEMENTED` | Complete admin domain module: Student & Parent master directories with permanent Student ID, non-evaluative faculty staff directory, class capacity & course catalog, 4-status attendance oversight, CBSE 8-tier marks audit register, timetable overview, calendar event publisher, Merit & Random section allocation engine, 18 Vitest tests |
 | **Principal Domain Feature Module (`features/principal`)** | `IMPLEMENTED` | Complete principal domain module: Head of Institution executive console, academic & stream performance analytics, school presence telemetry & cohort curves, non-evaluative faculty roster, statutory report endorsement workflow with approval audit trail, 10 Vitest tests |
-| **Hardening & Quality Assurance (Task 2.6)** | `PLANNED` | Automated WCAG AA accessibility audit, responsive polish across viewport breakpoints, and final Phase 2 sign-off |
+| **Hardening & Quality Assurance (Task 2.6)** | `IMPLEMENTED` | Full audit pass: academic model, attendance model, Student ID, streams, faculty scope, branding, route guards, auth honesty, mock/service abstraction, responsive, a11y. Fixed: dark mode toggle removed (out-of-scope). Tests: 130/130. Build: clean. Browser QA: all 5 roles verified. |
+| **Operational Allocation, Search & Attendance Visibility (Task 2.7)** | `IMPLEMENTED` | Approved functional amendment: student section allocation (Admin/Principal update+delete, Faculty view-only, immutable Student ID), Class Teacher allocation (Admin/Principal update+delete), faculty subject badges, dedicated student absentees list (ONLY status ABSENT), attendance not entered list (unmarked sessions), multi-role global directory search (Ctrl+K), non-blocking feedback, 28 Vitest tests (158/158 total suite passing). |
 
 ### 2.4 Application Layer (Backend)
 | Component / Area | Status | Notes |

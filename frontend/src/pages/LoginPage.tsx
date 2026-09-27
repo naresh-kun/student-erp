@@ -108,7 +108,7 @@ export const LoginPage: React.FC = () => {
             Sign In
           </CardTitle>
           <CardDescription className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-            Enter your User ID (e.g. <span className="font-mono">Student01</span>, <span className="font-mono">Faculty01</span>) and password to access your dashboard.
+            Enter your User ID (e.g. <span className="font-mono">Student01</span>, <span className="font-mono">STU202600001</span> for Parent) and password to access your dashboard.
           </CardDescription>
         </CardHeader>
 
@@ -132,7 +132,7 @@ export const LoginPage: React.FC = () => {
                 className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between"
               >
                 <span>User ID / School Email</span>
-                <span className="text-[11px] text-slate-400 font-normal">e.g. Student01, Faculty01, Admin</span>
+                <span className="text-[11px] text-slate-400 font-normal">e.g. Student01, STU202600001 (Parent), Faculty01</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -142,7 +142,7 @@ export const LoginPage: React.FC = () => {
                   id="identifier"
                   type="text"
                   autoComplete="username"
-                  placeholder="e.g. Student01, Faculty01, Admin, Principal"
+                  placeholder="e.g. Student01, STU202600001, Faculty01, Admin, Principal"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   disabled={loading}
@@ -207,7 +207,7 @@ export const LoginPage: React.FC = () => {
           {/* Institutional Compliance Notice */}
           <div className="pt-2 text-center">
             <p className="text-[11px] text-slate-400 dark:text-slate-500">
-              Authorized access only. All authentication attempts are logged for audit compliance.
+              School ERP Phase 2 Demonstration Environment • Simulated credential authentication.
             </p>
           </div>
         </CardContent>

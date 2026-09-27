@@ -164,3 +164,93 @@ export interface CalendarEvent {
   location: string;
   is_holiday: boolean;
 }
+
+// ==========================================
+// TASK 2.7 OPERATIONAL REVISION INTERFACES
+// ==========================================
+
+export interface StudentAllocationItem {
+  id: string;
+  student_id: string; // Permanent, immutable identifier (e.g. STU202600001)
+  student_name: string;
+  grade_level: number;
+  grade_name: string;
+  grade?: string; // Alias for grade_name
+  stream?: string; // Applicable to Grades 11-12
+  section_id: string;
+  section_name: string;
+  section?: string; // Alias for section_name
+  roll_number: string;
+  academic_year: string;
+  allocation_status: 'Allocated' | 'Pending' | 'Deallocated' | 'Unassigned';
+}
+
+export interface ClassTeacherAllocationItem {
+  id: string;
+  faculty_id: string;
+  faculty_name: string;
+  employee_code: string;
+  designation: string;
+  subjects: string[]; // Subject(s) Handling
+  assigned_subjects?: string[]; // Alias for subjects
+  academic_year: string;
+  grade_level: number;
+  grade_name: string;
+  grade?: string; // Alias for grade_name
+  stream?: string;
+  section_id: string;
+  section_name: string;
+  section?: string; // Alias for section_name
+  status?: string; // Alias for assignment_status
+  is_assigned: boolean;
+  assignment_status: 'Assigned' | 'Unassigned';
+}
+
+export interface StudentAbsenteeItem {
+  id: string;
+  student_id: string;
+  student_name: string;
+  grade_name: string;
+  grade?: string; // Alias for grade_name
+  stream?: string;
+  section_name: string;
+  section?: string; // Alias for section_name
+  subject_name: string;
+  subject?: string; // Alias for subject_name
+  date: string;
+  period: string | number;
+  status: 'ABSENT'; // Strictly ONLY ABSENT
+  faculty_name: string;
+  faculty_id: string;
+  class_id: string;
+  section_id: string;
+}
+
+export interface AttendanceNotEnteredItem {
+  id: string;
+  date: string;
+  grade_name: string;
+  grade?: string; // Alias for grade_name
+  stream?: string;
+  section_name: string;
+  section?: string; // Alias for section_name
+  subject_name: string;
+  subject?: string; // Alias for subject_name
+  period: string | number;
+  faculty_name: string;
+  faculty_id: string;
+  class_id: string;
+  section_id: string;
+  session_status: 'NOT ENTERED';
+}
+
+export interface GlobalSearchResultItem {
+  type: 'STUDENT' | 'FACULTY';
+  id: string;
+  identifier: string; // Student ID or Employee Code
+  title: string;
+  subtitle: string;
+  departmentOrClass: string;
+  subjects?: string[];
+  allocationRecord?: StudentAllocationItem | ClassTeacherAllocationItem;
+}

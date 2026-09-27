@@ -72,10 +72,22 @@ describe('Parent Domain — Profile & Linked Children Filtering', () => {
 });
 
 describe('Parent Domain — Student ID Login Identifier', () => {
-  it('authenticates Parent using TEMPORARY PHASE 2 DEMO credentials (Parent01 / demo123)', async () => {
-    // TEMPORARY PHASE 2 DEMO CREDENTIALS: Parent01 / demo123
-    // The Student-Parent relationship (Parent linked to STU202600001) is preserved
-    // in the domain model (ParentService.isChildLinkedToParent) — independent of login mechanism.
+  it('authenticates Parent using linked child permanent Student ID (STU202600001 / demo123)', async () => {
+    // Approved rule: Parent username = linked child's Student ID
+    const parentUser = await MockAuthService.loginWithCredentials('STU202600001', 'demo123');
+
+    expect(parentUser).toBeDefined();
+    expect(parentUser.role).toBe('Parent');
+    expect(parentUser.id).toBe('usr_007');
+    expect(parentUser.first_name).toBe('S.');
+    expect(parentUser.last_name).toBe('Ramanathan');
+
+    // Verify child scoping remains active for authenticated parent
+    const isLinked = await ParentService.isChildLinkedToParent('par_001', 'STU202600001');
+    expect(isLinked).toBe(true);
+  });
+
+  it('authenticates Parent using backward-compatible demo alias (Parent01 / demo123)', async () => {
     const parentUser = await MockAuthService.loginWithCredentials('Parent01', 'demo123');
 
     expect(parentUser).toBeDefined();
@@ -85,15 +97,23 @@ describe('Parent Domain — Student ID Login Identifier', () => {
     expect(parentUser.last_name).toBe('Ramanathan');
   });
 
-  it('authenticates second Parent using username and demo password', async () => {
-    // Secondary parent (M. Selvam) authenticated via username selvam.m / demo123
-    const parentUser = await MockAuthService.loginWithCredentials('selvam.m', 'demo123');
+  it('authenticates second Parent using second child Student ID (STU202600002 / demo123)', async () => {
+    const parentUser = await MockAuthService.loginWithCredentials('STU202600002', 'demo123');
 
     expect(parentUser).toBeDefined();
     expect(parentUser.role).toBe('Parent');
     expect(parentUser.id).toBe('usr_008');
     expect(parentUser.first_name).toBe('M.');
     expect(parentUser.last_name).toBe('Selvam');
+  });
+
+  it('guarantees Student login (Student01) resolves to Student role distinct from Parent', async () => {
+    const studentUser = await MockAuthService.loginWithCredentials('Student01', 'demo123');
+
+    expect(studentUser).toBeDefined();
+    expect(studentUser.role).toBe('Student');
+    expect(studentUser.id).toBe('usr_005');
+    expect(studentUser.first_name).toBe('Arun');
   });
 });
 

@@ -134,6 +134,24 @@ export const FacultyDirectory: React.FC = () => {
                     </div>
                   )}
 
+                  {/* Subject(s) Handling */}
+                  <div className="pt-1">
+                    <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+                      Subject(s) Handling:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {f.assigned_subjects && f.assigned_subjects.length > 0 ? (
+                        f.assigned_subjects.map((sub) => (
+                          <Badge key={sub} variant="secondary" className="text-[10px] bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-900/50">
+                            {sub}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-[11px] text-slate-400">None assigned</span>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Assigned Classes */}
                   <div className="pt-1">
                     <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">

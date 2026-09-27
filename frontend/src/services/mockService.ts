@@ -29,6 +29,7 @@ import attendanceData from '../../../mock-data/attendance.json';
 import marksData from '../../../mock-data/marks.json';
 import timetableData from '../../../mock-data/timetable.json';
 import eventsData from '../../../mock-data/events.json';
+import { AllocationService } from './allocationService';
 
 // Helper to simulate asynchronous service behavior (like a future API call)
 const delay = (ms = 35) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -995,5 +996,52 @@ export class MockDataService {
       { department: 'English & Languages', passRate: 96.8, academicAverage: 86.4, facultyCount: 16, completionRate: 96 },
       { department: 'Commerce & Economics', passRate: 91.5, academicAverage: 81.2, facultyCount: 12, completionRate: 91 },
     ];
+  }
+
+  // 10. Task 2.7 Operational Allocations, Attendance Visibilities, and Global Search
+  static async getStudentAllocations(filters?: Parameters<typeof AllocationService.getStudentAllocations>[0]) {
+    return AllocationService.getStudentAllocations(filters);
+  }
+
+  static async updateStudentAllocation(
+    studentId: string,
+    updates: Parameters<typeof AllocationService.updateStudentAllocation>[1]
+  ) {
+    return AllocationService.updateStudentAllocation(studentId, updates);
+  }
+
+  static async deleteStudentAllocation(studentId: string) {
+    return AllocationService.deleteStudentAllocation(studentId);
+  }
+
+  static async getClassTeacherAllocations(filters?: Parameters<typeof AllocationService.getClassTeacherAllocations>[0]) {
+    return AllocationService.getClassTeacherAllocations(filters);
+  }
+
+  static async updateClassTeacherAllocation(
+    sectionId: string,
+    faculty: Parameters<typeof AllocationService.updateClassTeacherAllocation>[1]
+  ) {
+    return AllocationService.updateClassTeacherAllocation(sectionId, faculty);
+  }
+
+  static async deleteClassTeacherAllocation(sectionId: string) {
+    return AllocationService.deleteClassTeacherAllocation(sectionId);
+  }
+
+  static async getStudentAbsentees(options?: Parameters<typeof AllocationService.getStudentAbsentees>[0]) {
+    return AllocationService.getStudentAbsentees(options);
+  }
+
+  static async getAttendanceNotEntered(options?: Parameters<typeof AllocationService.getAttendanceNotEntered>[0]) {
+    return AllocationService.getAttendanceNotEntered(options);
+  }
+
+  static async searchGlobal(
+    query: string,
+    userRole: Parameters<typeof AllocationService.searchGlobal>[1],
+    typeFilter?: Parameters<typeof AllocationService.searchGlobal>[2]
+  ) {
+    return AllocationService.searchGlobal(query, userRole, typeFilter);
   }
 }

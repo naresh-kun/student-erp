@@ -183,7 +183,7 @@ export interface AdminCalendarEventItem {
   location: string;
   target_audience: string;
   academic_relevance: string;
-  od_eligible: boolean;
+  od_eligible: boolean; // Flag indicating student participants receive On-Duty (OD) attendance sanction; strictly NOT academic credit
   is_holiday: boolean;
 }
 

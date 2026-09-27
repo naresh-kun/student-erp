@@ -14,12 +14,15 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingState, ErrorState } from '@/components/ui/States';
+import { StudentAbsenteesTable } from '@/components/attendance/StudentAbsenteesTable';
+import { AttendanceNotEnteredTable } from '@/components/attendance/AttendanceNotEnteredTable';
 import { AdminService } from '../services/adminService';
 import type { AdminAttendanceOverviewItem } from '../types';
 import { calculateAttendancePercentage } from '@/utils';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, LayoutGrid, UserX, Clock } from 'lucide-react';
 
 export const AttendanceOversight: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'absentees' | 'not_entered'>('overview');
   const [logs, setLogs] = useState<AdminAttendanceOverviewItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,6 +84,48 @@ export const AttendanceOversight: React.FC = () => {
         </Badge>
       </Card>
 
+      {/* Tab Switcher */}
+      <div className="flex border-b border-slate-200 dark:border-slate-800 space-x-6">
+        <button
+          type="button"
+          onClick={() => setActiveTab('overview')}
+          className={`pb-3 px-1 text-sm font-semibold border-b-2 flex items-center gap-2 transition-colors ${
+            activeTab === 'overview'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+          }`}
+        >
+          <LayoutGrid className="w-4 h-4" />
+          Section Overview
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('absentees')}
+          className={`pb-3 px-1 text-sm font-semibold border-b-2 flex items-center gap-2 transition-colors ${
+            activeTab === 'absentees'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+          }`}
+        >
+          <UserX className="w-4 h-4" />
+          Student Absentees
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('not_entered')}
+          className={`pb-3 px-1 text-sm font-semibold border-b-2 flex items-center gap-2 transition-colors ${
+            activeTab === 'not_entered'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+          }`}
+        >
+          <Clock className="w-4 h-4" />
+          Attendance Not Entered
+        </button>
+      </div>
+
+      {activeTab === 'overview' && (
+        <div className="space-y-6">
       {/* Aggregate Presence KPI Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <Card className="p-3 bg-white dark:bg-slate-900 text-center border-l-4 border-l-blue-600 col-span-2 sm:col-span-1 shadow-sm">
@@ -180,6 +225,16 @@ export const AttendanceOversight: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+        </div>
+      )}
+
+      {activeTab === 'absentees' && (
+        <StudentAbsenteesTable userRole="Admin" />
+      )}
+
+      {activeTab === 'not_entered' && (
+        <AttendanceNotEnteredTable userRole="Admin" />
+      )}
     </div>
   );
 };
