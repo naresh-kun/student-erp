@@ -1,8 +1,13 @@
+"""
+Student ERP — Notifications URL Routing
+Namespace: /api/v1/notifications/
+"""
+
 from django.urls import path
+from apps.notifications.views import NotificationListView
 
 app_name = 'notifications'
 
-# REST endpoint routes (Planned for backend implementation phases)
 urlpatterns = [
-    # path('', NotificationListView.as_view(), name='notification_list'),
+    path('', NotificationListView.as_view(), name='notification_list'),
 ]

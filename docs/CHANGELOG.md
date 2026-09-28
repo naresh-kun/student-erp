@@ -1,7 +1,71 @@
 # Project Changelog
 
 All notable changes to the Student ERP project will be documented in this file.
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+## [Phase 3: Task 3.3 — Core Database Models & PostgreSQL Schema] - 2026-09-28
+
+### Summary
+Designed, implemented, and migrated 3NF relational database models across `accounts`, `students`, and `academics` domain applications with UUID primary keys, strict relationship integrity (`RESTRICT`, `PROTECT`, `SET_NULL`, `CASCADE`), CBSE/Indian school business constraints, permanent immutable Student IDs (`ImmutableFieldMutationError`), non-evaluative faculty profiles, and migration dependency sequencing. Verified 0 pending migration changes, 76 passing backend unit/model tests, 158/158 passing frontend tests, and a clean production build.
+
+### Added
+- **Core 3NF Models (`backend/apps/`)**:
+  - `accounts`: `Role` (UUID PK, 5 canonical roles), `User` (`AbstractUser`, UUID PK, `AUTH_USER_MODEL = 'accounts.User'`, `role` FK `RESTRICT`), `Faculty` (UUID PK, descriptive non-evaluative staff profile, unique `employee_code`), `Parent` (UUID PK, guardian details).
+  - `students`: `Student` (UUID PK, permanent `student_id` formatted `STUYYYYNNNNN` with regex validation & immutability check on `save()`, `parent` FK `PROTECT`, unique `admission_number`, `is_active`).
+  - `academics`: `AcademicYear` (UUID PK, `name`, `is_current`), `SchoolClass` (UUID PK, `academic_year` FK `PROTECT`, approved streams, unique together `(academic_year, code)`), `Section` (UUID PK, `class_teacher` FK `SET_NULL`, unique together `(school_class, name)`), `Subject` (UUID PK, unique `code`, `weekly_periods` [periods, not credits]), `Enrollment` (UUID PK, student FK `CASCADE`, unique together `(student, academic_year)`).
+- **PostgreSQL Initial Migrations**:
+  - `apps/accounts/migrations/0001_initial.py`
+  - `apps/students/migrations/0001_initial.py`
+  - `apps/academics/migrations/0001_initial.py`
+  - `apps/academics/migrations/0002_initial.py` (cross-app FKs to accounts and students)
+- **Comprehensive Task 3.3 Test Suite (`backend/tests/test_models_task33.py`)**:
+  - 31 test cases covering migration graph dependencies, model structure, UUID PKs, relationship deletion rules, CBSE rules (periods vs credits), Student ID validation & immutability, and live-DB integration tests.
+  - Test suite grew to 76 passing backend tests (with 17 live PostgreSQL tests marked and skipped when DB host is offline).
+
+### Verified (Non-Regression)
+- **Django Core**: `python manage.py check` passes with 0 issues identified.
+- **Migration Graph**: In-memory migration autodetector verifies 0 unmigrated changes.
+- **Scope Discipline**: Enforced 0 concrete models and 0 migrations for deferred apps (`attendance`, `marks`, `timetable`, `calendar`, `allocation`, `reports`, `notifications`, `audit`).
+- **Frontend Test Suite**: 158/158 Vitest tests passing across all 8 test suites.
+- **Frontend Build**: Production bundle compiles cleanly with 0 TypeScript errors.
+
+---
+
+## [Phase 3: Task 3.2 — Django App Architecture & Base Domain Scaffolding] - 2026-09-28
+
+### Summary
+Established the modular monolith Django domain application architecture, dedicated service layer structures (`BaseService`), DRF serializers scaffolding, thin view dispatchers, URL routes, and shared domain utilities across all 11 domain apps. Reconciled boundaries by removing premature concrete database models (which are scheduled for Task 3.3). Verified zero premature concrete models exist in Django's app registry, zero migrations created, 45 passing backend unit tests, zero frontend regressions (158/158 Vitest tests passing), and a clean frontend production build.
+
+### Added
+- **Shared Domain Utilities & Constants (`backend/common/`)**:
+  - `common/constants.py`: Canonical 5 system roles (`Admin`, `Principal`, `Faculty`, `Student`, `Parent`), Master Plan Amendment 2 attendance 4-status model (`PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`), prohibited legacy statuses (`LATE`, `EXCUSED`), CBSE / ICSE 8-tier grading scale (`A1`–`E`), approved streams, and workflow states.
+  - `common/utils.py`: Pure mathematical utilities for CBSE 8-tier grading (`calculate_grade`, `calculate_percentage`, `calculate_cumulative_evaluation`), attendance formula adherence, canonical status validation, permanent Student ID validation (`validate_student_id`), and canonical ID generator (`format_student_id`).
+  - `common/exceptions.py`: Custom domain exceptions (`DomainValidationError`, `BusinessLogicError`, `ResourceNotFoundError`, `PermissionDeniedError`, `InvalidAttendanceStatusError`, `ImmutableFieldMutationError`) integrated with standardized error envelope.
+  - `common/responses.py`: Envelope response builders (`success_response`, `error_response`).
+  - `common/services.py`: `BaseService` base class providing transactional boundaries (`self.atomic()`) and structured error logging.
+  - `common/models.py`: Shared abstract base models (`TimeStampedModel`, `UUIDModel`, `BaseModel`).
+- **Domain App Scaffolding Across All 11 Domain Apps**:
+  - Structured all 11 domain apps (`accounts`, `students`, `academics`, `attendance`, `marks`, `timetable`, `calendar`, `allocation`, `reports`, `notifications`, `audit`) with standard module files: `models.py`, `services.py`, `serializers.py`, `views.py`, `urls.py`.
+  - Defined dedicated service class scaffolding: `AccountService`, `StudentService`, `AcademicService`, `AttendanceService`, `MarksService`, `TimetableService`, `CalendarService`, `AllocationService`, `ReportService`, `NotificationService`, `AuditService`.
+  - Defined serializer-layer scaffolding using standard DRF serializers.
+  - Wired thin DRF view dispatchers and URL routes under `/api/v1/`.
+  - Terminology neutralized: Removed unsupported "statutory" references across all backend files in favor of neutral academic/administrative reporting.
+- **Backend Test Suite Expansion**:
+  - `tests/test_common_utils.py`: 14 unit tests covering grading, percentage, attendance formula, forbidden statuses, Student ID.
+  - `tests/test_services_scaffolding.py`: 12 unit tests verifying all 11 domain service classes and BaseService helpers.
+  - `tests/test_common_responses.py`: 4 unit tests covering response envelopes and exception handlers.
+  - `tests/test_models_scaffolding.py`: 3 unit tests verifying abstract base models, 11-app file structure, and boundary assertion of 0 premature concrete models.
+  - Test suite grew from 12 to 45 unit tests (100% passing).
+- **Task Specification**:
+  - Created `docs/phase_prompts/Phase_3_Task_3.2.md`.
+  - Updated `docs/phases/PHASE_03_STATUS.md`.
+
+### Verified (Non-Regression)
+- **Task 3.2 Boundary**: Confirmed 0 concrete models and 0 database migrations in Task 3.2.
+- **Django Core**: `python manage.py check` passes with 0 issues identified.
+- **Frontend Protection**: Phase 2 frontend source code left completely untouched.
+- **Frontend Test Suite**: 158/158 Vitest tests passing across all 8 test suites.
+- **Frontend Build**: Production bundle compiles cleanly with 0 TypeScript errors.
+
+---
 
 ## [Phase 3: Task 3.1 — Backend Foundation & Environment] - 2026-09-28
 

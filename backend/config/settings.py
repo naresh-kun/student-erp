@@ -161,6 +161,9 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Task 3.3: Custom User Model (accounts app; app_label = 'accounts')
+AUTH_USER_MODEL = 'accounts.User'
+
 # 7. Django REST Framework Configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (

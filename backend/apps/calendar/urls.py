@@ -1,8 +1,13 @@
+"""
+Student ERP — Calendar URL Routing
+Namespace: /api/v1/calendar/
+"""
+
 from django.urls import path
+from apps.calendar.views import CalendarEventListView
 
 app_name = 'calendar'
 
-# REST endpoint routes (Planned for backend implementation phases)
 urlpatterns = [
-    # path('events/', CalendarEventListView.as_view(), name='calendar_events'),
+    path('events/', CalendarEventListView.as_view(), name='event_list'),
 ]

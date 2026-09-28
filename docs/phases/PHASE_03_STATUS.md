@@ -1,8 +1,8 @@
 # Phase 3 Execution Status: Backend Foundation + Database
 
 > **Phase**: Phase 3 (Backend Foundation + Database)  
-> **Current Task**: **Task 3.1 Completed (Backend Foundation & Environment)**  
-> **Status**: **IN PROGRESS (Task 3.1 DONE; 12/12 backend tests passing; 158/158 frontend tests passing; Build clean)**  
+> **Current Task**: **Task 3.3 Completed (Core Database Models & PostgreSQL Schema)**  
+> **Status**: **IN PROGRESS (Task 3.1, 3.2, 3.3 DONE; 76 backend unit/model tests passing, 17 DB tests marked; 158/158 frontend tests passing; Build clean)**  
 > **Date**: 2026-09-28
 
 ---
@@ -18,8 +18,8 @@ Establish the core Python/Django application tier, relational database persisten
 | Task | Title | Scope | Status |
 | :--- | :--- | :--- | :--- |
 | **Task 3.1** | **Backend Foundation & Environment** | Virtual environment, Django 5+, DRF, PostgreSQL env config, health endpoint (`/api/health/`), WSGI/ASGI verification, pytest foundation, Dockerfile | **COMPLETED** |
-| **Task 3.2** | **Django App Architecture & Base Domain Scaffolding** | Domain app configs, services layer structure, shared utilities | **PLANNED** |
-| **Task 3.3** | **PostgreSQL Schema Models & Migrations** | 3NF database models, constraints, UUID PKs, initial migrations | **PLANNED** |
+| **Task 3.2** | **Django App Architecture & Base Domain Scaffolding** | Modular domain architecture, dedicated service layers, serializer contracts, thin views, shared utilities (Zero concrete database models/migrations) | **COMPLETED** |
+| **Task 3.3** | **PostgreSQL Schema Models & Migrations** | 3NF database models, constraints, UUID PKs, initial migrations (`accounts`, `students`, `academics`) | **COMPLETED** |
 | **Task 3.4** | **Initial REST APIs & Serializers** | DRF serializers, initial `/api/v1/` read endpoints, pagination | **PLANNED** |
 | **Task 3.5** | **Backend Testing & Verification** | Model tests, API tests, database constraint assertions | **PLANNED** |
 
@@ -27,71 +27,111 @@ Establish the core Python/Django application tier, relational database persisten
 
 ## 3. Completed Work (Task 3.1: Backend Foundation & Environment)
 
-- [x] **Virtual Environment Setup**:
-  - Created isolated Python 3.11 virtual environment under `backend/.venv` (verified excluded by root `.gitignore`).
-  - Installed all pinned dependencies from `backend/requirements/development.txt`: Django 5.1.15, djangorestframework 3.15.2, psycopg 3.3.6 (with binary), channels 4.3.2, channels-redis 4.3.0, daphne 4.2.3, django-cors-headers 4.9.0, djangorestframework-simplejwt 5.5.1, pytest 9.1.1, pytest-django 4.14.0, python-dotenv 1.2.3, and development linters.
-- [x] **Environment Configuration & Dotenv Loading**:
-  - Authored documented `backend/.env.example` defining safe local development defaults.
-  - Standardized environment variables: `DATABASE_NAME`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_HOST`, `DATABASE_PORT`.
-  - Maintained compatibility fallback for legacy variables (`DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`) and `DATABASE_URL` (for Twelve-Factor / Docker Compose).
-  - Integrated `python-dotenv` in `backend/manage.py` and `backend/config/settings.py` to automatically load environment files when present.
-  - Verified no secrets or passwords are committed (`.env` remains untracked).
-- [x] **Django Core & Application Registry**:
-  - Created explicit `CommonConfig(AppConfig)` in `backend/common/apps.py` registering `common`.
-  - Created placeholder `backend/templates/.gitkeep` satisfying the `TEMPLATES['DIRS']` configuration.
-  - Cleaned up `ALLOWED_HOSTS` parsing in `settings.py`.
-  - Ran `python manage.py check` — passed with 0 issues identified.
-  - Verified all 11 domain apps (`accounts`, `students`, `academics`, `attendance`, `marks`, `timetable`, `calendar`, `allocation`, `reports`, `notifications`, `audit`) load cleanly into Django's application registry.
-- [x] **DRF Baseline Configuration**:
-  - Preserved existing `REST_FRAMEWORK` settings: custom pagination (`StandardResultsSetPagination`), standardized error envelope (`custom_exception_handler`), and authentication placeholders.
-  - Guaranteed zero implementation of premature business endpoints or JWT login in Task 3.1.
-- [x] **Unauthenticated Health Check Endpoint (`GET /api/health/`)**:
-  - Implemented `HealthCheckView` in `backend/common/views.py` utilizing `permission_classes = [AllowAny]` and `authentication_classes = []`.
-  - Registered route `path('api/health/', ...)` in `backend/config/urls.py`, keeping `/api/v1/` reserved for domain APIs.
-  - Implemented an honest, explicit database connectivity probe via `connection.ensure_connection()`.
-  - Configured `'connect_timeout': 2` in database `OPTIONS` so offline database probes fail fast and never hang the HTTP process.
-  - Verified endpoint returns HTTP 200 with valid JSON:
-    ```json
-    {
-      "status": "ok",
-      "service": "student-erp-backend",
-      "environment": "development",
-      "database": "disconnected"
-    }
-    ```
-- [x] **Logging Configuration**:
-  - Added clean development-friendly `LOGGING` dictionary in `backend/config/settings.py` for console output across `django`, `django.server`, `apps`, and `common`.
-- [x] **ASGI & WSGI Verification**:
-  - Verified both `config.wsgi.application` and `config.asgi.application` import and instantiate cleanly without errors.
-- [x] **Backend Test Infrastructure**:
-  - Created `backend/pytest.ini` configuring `DJANGO_SETTINGS_MODULE = config.settings`.
-  - Created `backend/tests/test_settings.py` (settings load, apps in installed apps, middleware, DRF config, DB structure, logging).
-  - Created `backend/tests/test_apps.py` (common app config, all 11 domain app configs in Django apps registry, no duplicates).
-  - Created `backend/tests/test_health.py` (200 status, valid payload structure, honest database status, unauthenticated access).
-  - Executed test suite: **12/12 tests passing** in 0.66s.
-- [x] **Docker Blueprint Alignment**:
-  - Authored standard multi-stage Python 3.11 `backend/Dockerfile` matching the contract in `infra/docker-compose.yml`.
-- [x] **Phase Boundary & Non-Regression Verification**:
-  - Confirmed zero ERP business models, zero real authentication/RBAC, zero frontend API integration, zero WebSockets.
-  - Executed frontend Vitest suite: **158/158 tests passing** across all 8 suites.
-  - Executed frontend production build: **Clean build** with zero TypeScript errors.
+- [x] **Virtual Environment Setup**: Python 3.11 virtualenv initialized under `backend/.venv`; dependencies installed from `backend/requirements/development.txt`.
+- [x] **Environment Configuration**: `backend/.env.example` created; `python-dotenv` integrated into `manage.py` and `settings.py`.
+- [x] **Django Core & Application Registry**: `CommonConfig` created in `common/apps.py`; `python manage.py check` passing with 0 issues.
+- [x] **DRF Baseline Configuration**: Pagination, error formatting, and authentication placeholders configured.
+- [x] **Unauthenticated Health Check Endpoint (`GET /api/health/`)**: Operational liveness check with non-crashing database connectivity probe.
+- [x] **Logging Configuration**: Development-friendly logging dictionary in `settings.py`.
+- [x] **ASGI & WSGI Verification**: Validated application instantiations.
+- [x] **Backend Test Infrastructure**: Pytest configured with initial passing tests.
+- [x] **Docker Blueprint Alignment**: `backend/Dockerfile` authored matching `infra/docker-compose.yml`.
 
 ---
 
-## 4. Known Limitations & Environmental Notes
+## 4. Completed Work (Task 3.2: Django App Architecture & Base Domain Scaffolding)
 
-1. **PostgreSQL Availability**:
-   - PostgreSQL service is not currently active on `localhost:5432` on the development host machine.
-   - The health endpoint honestly reports `"database": "disconnected"` while the Django application service reports `"status": "ok"` with HTTP 200.
-   - Database models and migrations will be executed once PostgreSQL is running in subsequent tasks.
-2. **Docker Engine**:
-   - Docker CLI is not installed on the Windows host machine.
-   - `backend/Dockerfile` has been authored and statically verified to match `infra/docker-compose.yml`, but container image build will occur when Docker is available.
-3. **Frontend Separation**:
-   - The frontend remains 100% on mock services (`MockDataService`) and mock authentication; no live API calls are made from the client in Task 3.1.
+- [x] **Shared Domain Constants & Utilities (`backend/common/`)**:
+  - `common/constants.py`: Canonical 5 system roles (`Admin`, `Principal`, `Faculty`, `Student`, `Parent`), Master Plan Amendment 2 attendance 4-status model (`PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`), prohibited legacy statuses (`LATE`, `EXCUSED`), CBSE / ICSE 8-tier letter grading scale (`A1`–`E`), approved senior secondary streams, leave statuses, and allocation workflow states.
+  - `common/utils.py`: Pure mathematical utilities for CBSE 8-tier grading (`calculate_grade`, `calculate_percentage`, `calculate_cumulative_evaluation`), attendance formula adherence:
+    $$\text{Attendance \%} = \frac{\text{PRESENT} + \text{ON\_DUTY}}{\text{PRESENT} + \text{ABSENT} + \text{ON\_DUTY} + \text{LEAVE}} \times 100$$
+    Attendance status validation with legacy status rejection, permanent Student ID format verification (`validate_student_id`), and canonical ID generator (`format_student_id`).
+  - `common/exceptions.py`: Custom domain exceptions (`DomainValidationError`, `BusinessLogicError`, `ResourceNotFoundError`, `PermissionDeniedError`, `InvalidAttendanceStatusError`, `ImmutableFieldMutationError`) integrated with standardized JSON error envelope.
+  - `common/responses.py`: Standardized envelope builders (`success_response`, `error_response`).
+  - `common/services.py`: `BaseService` base class providing transactional boundaries (`self.atomic()`) and structured error logging.
+  - `common/models.py`: Shared abstract base models (`TimeStampedModel`, `UUIDModel`, `BaseModel`).
+- [x] **Domain Architecture Scaffolding Across All 11 Domain Apps**:
+  - Structured every domain app under `backend/apps/` with full modular architecture: `models.py`, `services.py`, `serializers.py`, `views.py`, `urls.py`.
+  - Reverted premature concrete database models from all apps, preserving pure architectural scaffolding.
+  - Neutralized terminology (purged unsupported "statutory" references across services, serializers, and views in favor of neutral academic/administrative reporting).
+  - Wired domain services inheriting from `BaseService`: `AccountService`, `StudentService`, `AcademicService`, `AttendanceService`, `MarksService`, `TimetableService`, `CalendarService`, `AllocationService`, `ReportService`, `NotificationService`, `AuditService`.
+  - Defined serializer-layer scaffolding using standard DRF serializers.
+  - Wired thin DRF views and URL routes into `config/urls.py`.
+- [x] **Task 3.2 Boundary Verification**:
+  - Verified **zero concrete ERP business models** registered in Django's app registry:
+    - [x] No concrete Student model
+    - [x] No concrete Parent model
+    - [x] No concrete Faculty model
+    - [x] No concrete AcademicYear model
+    - [x] No concrete Class model
+    - [x] No concrete Section model
+    - [x] No concrete Stream model
+    - [x] No concrete Subject model
+    - [x] No concrete Enrollment model
+    - [x] No concrete Attendance model
+    - [x] No concrete Mark model
+    - [x] No concrete ExamType model
+    - [x] No concrete Timetable model
+    - [x] No concrete CalendarEvent model
+    - [x] No concrete Allocation model
+    - [x] No concrete Report model
+    - [x] No concrete Notification model
+    - [x] No concrete AuditLog model
+  - Verified **zero database migrations** created as part of Task 3.2.
+- [x] **Backend Test Suite Alignment**:
+  - `tests/test_common_utils.py` (14 unit tests covering grading, percentage, attendance formula, forbidden statuses, Student ID).
+  - `tests/test_services_scaffolding.py` (12 unit tests verifying all 11 domain service classes and BaseService helpers).
+  - `tests/test_common_responses.py` (4 unit tests covering response envelopes and exception handlers).
+  - `tests/test_models_scaffolding.py` (3 unit tests verifying abstract base models, 11-app file structure, and boundary assertion of 0 concrete models).
+  - Total backend tests: **45/45 tests passing** in 1.02s.
+- [x] **Non-Regression & System Check**:
+  - `python manage.py check` passes with 0 issues identified.
+  - Frontend Vitest suite: **158/158 tests passing** across 8 test suites.
+  - Frontend production build: **Clean compile** in 10.3s with zero TypeScript errors.
 
 ---
 
-## 5. Next Task
+---
 
-**PHASE 3 — TASK 3.2**: Django App Architecture & Base Domain Scaffolding (Domain service layers, shared serializers, and base structures across domain apps).
+## 5. Completed Work (Task 3.3: Core Database Models & PostgreSQL Schema)
+
+- [x] **Core Domain Models in 3NF (`backend/apps/`)**:
+  - **`accounts` App**:
+    - `Role`: UUID PK, unique name (`Admin`, `Principal`, `Faculty`, `Student`, `Parent`), description, timestamps.
+    - `User`: Custom user model (`AbstractUser`), UUID PK, `role` FK to `Role` (`on_delete=models.RESTRICT`), unique email, `AUTH_USER_MODEL = 'accounts.User'`.
+    - `Faculty`: UUID PK, 1-to-1 to `User` (`on_delete=CASCADE`), unique `employee_code`, department, designation, joining date, qualification, strictly descriptive profile (no evaluation ratings/grades).
+    - `Parent`: UUID PK, 1-to-1 to `User` (`on_delete=CASCADE`), relation (`Father`, `Mother`, `Guardian`), occupation, alternate phone.
+  - **`students` App**:
+    - `Student`: UUID PK, 1-to-1 to `User` (`on_delete=CASCADE`), `parent` FK to `Parent` (`on_delete=models.PROTECT`, nullable), permanent `student_id` (format `STUYYYYNNNNN`, regex-validated, unique, immutable after initial creation via model `save()` check raising `ImmutableFieldMutationError`), unique `admission_number`, `roll_number`, `date_of_birth`, `gender`, `blood_group`, `emergency_contact`, `address`, `is_active`.
+  - **`academics` App**:
+    - `AcademicYear`: UUID PK, unique `name` (e.g. `2026-2027`), `start_date`, `end_date`, `is_current`.
+    - `SchoolClass`: UUID PK, `academic_year` FK (`on_delete=models.PROTECT`), `name`, `code`, `stream` (Senior secondary: `Computer Science`, `Biology`, `Commerce`, `Pure Science`), unique together `(academic_year, code)`.
+    - `Section`: UUID PK, `school_class` FK (`on_delete=CASCADE`), `name` (e.g. `A`, `B`), `room`, `class_teacher` FK to `Faculty` (`on_delete=models.SET_NULL`, nullable), unique together `(school_class, name)`.
+    - `Subject`: UUID PK, `name`, unique `code`, `department`, `weekly_periods` (integer default 5; university credits strictly purged), `is_elective`.
+    - `Enrollment`: UUID PK, `student` FK (`on_delete=CASCADE`), `section` FK (`on_delete=models.PROTECT`), `academic_year` FK (`on_delete=models.PROTECT`), `roll_number`, `status` (`Active`, `Transferred`, `Completed`), unique together `(student, academic_year)`.
+- [x] **Database Migrations Generated & Validated**:
+  - `apps/accounts/migrations/0001_initial.py` (Creates `Role`, `User`, `Faculty`, `Parent`)
+  - `apps/students/migrations/0001_initial.py` (Creates `Student`, depends on `accounts/0001`)
+  - `apps/academics/migrations/0001_initial.py` (Creates `AcademicYear`, `SchoolClass`, `Subject`)
+  - `apps/academics/migrations/0002_initial.py` (Creates `Section`, `Enrollment`, depends on `accounts`, `students`, `academics/0001`)
+  - Verified 0 pending migration changes (`makemigrations --dry-run` reports 0 changes).
+  - Verified deferred apps (`attendance`, `marks`, `timetable`, `calendar`, `allocation`, `reports`, `notifications`, `audit`) have 0 migrations and 0 concrete models.
+- [x] **Backend Test Suite Expansion (Task 3.3)**:
+  - Created `backend/tests/test_models_task33.py`:
+    - Migration graph integrity tests (dependencies, no pending changes, deferred app assertions).
+    - Model structure validation (UUID PKs, FK relationships, `on_delete` behaviors: `RESTRICT`, `PROTECT`, `SET_NULL`, `CASCADE`).
+    - Field constraints & CBSE rules (weekly periods vs credits, non-evaluative faculty profile, unique constraints).
+    - Student ID validation & immutability test (verified `ImmutableFieldMutationError` raised on mutation).
+    - Live-DB integration tests for PostgreSQL (gracefully skipped when PostgreSQL is not running on localhost:5432).
+  - Total backend tests: **76 passing**, 17 skipped (live-DB).
+- [x] **System Integrity**:
+  - `python manage.py check`: 0 issues.
+  - Frontend Vitest suite: **158/158 tests passing**.
+  - Frontend production build: **Clean compile** in 9.8s with 0 TypeScript errors.
+
+---
+
+## 6. Next Task
+
+**PHASE 3 — TASK 3.4**: Initial REST APIs & Serializers (DRF serializers, initial `/api/v1/` read endpoints, pagination, and API contract validation).
+

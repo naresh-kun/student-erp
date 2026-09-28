@@ -1,7 +1,7 @@
 # Project Status & Milestone Ledger
 
 > **Current Phase**: Phase 3 IN PROGRESS (Backend Foundation + Database)  
-> **Authoritative State**: Phase 3 Task 3.1 COMPLETE (Backend Foundation & Environment; Virtualenv active, Django 5+ & DRF loaded, health endpoint `/api/health/` active, 12/12 backend tests passing, 158/158 frontend tests passing, clean build)  
+> **Authoritative State**: Phase 3 Task 3.3 COMPLETE (Core Database Models & PostgreSQL Schema; 9 concrete 3NF models across accounts, students, academics; initial migrations generated; 76 backend unit/model tests passing, 17 DB tests marked; 158/158 frontend tests passing, clean build)  
 > **Last Updated**: 2026-09-28
 
 ---
@@ -71,13 +71,14 @@ To ensure strict engineering honesty, features and modules are classified into e
 | :--- | :--- | :--- |
 | **Django Virtual Environment & Dependencies** | `IMPLEMENTED` | Python 3.11 virtualenv (`backend/.venv`), Django 5.1.15, DRF 3.15.2, psycopg 3.3.6, pytest 9.1.1 installed |
 | **Django Project Foundation & Settings** | `IMPLEMENTED` | Settings unified for Twelve-Factor/PostgreSQL, logging configured, `manage.py check` passes with 0 issues |
-| **Modular App Domain Boundaries** | `IMPLEMENTED` | 11 app directories under `backend/apps/` plus `common` (`CommonConfig`) registered in Django app registry |
+| **Modular App Domain Boundaries** | `IMPLEMENTED` | 11 app modules under `backend/apps/` configured with `models.py`, `services.py`, `serializers.py`, `views.py`, `urls.py` |
+| **Domain Services & Base Architecture** | `IMPLEMENTED` | `BaseService` foundation, 11 dedicated service classes, CBSE 8-tier grading, 4-status attendance formula, Student ID format helpers |
 | **Health Check Endpoint (`/api/health/`)** | `IMPLEMENTED` | Unauthenticated liveness probe with honest, non-crashing database connectivity status (`status: ok`) |
-| **Backend Test Infrastructure** | `IMPLEMENTED` | `backend/pytest.ini` and 12 unit tests covering settings, apps, and health endpoint (12/12 passing) |
+| **Backend Test Infrastructure** | `IMPLEMENTED` | `backend/pytest.ini` and 76 unit/architecture/model tests passing (76/76 passing, 17 DB tests marked) |
 | **Backend Container Blueprint** | `IMPLEMENTED` | `backend/Dockerfile` created conforming to `infra/docker-compose.yml` |
-| **REST API Endpoints (`/api/v1/`)** | `PLANNED` | Documented in `docs/API_CONTRACT.md`; scheduled for Task 3.4 |
+| **REST API Endpoints (`/api/v1/`)** | `PLANNED` | Documented in `docs/API_CONTRACT.md`; base views & routes scaffolded; live endpoints scheduled for Task 3.4 |
 | **Realtime WebSockets (Channels)** | `PLANNED` | Documented in `docs/BACKEND_ARCHITECTURE.md`; scheduled for Phase 6 |
-| **Database Migrations & Models** | `PLANNED` | 3NF PostgreSQL models and migrations scheduled for Task 3.3 |
+| **Database Migrations & Models** | `IMPLEMENTED` | 3NF PostgreSQL models (`Role`, `User`, `Faculty`, `Parent`, `Student`, `AcademicYear`, `SchoolClass`, `Section`, `Subject`, `Enrollment`) and initial migrations generated for `accounts`, `students`, `academics` |
 
 ### 2.5 Infrastructure & Database
 | Component / Area | Status | Notes |

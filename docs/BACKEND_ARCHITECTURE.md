@@ -44,8 +44,9 @@ backend/
 
 1. **No Circular Dependencies**: An app in `backend/apps/` may import models from another app only through explicit, unidirectional relationships.
 2. **Fat Models / Thin Views / Dedicated Services**:
-   - Complex business calculations (such as semester GPA derivation, student section allocation, or attendance percentage summaries) belong in dedicated service classes (`services.py` within each app), keeping DRF views lightweight.
+   - Complex business calculations (such as marks percentage derivation, student section allocation, or attendance percentage summaries) belong in dedicated service classes (`services.py` within each app), keeping DRF views lightweight.
 3. **Common Utilities Isolation**: Any utility or base class used by two or more apps must reside in `backend/common/`.
+4. **Phase 3 Staging Boundary**: Task 3.2 establishes app architecture, service layer scaffolding (`BaseService`), serializer contracts, and shared utilities. Concrete database models, relational schema constraints, and migrations belong strictly to Task 3.3.
 
 ---
 

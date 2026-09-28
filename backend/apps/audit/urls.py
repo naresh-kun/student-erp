@@ -1,8 +1,13 @@
+"""
+Student ERP — Audit URL Routing
+Namespace: /api/v1/audit/
+"""
+
 from django.urls import path
+from apps.audit.views import AuditLogListView
 
 app_name = 'audit'
 
-# REST endpoint routes (Planned for backend implementation phases)
 urlpatterns = [
-    # path('', AuditLogListView.as_view(), name='audit_list'),
+    path('', AuditLogListView.as_view(), name='audit_log_list'),
 ]

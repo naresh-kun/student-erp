@@ -1,8 +1,13 @@
+"""
+Student ERP — Allocation URL Routing
+Namespace: /api/v1/allocation/
+"""
+
 from django.urls import path
+from apps.allocation.views import AllocationListView
 
 app_name = 'allocation'
 
-# REST endpoint routes (Planned for backend implementation phases)
 urlpatterns = [
-    # path('run/', RunAllocationView.as_view(), name='run_allocation'),
+    path('', AllocationListView.as_view(), name='allocation_list'),
 ]
