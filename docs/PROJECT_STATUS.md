@@ -1,8 +1,8 @@
 # Project Status & Milestone Ledger
 
-> **Current Phase**: Phase 2 COMPLETE (Frontend Core + Role Dashboards + Mock Data Integration + Task 2.7 Approved Amendment)  
-> **Authoritative State**: Phase 2 COMPLETE — Task 2.7 Completed (Operational Allocation, Search & Attendance Visibility; 158/158 tests passing; Build clean; Browser QA passed; Ready for Phase 3)  
-> **Last Updated**: 2026-09-27
+> **Current Phase**: Phase 3 IN PROGRESS (Backend Foundation + Database)  
+> **Authoritative State**: Phase 3 Task 3.1 COMPLETE (Backend Foundation & Environment; Virtualenv active, Django 5+ & DRF loaded, health endpoint `/api/health/` active, 12/12 backend tests passing, 158/158 frontend tests passing, clean build)  
+> **Last Updated**: 2026-09-28
 
 ---
 
@@ -69,13 +69,15 @@ To ensure strict engineering honesty, features and modules are classified into e
 ### 2.4 Application Layer (Backend)
 | Component / Area | Status | Notes |
 | :--- | :--- | :--- |
-| **Django Project Skeleton** | `IMPLEMENTED` | Configured root settings, ASGI, WSGI, URLs under `backend/config/` |
-| **Modular App Domain Boundaries** | `IMPLEMENTED` | 11 app directories created under `backend/apps/` with package markers |
-| **Common Utilities & Base Models** | `IMPLEMENTED` | Base abstract models, custom permissions, exception handlers in `backend/common/` |
-| **Requirements Manifests** | `IMPLEMENTED` | Pinned dependencies under `backend/requirements/` |
-| **REST API Endpoints (`/api/v1/`)** | `PLANNED` | Fully documented in `docs/API_CONTRACT.md`; code implementation in future backend phase |
-| **Realtime WebSockets (Channels)** | `PLANNED` | Documented in `docs/BACKEND_ARCHITECTURE.md`; code implementation in future phase |
-| **Database Migrations & Models** | `NOT IMPLEMENTED` | Deliberately omitted in Phase 1 per master rule |
+| **Django Virtual Environment & Dependencies** | `IMPLEMENTED` | Python 3.11 virtualenv (`backend/.venv`), Django 5.1.15, DRF 3.15.2, psycopg 3.3.6, pytest 9.1.1 installed |
+| **Django Project Foundation & Settings** | `IMPLEMENTED` | Settings unified for Twelve-Factor/PostgreSQL, logging configured, `manage.py check` passes with 0 issues |
+| **Modular App Domain Boundaries** | `IMPLEMENTED` | 11 app directories under `backend/apps/` plus `common` (`CommonConfig`) registered in Django app registry |
+| **Health Check Endpoint (`/api/health/`)** | `IMPLEMENTED` | Unauthenticated liveness probe with honest, non-crashing database connectivity status (`status: ok`) |
+| **Backend Test Infrastructure** | `IMPLEMENTED` | `backend/pytest.ini` and 12 unit tests covering settings, apps, and health endpoint (12/12 passing) |
+| **Backend Container Blueprint** | `IMPLEMENTED` | `backend/Dockerfile` created conforming to `infra/docker-compose.yml` |
+| **REST API Endpoints (`/api/v1/`)** | `PLANNED` | Documented in `docs/API_CONTRACT.md`; scheduled for Task 3.4 |
+| **Realtime WebSockets (Channels)** | `PLANNED` | Documented in `docs/BACKEND_ARCHITECTURE.md`; scheduled for Phase 6 |
+| **Database Migrations & Models** | `PLANNED` | 3NF PostgreSQL models and migrations scheduled for Task 3.3 |
 
 ### 2.5 Infrastructure & Database
 | Component / Area | Status | Notes |

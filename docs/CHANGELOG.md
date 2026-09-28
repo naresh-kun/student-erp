@@ -3,6 +3,47 @@
 All notable changes to the Student ERP project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Phase 3: Task 3.1 — Backend Foundation & Environment] - 2026-09-28
+
+### Summary
+Established the core Python/Django application tier foundation, environment configuration, database resolution, unauthenticated health check endpoint, test infrastructure, and container blueprint. Django 5.1.15 and Django REST Framework 3.15.2 are verified and operational with 12/12 passing backend unit tests, zero regressions on the frontend (158/158 passing Vitest tests), and a clean frontend build.
+
+### Added
+- **Python Virtual Environment (`backend/.venv`)**:
+  - Isolated Python 3.11 virtual environment initialized and excluded in root `.gitignore`.
+  - Installed dependencies from `backend/requirements/development.txt` (Django 5.1.15, DRF 3.15.2, psycopg 3.3.6, pytest 9.1.1, pytest-django 4.14.0, python-dotenv 1.2.3, channels 4.3.2, etc.).
+- **Environment Configuration**:
+  - Created `backend/.env.example` documenting standardized database variables (`DATABASE_NAME`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_HOST`, `DATABASE_PORT`) and compatibility aliases.
+  - Wired `python-dotenv` into `backend/manage.py` and `backend/config/settings.py` for seamless environment loading.
+- **Django Application Foundation**:
+  - Created `backend/common/apps.py` with `CommonConfig(AppConfig)` for clean app registry integration.
+  - Created placeholder `backend/templates/.gitkeep` for `TEMPLATES['DIRS']`.
+  - Added development-friendly `LOGGING` dictionary in `backend/config/settings.py`.
+  - Unified database settings supporting `DATABASE_URL` or individual `DATABASE_*` / `DB_*` variables with fast connect timeout (`connect_timeout=2`) for offline environments.
+  - `python manage.py check` passes with 0 issues.
+- **Unauthenticated Health Check Endpoint (`GET /api/health/`)**:
+  - Implemented `HealthCheckView` in `backend/common/views.py` (`AllowAny`, no auth required).
+  - Registered route in `backend/config/urls.py`.
+  - Performs an honest database probe via `connection.ensure_connection()`, reporting `status: "ok"` and `database: "disconnected"` when PostgreSQL is not running locally without crashing the process.
+- **Backend Test Foundation**:
+  - Configured `backend/pytest.ini` pointing to `config.settings`.
+  - Implemented `backend/tests/test_settings.py` (settings, middleware, DRF, database, logging).
+  - Implemented `backend/tests/test_apps.py` (app registry, all 11 domain apps + common).
+  - Implemented `backend/tests/test_health.py` (200 status, JSON schema, database probe, unauthenticated access).
+  - 12/12 backend tests passing.
+- **Container Blueprint**:
+  - Created multi-stage Python 3.11 `backend/Dockerfile` aligning with `infra/docker-compose.yml`.
+- **Phase 3 Governance**:
+  - Created `docs/phase_prompts/Phase_3_Task_3.1.md`.
+  - Created `docs/phases/PHASE_03_STATUS.md`.
+
+### Verified (Non-Regression)
+- **Frontend Protection**: Phase 2 frontend source code left completely untouched.
+- **Test Suite**: 158/158 Vitest tests passing across 8 suites.
+- **Build**: Frontend production bundle compiles cleanly with 0 TypeScript errors.
+
+---
+
 ## [Phase 2: Task 2.7 — Operational Allocation, Search & Attendance Visibility Revision] - 2026-09-27
 
 ### Summary

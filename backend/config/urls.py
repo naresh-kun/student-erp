@@ -5,11 +5,16 @@ Root routing configuration mapping all REST APIs under /api/v1/
 
 from django.contrib import admin
 from django.urls import path, include
+from common.views import HealthCheckView
 
 urlpatterns = [
+    # Foundation Health Check
+    path('api/health/', HealthCheckView.as_view(), name='health_check'),
+
+    # Django Admin Interface
     path('admin/', admin.site.urls),
     
-    # API Version 1 Namespace
+    # API Version 1 Namespace (Preserved for domain modules)
     path('api/v1/auth/', include('apps.accounts.urls')),
     path('api/v1/students/', include('apps.students.urls')),
     path('api/v1/academics/', include('apps.academics.urls')),
@@ -22,3 +27,4 @@ urlpatterns = [
     path('api/v1/notifications/', include('apps.notifications.urls')),
     path('api/v1/audit/', include('apps.audit.urls')),
 ]
+

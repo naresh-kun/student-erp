@@ -4,6 +4,16 @@ Student ERP — Django Command-Line Utility
 """
 import os
 import sys
+from pathlib import Path
+
+# Load environment variables from .env if present
+try:
+    from dotenv import load_dotenv
+    backend_dir = Path(__file__).resolve().parent
+    load_dotenv(backend_dir / '.env')
+    load_dotenv(backend_dir.parent / '.env')
+except ImportError:
+    pass
 
 def main():
     """Run administrative tasks."""
