@@ -1,0 +1,47 @@
+[
+  {
+    "id": "sub_001",
+    "name": "Mathematics",
+    "code": "MATH-041",
+    "department": "Mathematics",
+    "weekly_periods": 6,
+    "description": "Calculus, algebra, vectors, three-dimensional geometry, linear programming, and probability.",
+    "faculty_ids": ["fac_001"]
+  },
+  {
+    "id": "sub_002",
+    "name": "Computer Science",
+    "code": "CS-083",
+    "department": "Computer Science",
+    "weekly_periods": 6,
+    "description": "Python programming, object-oriented concepts, computational thinking, data structures, and SQL.",
+    "faculty_ids": ["fac_002"]
+  },
+  {
+    "id": "sub_003",
+    "name": "Physics",
+    "code": "PHY-042",
+    "department": "Physics",
+    "weekly_periods": 5,
+    "description": "Mechanics, thermodynamics, electrostatics, magnetics, optics, modern physics, and laboratory experiments.",
+    "faculty_ids": []
+  },
+  {
+    "id": "sub_004",
+    "name": "English Core",
+    "code": "ENG-301",
+    "department": "English & Languages",
+    "weekly_periods": 5,
+    "description": "Reading comprehension, advanced writing skills, literature analysis, and linguistic competence.",
+    "faculty_ids": []
+  },
+  {
+    "id": "sub_005",
+    "name": "Chemistry",
+    "code": "CHEM-043",
+    "department": "Chemistry",
+    "weekly_periods": 5,
+    "description": "Physical, inorganic, and organic chemistry, equilibrium, coordination compounds, and lab analysis.",
+    "faculty_ids": []
+  }
+]

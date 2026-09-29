@@ -1,0 +1,32 @@
+[
+  {
+    "id": "fac_001",
+    "user_id": "usr_003",
+    "employee_code": "FAC-MATH-012",
+    "first_name": "R.",
+    "last_name": "Suresh",
+    "department": "Mathematics",
+    "designation": "Senior PGT & Department Head",
+    "qualification": "M.Sc., B.Ed. in Mathematics",
+    "specialization": "Algebra, Calculus & Probability",
+    "office_room": "Staff Room B, Ramanujan Block",
+    "joining_date": "2015-06-15",
+    "assigned_subject_ids": ["sub_001"],
+    "class_teacher_of": "cls_001"
+  },
+  {
+    "id": "fac_002",
+    "user_id": "usr_004",
+    "employee_code": "FAC-CS-008",
+    "first_name": "Priya",
+    "last_name": "Krishnan",
+    "department": "Computer Science",
+    "designation": "PGT Computer Science",
+    "qualification": "M.C.A., B.Ed. in Computer Applications",
+    "specialization": "Python, Data Structures & SQL Databases",
+    "office_room": "Computer Lab 2, Aryabhata Block",
+    "joining_date": "2018-07-02",
+    "assigned_subject_ids": ["sub_002"],
+    "class_teacher_of": null
+  }
+]

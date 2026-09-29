@@ -1,0 +1,11 @@
+warning: in the working copy of 'docs/CHANGELOG.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/GIT_WORKFLOW.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/PROJECT_STATUS.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/PROJECT_STRUCTURE.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/phases/PHASE_01_STATUS.md', LF will be replaced by CRLF the next time Git touches it
+ docs/CHANGELOG.md              |  6 [32m++++++[m
+ docs/GIT_WORKFLOW.md           | 10 [32m++++++++++[m
+ docs/PROJECT_STATUS.md         |  1 [32m+[m
+ docs/PROJECT_STRUCTURE.md      |  1 [32m+[m
+ docs/phases/PHASE_01_STATUS.md |  4 [32m++++[m
+ 5 files changed, 22 insertions(+)

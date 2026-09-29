@@ -1,0 +1,44 @@
+# Student ERP — Caddy Edge Reverse Proxy Configuration
+# Automatic TLS via Let's Encrypt / ZeroSSL
+
+{$DOMAIN:localhost} {
+    # Encode responses with modern compression
+    encode zstd gzip
+
+    # 1. API Reverse Proxy
+    handle /api/* {
+        reverse_proxy backend:8000
+    }
+
+    # 2. Django Channels WebSocket Reverse Proxy
+    handle /ws/* {
+        reverse_proxy backend:8000
+    }
+
+    # 3. Static Media & Django Admin
+    handle /admin/* {
+        reverse_proxy backend:8000
+    }
+
+    handle /static/* {
+        reverse_proxy backend:8000
+    }
+
+    # 4. Frontend Single Page Application
+    handle {
+        reverse_proxy frontend:80
+    }
+
+    # Security Headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    log {
+        output stdout
+        format console
+    }
+}

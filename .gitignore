@@ -1,0 +1,45 @@
+# =============================================================================
+# Student ERP — Git Ignore Configuration
+# =============================================================================
+
+# 1. Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# 2. Virtual Environments
+venv/
+env/
+.venv/
+ENV/
+
+# 3. Node & Frontend Build Artifacts
+node_modules/
+dist/
+dist-ssr/
+*.local
+.vite/
+
+# 4. Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+
+# 5. Django Runtime Artifacts
+staticfiles/
+media/
+*.sqlite3
+
+# 6. IDE, Editors & OS Files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
