@@ -1,9 +1,9 @@
 # Phase 3 Execution Status: Backend Foundation + Database
 
 > **Phase**: Phase 3 (Backend Foundation + Database)  
-> **Current Task**: **Task 3.5 Completed (Migrations, Constraints & Seed Data)**  
-> **Status**: **IN PROGRESS (Task 3.1, 3.2, 3.3, 3.4, 3.5 DONE; 105 backend unit/model tests passing, 19 DB tests marked; 158/158 frontend tests passing; Build clean)**  
-> **Date**: 2026-09-29
+> **Current Task**: **Task 3.6 Completed (Initial REST API Foundation)**  
+> **Status**: **IN PROGRESS (Task 3.1, 3.2, 3.3, 3.4, 3.5, 3.6 DONE; 132 backend unit/model/API tests passing, 22 DB tests marked; 158/158 frontend tests passing; Build clean)**  
+> **Date**: 2026-09-30
 
 ---
 
@@ -22,7 +22,7 @@ Establish the core Python/Django application tier, relational database persisten
 | **Task 3.3** | **PostgreSQL Schema Models & Migrations (Core)** | 3NF database models, constraints, UUID PKs, initial migrations (`accounts`, `students`, `academics`) | **COMPLETED** |
 | **Task 3.4** | **Attendance & Marks Database Layer** | 3NF database models for `Attendance`, `LeaveApplication`, `ExamType`, `Mark`, CBSE 8-tier grading, 4-status attendance, migrations (`attendance`, `marks`) | **COMPLETED** |
 | **Task 3.5** | **Migrations, Constraints & Seed Data** | Database hardening, FK audit, constraint verification, reproducible & idempotent `seed_dev_data` management command | **COMPLETED** |
-| **Task 3.6** | **Initial REST APIs & Serializers** | DRF serializers, initial `/api/v1/` read endpoints, pagination | **PLANNED** |
+| **Task 3.6** | **Initial REST API Foundation** | DRF serializers, versioned `/api/v1/` routes, thin views, standardized envelopes, pagination, filtering, query optimization | **COMPLETED** |
 
 ---
 
@@ -132,7 +132,38 @@ Establish the core Python/Django application tier, relational database persisten
 
 ---
 
-## 6. Next Task
+## 6. Completed Work (Task 3.6: Initial REST API Foundation)
 
-**PHASE 3 — TASK 3.4**: Initial REST APIs & Serializers (DRF serializers, initial `/api/v1/` read endpoints, pagination, and API contract validation).
+- [x] **Master URL Routing & Versioning (`backend/config/urls.py`)**:
+  - Maintained unauthenticated `/api/health/` liveness endpoint.
+  - Configured clean, domain-oriented `/api/v1/` routes for `auth`, `students`, `parents`, `faculty`, `classes`, `subjects`, `academics`, `attendance`, `marks`, `timetable`, `calendar`, `allocation`, `reports`, `notifications`, and `audit`.
+- [x] **DRF Serializers Across Active Domain Models**:
+  - `apps/accounts`: `RoleSerializer`, `UserSummarySerializer`, `ParentSerializer`, `ParentSummarySerializer`, `FacultySerializer`, `FacultySummarySerializer` (strictly descriptive, zero evaluative metrics).
+  - `apps/students`: `StudentListSerializer`, `StudentDetailSerializer`, `StudentWriteSerializer` (format validation for `STUYYYYNNNNN` and immutability protection).
+  - `apps/academics`: `AcademicYearSerializer`, `SchoolClassSerializer`, `SectionSerializer`, `SubjectSerializer` (`weekly_periods` strictly replaces `credits`), `EnrollmentSerializer`.
+  - `apps/attendance`: `AttendanceRecordSerializer`, `AttendanceBulkItemSerializer`, `BulkAttendanceCreateSerializer`, `LeaveApplicationSerializer` (canonical 4 statuses: `PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`; strict rejection of `LATE` and `EXCUSED`).
+  - `apps/marks`: `ExamTypeSerializer`, `MarkSerializer`, `MarkBulkItemSerializer`, `BulkMarkCreateSerializer` (0–100 boundary validation, automatic 8-tier letter grade derivation via `calculate_grade`).
+- [x] **Thin Views & ViewSets with Domain Services**:
+  - `AccountService`, `StudentService`, `AcademicService`, `AttendanceService`, `MarksService` powering views with query optimization (`select_related`, `prefetch_related`) to prevent N+1 queries.
+  - Attendance overview returns canonical percentage calculation adhering to Master Plan Amendment 2.
+  - Dedicated `StudentAbsenteesView` returning only students with status `ABSENT`.
+  - Report card endpoint generating cumulative evaluations (`calculate_cumulative_evaluation`).
+- [x] **Standard Response & Centralized Error Handling**:
+  - Success responses adhere to standard envelope (`success`, `data`, `meta`).
+  - Error responses formatted via `custom_exception_handler` (`success`, `error: {code, message, status_code, details}`).
+  - Standard pagination via `StandardResultsSetPagination` returning `page`, `page_size`, `total_records`, `total_pages`, `has_next`, `has_previous`.
+- [x] **Backend Test Suite Expansion (Task 3.6)**:
+  - Authored `backend/tests/test_api_task36.py` covering routing resolution, serializers, response envelopes, error handler normalization, 4-status attendance formula, CBSE 8-tier grading, and live DB integration tests.
+  - Total backend tests: **132 passed**, 22 skipped (live PostgreSQL DB).
+- [x] **Non-Regression & System Integrity**:
+  - `python manage.py check`: 0 issues.
+  - `python manage.py makemigrations --check`: 0 unmigrated changes.
+  - Frontend Vitest suite: **158/158 tests passing**.
+  - Frontend production build: Clean compile in 14.18s with 0 TypeScript errors.
+
+---
+
+## 7. Next Task
+
+**PHASE 3 COMPLETE**: Proceed to Phase 4 (Authentication & RBAC) / Task 3.7 Phase 3 Wrap-up & Audit as designated by project governance.
 

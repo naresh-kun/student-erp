@@ -2,9 +2,9 @@
 
 > **Status**: Authoritative API Specification  
 > **API Version**: `v1`  
-> **Current Status**: **PLANNED** (Phase 1 establishes design contracts only; NO API endpoints are currently implemented)  
+> **Current Status**: **IN PROGRESS** (Phase 3 Task 3.6 establishes initial REST API foundation across core domain endpoints; frontend integration deferred to Phase 5)  
 > **Base URL**: `/api/v1`  
-> **Last Updated**: 2026-09-24
+> **Last Updated**: 2026-09-30
 
 ---
 
@@ -12,9 +12,9 @@
 
 | Status Token | Definition | Current Count |
 | :--- | :--- | :--- |
-| **`IMPLEMENTED`** | Endpoint exists, unit tested, accessible via network | 0 |
+| **`IMPLEMENTED`** | Endpoint exists, unit tested, accessible via network | 18 Endpoints (Task 3.6 Foundation) |
 | **`MOCKED`** | Simulated in frontend via `mock-data/` & `services/mockService.ts` | 10 Datasets |
-| **`PLANNED`** | Fully documented schema & contract, scheduled for future backend phases | All v1 endpoints below |
+| **`PLANNED`** | Fully documented schema & contract, scheduled for future backend phases | Remaining v1 endpoints below |
 
 ---
 

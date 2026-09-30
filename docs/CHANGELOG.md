@@ -1,6 +1,45 @@
 # Project Changelog
 
 All notable changes to the Student ERP project will be documented in this file.
+
+## [Phase 3: Task 3.6 — Initial REST API Foundation] - 2026-09-30
+
+### Summary
+Designed and implemented the first REST API foundation for the Student ERP backend under versioned namespace `/api/v1/` matching `docs/API_CONTRACT.md`. Authored DRF ModelSerializers and Serializers across 5 active domains (`accounts`, `students`, `academics`, `attendance`, `marks`), wired thin DRF views with dedicated domain services, enforced standardized response and error envelopes, standard pagination (`StandardResultsSetPagination`), and query optimization (`select_related`, `prefetch_related`) to prevent N+1 queries. Implemented Master Plan Amendment 2 canonical 4-status attendance percentage calculation (`(PRESENT + ON_DUTY) / (PRESENT + ABSENT + ON_DUTY + LEAVE) * 100`), strict legacy status rejection (`LATE`, `EXCUSED`), CBSE 8-tier letter grading derivation, Student ID format validation and immutability protection, and cumulative report card computation. Expanded test suite to 132 passing backend unit/model/API tests (22 DB tests marked), verified 0 unmigrated model changes, 158/158 passing frontend tests, and a clean production build.
+
+### Added
+- **API Routing & Versioning (`backend/config/urls.py`)**:
+  - Maintained unauthenticated `/api/health/` liveness endpoint.
+  - Wired domain-specific routers: `/api/v1/auth/`, `/api/v1/students/`, `/api/v1/parents/`, `/api/v1/faculty/`, `/api/v1/classes/`, `/api/v1/subjects/`, `/api/v1/academics/`, `/api/v1/attendance/`, `/api/v1/marks/`, and deferred domain endpoints (`timetable`, `calendar`, `allocation`, `reports`, `notifications`, `audit`).
+- **DRF Serializers**:
+  - `accounts`: `RoleSerializer`, `UserSummarySerializer`, `ParentSerializer`, `ParentSummarySerializer`, `FacultySerializer`, `FacultySummarySerializer` (strictly descriptive).
+  - `students`: `StudentListSerializer`, `StudentDetailSerializer`, `StudentWriteSerializer` (with `STUYYYYNNNNN` format validation & immutability protection).
+  - `academics`: `AcademicYearSerializer`, `SchoolClassSerializer`, `SectionSerializer`, `SubjectSerializer` (`weekly_periods` replaces `credits`), `EnrollmentSerializer`.
+  - `attendance`: `AttendanceRecordSerializer`, `AttendanceBulkItemSerializer`, `BulkAttendanceCreateSerializer`, `LeaveApplicationSerializer` (4 canonical statuses: `PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`; rejects `LATE`/`EXCUSED`).
+  - `marks`: `ExamTypeSerializer`, `MarkSerializer`, `MarkBulkItemSerializer`, `BulkMarkCreateSerializer` (0–100 range validation, automatic CBSE 8-tier grading).
+- **Views & Domain Services**:
+  - `apps/accounts`: `CurrentUserProfileView` (`/auth/me/`), `ParentListView`, `ParentDetailView`, `ParentChildrenView`, `FacultyListView`, `FacultyDetailView`.
+  - `apps/students`: `StudentListView`, `StudentDetailView` (supports lookup by UUID PK or `student_id`).
+  - `apps/academics`: `ClassListView`, `ClassDetailView`, `ClassSectionsView`, `SubjectListView`, `SubjectDetailView`, `AcademicYearListView`.
+  - `apps/attendance`: `AttendanceOverviewView` (returns summary metrics & attendance % in metadata), `BulkAttendanceCreateView`, `AttendanceDetailView`, `StudentAbsenteesView` (dedicated surface for status `ABSENT`), `LeaveApplicationListView`.
+  - `apps/marks`: `MarkListView`, `BulkMarkCreateView`, `MarkDetailView`, `ReportCardView` (cumulative total, max marks, overall percentage, letter grade, subject breakdown), `ExamTypeListView`.
+- **Response & Error Handling**:
+  - Standard success envelope (`success`, `data`, `meta`).
+  - Standard error envelope (`success`, `error: {code, message, status_code, details}`).
+  - `custom_exception_handler` normalized for Django `ValidationError`, `Http404`, and custom domain exceptions.
+  - Standard pagination with `page`, `page_size`, `total_records`, `total_pages`, `has_next`, `has_previous`.
+- **Task 3.6 Pytest Suite (`backend/tests/test_api_task36.py`)**:
+  - Comprehensive suite verifying route resolution, serializer validation, response envelopes, error normalization, attendance formulas, grading boundaries, and PostgreSQL DB integration.
+  - Total backend tests: **132 passing**, 22 skipped (live DB).
+
+### Verified (Non-Regression)
+- **Django System Check**: `python manage.py check` passes with 0 issues.
+- **Migration Graph**: `makemigrations --check` reports 0 unmigrated changes.
+- **Frontend Test Suite**: 158/158 Vitest tests passing across all 8 test suites.
+- **Frontend Build**: Production bundle compiles cleanly with 0 TypeScript errors in 14.18s.
+
+---
+
 ## [Phase 3: Task 3.5 — Migrations, Constraints & Seed Data] - 2026-09-29
 
 ### Summary

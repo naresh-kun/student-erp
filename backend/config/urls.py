@@ -13,10 +13,14 @@ urlpatterns = [
 
     # Django Admin Interface
     path('admin/', admin.site.urls),
-    
-    # API Version 1 Namespace (Preserved for domain modules)
+
+    # API Version 1 Namespace (Domain Endpoints matching docs/API_CONTRACT.md)
     path('api/v1/auth/', include('apps.accounts.urls')),
     path('api/v1/students/', include('apps.students.urls')),
+    path('api/v1/parents/', include('apps.accounts.urls_parents')),
+    path('api/v1/faculty/', include('apps.accounts.urls_faculty')),
+    path('api/v1/classes/', include('apps.academics.urls_classes')),
+    path('api/v1/subjects/', include('apps.academics.urls_subjects')),
     path('api/v1/academics/', include('apps.academics.urls')),
     path('api/v1/attendance/', include('apps.attendance.urls')),
     path('api/v1/marks/', include('apps.marks.urls')),
@@ -27,4 +31,3 @@ urlpatterns = [
     path('api/v1/notifications/', include('apps.notifications.urls')),
     path('api/v1/audit/', include('apps.audit.urls')),
 ]
-

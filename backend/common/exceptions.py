@@ -95,6 +95,10 @@ class ImmutableFieldMutationError(BusinessLogicError):
 # ============================================================================
 # Global DRF Exception Handler
 # ============================================================================
+from django.core.exceptions import ValidationError as DjangoValidationError, ObjectDoesNotExist
+from django.http import Http404
+
+
 def custom_exception_handler(exc, context):
     """
     Standard envelope error formatter:
@@ -109,6 +113,41 @@ def custom_exception_handler(exc, context):
     }
     """
     response = exception_handler(exc, context)
+
+    if response is None:
+        if isinstance(exc, DjangoValidationError):
+            details = []
+            if hasattr(exc, 'message_dict'):
+                details = [exc.message_dict]
+            elif hasattr(exc, 'messages'):
+                details = exc.messages
+            else:
+                details = [str(exc)]
+            return Response(
+                {
+                    'success': False,
+                    'error': {
+                        'code': 'VALIDATION_ERROR',
+                        'message': 'Validation failed for entity.',
+                        'status_code': status.HTTP_400_BAD_REQUEST,
+                        'details': details,
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        elif isinstance(exc, (ObjectDoesNotExist, Http404)):
+            return Response(
+                {
+                    'success': False,
+                    'error': {
+                        'code': 'NOT_FOUND',
+                        'message': str(exc) or 'Requested resource was not found.',
+                        'status_code': status.HTTP_404_NOT_FOUND,
+                        'details': [],
+                    }
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
     if response is not None:
         details = []
@@ -132,6 +171,11 @@ def custom_exception_handler(exc, context):
                     code = raw_code.upper()
             except Exception:
                 pass
+
+        if isinstance(exc, Http404) or (response.status_code == 404 and str(code).lower() in ('http404', 'not_found', 'notfound')):
+            code = 'NOT_FOUND'
+        elif isinstance(code, str):
+            code = code.upper()
 
         message = str(getattr(exc, 'detail', str(exc)))
 
