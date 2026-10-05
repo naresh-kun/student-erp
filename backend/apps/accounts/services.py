@@ -57,6 +57,35 @@ class AuthService(BaseService):
             'token_type': 'Bearer',
         }
 
+    def login_with_credentials(self, username: str, password: str) -> Optional[Dict[str, Any]]:
+        """
+        Executes complete login authentication workflow (Task 4.2):
+        1. Validates input credentials via Django authentication.
+        2. Rejects inactive or non-existent accounts safely.
+        3. Issues JWT access and refresh tokens with safe claims.
+        4. Returns safe authenticated user context and tokens.
+        """
+        user = self.authenticate_user(username, password)
+        if user is None:
+            return None
+
+        tokens = self.generate_tokens_for_user(user)
+        user_info = {
+            'id': str(user.id),
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'role': user.role.name if user.role else 'Unknown',
+        }
+
+        return {
+            'user': user_info,
+            'access': tokens['access'],
+            'refresh': tokens['refresh'],
+            'token_type': tokens.get('token_type', 'Bearer'),
+        }
+
     def validate_password_strength(self, password: str, user: Optional[User] = None) -> List[str]:
         """
         Validates password against configured AUTH_PASSWORD_VALIDATORS.

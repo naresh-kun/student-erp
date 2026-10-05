@@ -2,6 +2,34 @@
 
 All notable changes to the Student ERP project will be documented in this file.
 
+## [Phase 4: Task 4.2 — Custom User & Login] - 2026-10-05
+
+### Summary
+Implemented the authoritative login and authentication workflow under `/api/v1/auth/` using the custom User model (`accounts.User`), Django password verification, and SimpleJWT. Authored `ERPTokenObtainPairSerializer` to authenticate credentials, reject disabled/inactive accounts (`is_active=False`), inject standard safe claims (`user_id`, `role`, `username`), assemble a safe authenticated user identity payload, and return a standardized dual-compatibility envelope (`access`, `refresh`, `token_type`, `user`, `success`, `data`). Wired custom `TokenObtainPairView` and `TokenRefreshView` under `apps/accounts/views.py`. Extended `AuthService` with `login_with_credentials`. Validated password security with PBKDF2 hashing, verified all 5 canonical roles, verified `/api/v1/auth/me/` current-user identity resolution, and authored 20 automated tests expanding the backend test suite to 201/201 passing tests (100%). Executed real live API smoke tests against PostgreSQL seeded credentials, and confirmed frontend non-regression with 158/158 Vitest tests passing and a clean production build in 7.79s.
+
+### Added
+- **Login Serializer & View (`backend/apps/accounts/serializers.py` & `views.py`)**:
+  - `ERPTokenObtainPairSerializer`: Subclasses SimpleJWT `TokenObtainPairSerializer`, validates credentials, checks active account status, injects claims, returns user info and tokens in dual envelope format.
+  - `TokenObtainPairView`: Exposes `POST /api/v1/auth/login/` backed by `ERPTokenObtainPairSerializer`.
+  - `TokenRefreshView`: Exposes `POST /api/v1/auth/refresh/` with dual envelope wrapping (`access`, `refresh`, `token_type`, `success`, `data`).
+- **AuthService Extension (`backend/apps/accounts/services.py`)**:
+  - `login_with_credentials(username, password)`: Complete authentication workflow returning safe user payload and JWT token pair.
+- **Task 4.2 Pytest Suite (`backend/tests/test_login_task42.py`)**:
+  - 20 comprehensive unit and integration tests covering login success, role identity (all 5 roles), invalid passwords, unknown users, empty inputs, inactive accounts, token lifetimes, claim inspection, refresh workflow, `/auth/me/` profile retrieval, and post-issuance account deactivation.
+  - Backend test suite expanded from 181 to **201 passing tests (100%)**.
+- **Live API Smoke Testing**:
+  - Validated live HTTP requests for login, token refresh, and `/auth/me/` against PostgreSQL seeded data (`admin_demo` / `demo123`).
+
+### Verified (Non-Regression)
+- **Django System Check**: `python manage.py check` passes with 0 issues.
+- **Database Migrations**: `makemigrations --check` reports 0 unmigrated changes; schema unchanged.
+- **Backend Test Suite**: 201 passed out of 201 tests across all 14 test modules.
+- **Frontend Test Suite**: 158 passed out of 158 Vitest tests (`npm test -- --run`).
+- **Frontend Build**: Production bundle compiles cleanly in 7.79s (`npm run build`).
+- **Architectural Invariants**: Frontend remains mock-driven; zero RBAC enforcement or Student/Parent special auth implemented in Task 4.2.
+
+---
+
 ## [Phase 4: Task 4.1 — Authentication Foundation] - 2026-10-05
 
 ### Summary

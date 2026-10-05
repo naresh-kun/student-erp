@@ -7,17 +7,52 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.shortcuts import get_object_or_404
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView as SimpleJWTTokenObtainPairView,
+    TokenRefreshView as SimpleJWTTokenRefreshView,
+)
 
 from common.responses import success_response
 from common.pagination import StandardResultsSetPagination
 from apps.accounts.models import Parent, Faculty
 from apps.accounts.serializers import (
+    ERPTokenObtainPairSerializer,
     ParentSerializer,
     ParentSummarySerializer,
     FacultySerializer,
     FacultySummarySerializer,
 )
-from apps.accounts.services import AccountService
+from apps.accounts.services import AccountService, AuthService
+
+
+class TokenObtainPairView(SimpleJWTTokenObtainPairView):
+    """
+    POST /api/v1/auth/login/
+    Authoritative login endpoint for Student ERP (Task 4.2).
+    Authenticates custom User credentials, issues JWT access/refresh tokens with safe claims,
+    and returns safe user profile data matching docs/API_CONTRACT.md Section 3.1.
+    """
+    serializer_class = ERPTokenObtainPairSerializer
+
+
+class TokenRefreshView(SimpleJWTTokenRefreshView):
+    """
+    POST /api/v1/auth/refresh/
+    Authoritative token refresh endpoint for Student ERP (Task 4.2).
+    Refreshes JWT access token and rotates refresh token per configuration.
+    Provides dual-compatibility envelope adhering to API contract.
+    """
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == status.HTTP_200_OK and isinstance(response.data, dict):
+            response.data['token_type'] = 'Bearer'
+            response.data['success'] = True
+            response.data['data'] = {
+                'access': response.data.get('access'),
+                'refresh': response.data.get('refresh'),
+                'token_type': 'Bearer',
+            }
+        return response
 
 
 class CurrentUserProfileView(APIView):

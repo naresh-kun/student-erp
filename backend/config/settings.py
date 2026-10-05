@@ -32,6 +32,8 @@ ALLOWED_HOSTS = [
     for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',')
     if host.strip()
 ]
+if DEBUG and 'testserver' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('testserver')
 
 # 1. Application Definition
 DJANGO_APPS = [

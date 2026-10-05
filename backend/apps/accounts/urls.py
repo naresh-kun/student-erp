@@ -4,8 +4,11 @@ Namespace: /api/v1/auth/
 """
 
 from django.urls import path
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from apps.accounts.views import CurrentUserProfileView
+from apps.accounts.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+    CurrentUserProfileView,
+)
 
 app_name = 'accounts'
 

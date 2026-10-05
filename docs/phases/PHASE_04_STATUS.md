@@ -1,9 +1,9 @@
 # Phase 4 Execution Status: Authentication + RBAC
 
 > **Phase**: Phase 4 (Authentication + Role-Based Access Control)  
-> **Current Task**: **Task 4.1 Completed (Authentication Foundation)**  
-> **Next Task**: **Task 4.2 (Custom User & Login)**  
-> **Status**: **IN PROGRESS (Task 4.1 DONE; 181/181 backend pytest tests passing; 158/158 frontend tests passing; clean build)**  
+> **Current Task**: **Task 4.2 Completed (Custom User & Login)**  
+> **Next Task**: **Task 4.3 (Token Refresh & Invalidation / RBAC Architecture)**  
+> **Status**: **IN PROGRESS (Tasks 4.1 & 4.2 DONE; 201/201 backend pytest tests passing; 158/158 frontend tests passing; clean build)**  
 > **Date**: 2026-10-05  
 
 ---
@@ -19,7 +19,7 @@ Establish the authoritative backend authentication and authorization engine for 
 | Task | Title | Scope | Status |
 | :--- | :--- | :--- | :--- |
 | **Task 4.1** | **Authentication Foundation** | SimpleJWT configuration, environment variables, AuthService boundary, auth serializers, `/api/v1/auth/` URL namespace, password security, test suite | **COMPLETED** |
-| **Task 4.2** | **Custom User & Login** | Custom login endpoint, token claims, safe profile payload, envelope normalization | **PENDING** |
+| **Task 4.2** | **Custom User & Login** | Custom login endpoint, token claims, safe profile payload, envelope normalization, live smoke tests | **COMPLETED** |
 | **Task 4.3** | **Token Refresh & Invalidation** | Stateless refresh token workflow, token expiration handling, logout/blacklist boundaries | **PENDING** |
 | **Task 4.4** | **RBAC Permission Classes** | Custom DRF BasePermission classes (`IsAdmin`, `IsPrincipal`, `IsFaculty`, `IsStudent`, `IsParent`, object-level ownership) | **PENDING** |
 | **Task 4.5** | **Student & Parent Authentication** | Alphanumeric Student ID login, parent authentication via linked child's Student ID | **PENDING** |
@@ -78,10 +78,57 @@ Establish the authoritative backend authentication and authorization engine for 
 
 ---
 
-## 4. Phase 4 Invariants & Architectural Boundaries
+## 4. Completed Work (Task 4.2: Custom User & Login)
+
+- [x] **Login Pipeline Implementation (`POST /api/v1/auth/login/`)**:
+  - Implemented `ERPTokenObtainPairSerializer` subclassing `TokenObtainPairSerializer`:
+    - Enforces credential validation via Django authentication (`authenticate(username, password)`).
+    - Rejects inactive or disabled accounts (`is_active=False`) with HTTP 401.
+    - Rejects non-existent usernames and incorrect passwords with safe generic 401 response (zero account enumeration).
+    - Injects standard safe claims (`user_id`, `role`, `username`) into JWT payload.
+    - Assembles safe user identity payload: `id`, `username`, `email`, `first_name`, `last_name`, `role`.
+    - Returns standardized dual-compatibility envelope (`access`, `refresh`, `token_type`, `user`, `success`, `data`).
+  - Implemented `TokenObtainPairView` in `apps/accounts/views.py` backed by `ERPTokenObtainPairSerializer`.
+- [x] **Token Refresh Implementation (`POST /api/v1/auth/refresh/`)**:
+  - Implemented `TokenRefreshView` in `apps/accounts/views.py`:
+    - Validates refresh token and issues new access token.
+    - Rotates refresh tokens when configured.
+    - Rejects expired, tampered, or invalid refresh tokens with HTTP 401.
+    - Delivers standardized dual-compatibility envelope (`access`, `refresh`, `token_type`, `success`, `data`).
+- [x] **Current User Endpoint (`GET /api/v1/auth/me/`)**:
+  - Requires `IsAuthenticated`.
+  - Resolves authenticated User from validated JWT Bearer token.
+  - Returns safe user context via `AccountService.get_user_profile_context(request.user)`.
+  - Strictly excludes password, password hash, and security secrets.
+  - Rejects unauthenticated or tampered requests with HTTP 401.
+- [x] **AuthService Extension (`apps/accounts/services.py`)**:
+  - Added `login_with_credentials(username, password)` executing the complete credential check, inactive user validation, token issuance, and safe user payload assembly.
+- [x] **Automated Testing Suite (`backend/tests/test_login_task42.py`)**:
+  - 20 comprehensive automated tests covering:
+    - Login with valid credentials, invalid password, unknown username, empty inputs, inactive user.
+    - Login across all 5 canonical roles (`Admin`, `Principal`, `Faculty`, `Student`, `Parent`).
+    - JWT access & refresh token claims, lifetimes (15m / 7d), and signature validation.
+    - Refresh token issuance, rotation, and rejection of malformed tokens.
+    - Current user profile retrieval with token, unauthenticated 401, token tampering, and post-issuance account deactivation.
+    - Direct `AuthService` login workflow execution.
+  - **Total backend test suite expanded from 181 to 201 tests passing (100%)**.
+- [x] **Live API Smoke Testing**:
+  - Executed real HTTP queries against live PostgreSQL database with seeded credentials (`admin_demo` / `demo123`):
+    - `POST /api/v1/auth/login/` -> 200 OK (access, refresh, user: Admin).
+    - `POST /api/v1/auth/refresh/` -> 200 OK (access renewed).
+    - `GET /api/v1/auth/me/` -> 200 OK (user context verified).
+    - `POST /api/v1/auth/login/` (wrong password) -> 401 Unauthorized.
+    - `GET /api/v1/auth/me/` (unauthenticated) -> 401 Unauthorized.
+- [x] **Frontend Regression**:
+  - **158/158 Vitest tests passing (`npm test -- --run` in 5.79s)**.
+  - **Clean production build (`npm run build` in 7.79s, 0 errors)**.
+
+---
+
+## 5. Phase 4 Invariants & Architectural Boundaries
 
 1. **Django + DRF + SimpleJWT Sole Authority**: No competing authentication framework (Firebase, Supabase, Auth0, FastAPI) is permitted.
 2. **Stateless JWT Architecture**: Access tokens are stateless, short-lived (15 minutes), signed with HMAC-SHA256.
-3. **No Premature RBAC in Task 4.1**: Role permission enforcement classes are reserved for Task 4.4.
-4. **No Premature Student/Parent Workflows in Task 4.1**: Alphanumeric Student ID login and Parent linked-student auth are reserved for Task 4.5.
-5. **Frontend Decoupling**: React frontend remains completely mock-driven until Phase 5.
+3. **No Premature RBAC in Task 4.2**: Role permission enforcement classes are reserved for Task 4.4.
+4. **No Premature Student/Parent Workflows in Task 4.2**: Alphanumeric Student ID login and Parent linked-student auth are reserved for Task 4.5.
+5. **Frontend Decoupling**: React frontend remains completely mock-driven (`VITE_USE_MOCK_DATA=true`) until Phase 5.

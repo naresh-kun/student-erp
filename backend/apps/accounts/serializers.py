@@ -5,7 +5,48 @@ Serializer-layer contract for authentication, users, roles, faculty, and parents
 
 from typing import Optional
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from apps.accounts.models import Role, User, Parent, Faculty
+
+
+class ERPTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Authoritative login serializer for Student ERP (Task 4.2).
+    Authenticates custom User, injects role & username claims,
+    and returns access, refresh, token_type, and safe user identity.
+    Adheres strictly to docs/API_CONTRACT.md Section 3.1 and standardized envelope.
+    """
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['role'] = user.role.name if user.role else 'Unknown'
+        token['username'] = user.username
+        return token
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+
+        user_info = {
+            'id': str(self.user.id),
+            'username': self.user.username,
+            'email': self.user.email,
+            'first_name': self.user.first_name,
+            'last_name': self.user.last_name,
+            'role': self.user.role.name if self.user.role else 'Unknown',
+        }
+
+        data['token_type'] = 'Bearer'
+        data['user'] = user_info
+
+        # Dual-compatibility envelope
+        data['success'] = True
+        data['data'] = {
+            'access': data['access'],
+            'refresh': data['refresh'],
+            'token_type': 'Bearer',
+            'user': user_info,
+        }
+        return data
 
 
 class AuthTokenResponseSerializer(serializers.Serializer):

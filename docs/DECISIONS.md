@@ -212,5 +212,41 @@
   - Zero database bloat or unneeded migrations for token management in Task 4.1.
   - High developer velocity and strict preservation of Phase 3 invariants.
 
+---
+
+## ADR 011: Standardized Login Workflow and Dual Envelope Token Delivery
+
+- **Status**: ACCEPTED / AUTHORITATIVE
+- **Context**: 
+  - `docs/API_CONTRACT.md` establishes two conventions:
+    1. Section 2 global standard envelopes: `{ "success": true, "data": { ... } }`.
+    2. Section 3.1 auth endpoint specifics: `POST /api/v1/auth/login/` returning `{ "access": "...", "refresh": "...", "user": { ... } }`.
+  - Standard OAuth/JWT client SDKs (and direct DRF tests) look for `access` and `refresh` directly on the root JSON object, whereas Student ERP frontend adapters expect enveloped responses with `success: true`.
+- **Decision**:
+  1. **Dual Envelope Structure**: The login response emits a hybrid response payload containing both the root token keys and the standardized envelope:
+     ```json
+     {
+       "access": "<jwt>",
+       "refresh": "<jwt>",
+       "token_type": "Bearer",
+       "user": { "id": "...", "username": "...", "role": "..." },
+       "success": true,
+       "data": {
+         "access": "<jwt>",
+         "refresh": "<jwt>",
+         "token_type": "Bearer",
+         "user": { ... }
+       }
+     }
+     ```
+  2. **Serializer Layer Integration**: Implement `ERPTokenObtainPairSerializer` subclassing SimpleJWT's `TokenObtainPairSerializer` to generate safe claims (`user_id`, `role`, `username`), query the custom User model, and package this dual-envelope payload.
+  3. **Credential & Inactivity Enforcement**: Authentication strictly uses Django's password verification (`authenticate`). Non-existent usernames and incorrect passwords return identical generic error messages (HTTP 401) to prevent account enumeration. Disabled accounts (`is_active=False`) are unconditionally rejected.
+  4. **Preserved Endpoint Identity**: Keep view class names `TokenObtainPairView` and `TokenRefreshView` so route resolution contracts and earlier tests remain 100% stable.
+- **Consequences**:
+  - Zero ambiguity: both SimpleJWT client libraries and ERP envelope-aware clients operate seamlessly without custom adapters.
+  - Full adherence to security requirements: no passwords or hashes serialized, zero enumeration risk.
+  - 100% backward compatibility with Task 4.1 foundation tests.
+
+
 
 
