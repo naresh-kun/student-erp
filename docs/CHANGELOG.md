@@ -2,6 +2,28 @@
 
 All notable changes to the Student ERP project will be documented in this file.
 
+## [Phase 3: Task 3.7 — Final Verification, Hardening & Phase 3 Sign-Off] - 2026-10-05
+
+### Summary
+Concluded Phase 3 with comprehensive system verification, environment alignment, database seeding and idempotency testing, edge-case hardening, documentation gap repair, and formal Phase 3 sign-off. Aligned backend `.venv` with `requirements/development.txt` (`pytest`, `pytest-django`, `pytest-mock`, `faker`), resolved model parameter mismatches in `seed_dev_data`, hardened student ID resolution in `AttendanceService` and `MarksService` to safely parse UUID vs. alphanumeric business IDs against PostgreSQL, and corrected cumulative marks dictionary key mappings. Executed full backend pytest test suite achieving 154/154 passing tests (100%), verified 0 unmigrated changes, executed live PostgreSQL database seeding and proved 100% idempotency, verified REST API foundation endpoints against live data, confirmed frontend non-regression (158/158 Vitest tests passing, clean production build in 6.67s), and closed documentation gaps (`PHASE_03.md`, `Phase_3_Task_3.3.md`, `Phase_3_Task_3.7.md`). Formally signed off Phase 3.
+
+### Fixed & Hardened
+- **Test Suite**: Fixed `ProtectedError` import in `backend/tests/test_models_task33.py` (`from django.db.models import ProtectedError`).
+- **Seed Command**: Fixed `Parent`, `Student`, `SchoolClass`, and `Enrollment` model instantiation parameters in `backend/common/management/commands/seed_dev_data.py`. Attached `phone` to `User`, removed invalid `alternate_phone` from `Parent`, removed invalid `is_active` from `Student`, removed unmodeled `stream` from `SchoolClass`, and removed `roll_number` from `Enrollment`.
+- **Query Hardening**: Hardened `get_attendance_queryset`, `record_bulk_attendance`, `get_marks_queryset`, `record_bulk_marks`, and `generate_report_card` in `AttendanceService` and `MarksService` to safely handle UUID vs. alphanumeric business identifier (`STUYYYYNNNNN`) without triggering PostgreSQL UUID parse errors.
+- **Report Card Cumulative Totals**: Corrected report card generation dictionary key extraction in `MarksService.generate_report_card` to read `cumulative_eval['total_obtained']` and `cumulative_eval['total_max']`.
+
+### Verified
+- **Environment**: `pytest` (9.1.1), `pytest-django` (4.14.0), `pytest-mock` (3.16.0), and `faker` (40.40.0) runtime verified.
+- **PostgreSQL Database**: All initial migrations verified applied `[X]`. Idempotency proven across consecutive runs of `python manage.py seed_dev_data` (`Role: 5, User: 5, Faculty: 1, Parent: 1, Student: 1, AcademicYear: 1, SchoolClass: 1, Section: 1, Subject: 4, Enrollment: 1, Attendance: 5, LeaveApplication: 1, ExamType: 1, Mark: 4`).
+- **Backend Tests**: 154 passed out of 154 tests across all 12 test modules.
+- **API Endpoints**: `/api/health/`, `/api/v1/students/`, `/api/v1/attendance/`, `/api/v1/attendance/absentees/`, `/api/v1/marks/`, and `/api/v1/marks/report-card/{student_id}/` verified against live seeded PostgreSQL instance.
+- **Frontend Tests**: 158 passed out of 158 Vitest tests.
+- **Frontend Build**: Production bundle compiles cleanly in 6.67s with 0 errors.
+- **Documentation**: Repaired `PHASE_03.md`, `Phase_3_Task_3.3.md`, authored `Phase_3_Task_3.7.md`, and updated `PHASE_03_STATUS.md` and `PROJECT_STATUS.md`.
+
+---
+
 ## [Phase 3: Task 3.6 — Initial REST API Foundation] - 2026-09-30
 
 ### Summary

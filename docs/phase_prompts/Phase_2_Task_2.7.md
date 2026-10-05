@@ -1,4 +1,4 @@
-﻿# STUDENT ERP â€” TASK 2.7
+# STUDENT ERP — TASK 2.7
 # OPERATIONAL ALLOCATION, SEARCH & ATTENDANCE VISIBILITY REVISION
 
 The previously completed Phase 2 is now receiving an approved functional/UI amendment.
@@ -104,10 +104,10 @@ Implement/refine student section allocation.
 Use the hierarchy already defined by the project:
 
 Academic Year
-â†’ Grade
-â†’ Stream where applicable
-â†’ Section
-â†’ Student
+→ Grade
+→ Stream where applicable
+→ Section
+→ Student
 
 When a student joins/is assigned:
 
@@ -312,7 +312,7 @@ For Admin and Principal:
 Allow broader school-wide visibility.
 
 ==================================================
-8. SEARCH BAR â€” ADMIN
+8. SEARCH BAR — ADMIN
 ==================================================
 
 Admin must have search capability for:
@@ -351,7 +351,7 @@ Search results should use the existing enterprise table patterns.
 Admin sees Update/Delete actions where the role is authorized.
 
 ==================================================
-9. SEARCH BAR â€” PRINCIPAL
+9. SEARCH BAR — PRINCIPAL
 ==================================================
 
 Principal receives the same search capability:
@@ -373,7 +373,7 @@ Update/Delete appears only where this new approved permission explicitly applies
 Do not turn Principal into a general replacement for all Admin CRUD.
 
 ==================================================
-10. SEARCH BAR â€” FACULTY
+10. SEARCH BAR — FACULTY
 ==================================================
 
 Faculty receives a search interface.
@@ -419,13 +419,13 @@ Do NOT directly import raw JSON into UI components.
 Preferred architecture:
 
 Search UI
-â†“
+↓
 Hook
-â†“
+↓
 Domain Service
-â†“
+↓
 MockDataService
-â†“
+↓
 Synthetic Data
 
 ==================================================
@@ -501,7 +501,7 @@ Do not claim server/database deletion.
 
 Preserve existing stream rules:
 
-Grades 11â€“12:
+Grades 11–12:
 
 Computer Science A
 Bio-Maths B
@@ -537,7 +537,7 @@ Attendance formula remains:
 (PRESENT + ON_DUTY)
 /
 (PRESENT + ABSENT + ON_DUTY + LEAVE)
-Ã— 100
+× 100
 
 Absentee list:
 

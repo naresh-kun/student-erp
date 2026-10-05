@@ -444,7 +444,7 @@ class TestStudentModelDB:
     def test_parent_protect_prevents_deletion(self):
         from apps.accounts.models import Parent
         from apps.students.models import Student
-        from django.db import ProtectedError
+        from django.db.models import ProtectedError
         parent_user = self._make_user('par01', 'par@erp.in', 'Parent')
         parent = Parent.objects.create(user=parent_user, relation='Father')
         student_user = self._make_user('stu_p', 'stup@erp.in')

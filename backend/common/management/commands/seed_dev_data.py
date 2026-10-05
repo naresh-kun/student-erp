@@ -113,6 +113,7 @@ class Command(BaseCommand):
                 'first_name': 'S.',
                 'last_name': 'Ramanathan',
                 'role': roles[ROLE_PARENT],
+                'phone': '9840012345',
             }
         )
         parent_user.set_password('demo123')
@@ -123,7 +124,7 @@ class Command(BaseCommand):
             defaults={
                 'relation': 'Father',
                 'occupation': 'Senior Software Engineer',
-                'alternate_phone': '9840012345',
+                'address': 'Flat 4B, Shanthi Apts, T. Nagar, Chennai 600017',
             }
         )
 
@@ -153,7 +154,7 @@ class Command(BaseCommand):
                 'blood_group': 'O+',
                 'emergency_contact': '9840012345',
                 'address': 'No. 42, Anna Nagar West, Chennai, Tamil Nadu - 600040',
-                'is_active': True,
+                'status': 'Enrolled',
             }
         )
 
@@ -172,7 +173,6 @@ class Command(BaseCommand):
             code='G11-CS',
             defaults={
                 'name': 'Grade 11 - Computer Science',
-                'stream': 'Computer Science',
             }
         )
 
@@ -209,7 +209,6 @@ class Command(BaseCommand):
             academic_year=academic_year,
             defaults={
                 'section': section,
-                'roll_number': '11-A2-04',
                 'status': 'Active',
             }
         )

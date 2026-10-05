@@ -1,4 +1,4 @@
-﻿# PHASE 2 â€” TASK 2.3
+# PHASE 2 — TASK 2.3
 # Deep Parent Role Experience
 
 ## Objective
@@ -49,7 +49,7 @@ Do not modify code before understanding the existing implementation.
 
 ---
 
-# 2. PARENT ROLE â€” APPROVED SCOPE
+# 2. PARENT ROLE — APPROVED SCOPE
 
 Parent can:
 
@@ -136,12 +136,12 @@ frontend/src/features/parents/
 Prefer a structure similar to the Student domain:
 
 features/parents/
-â”œâ”€â”€ types/
-â”œâ”€â”€ schemas/
-â”œâ”€â”€ services/
-â”œâ”€â”€ hooks/
-â”œâ”€â”€ components/
-â””â”€â”€ index.ts
+├── types/
+├── schemas/
+├── services/
+├── hooks/
+├── components/
+└── index.ts
 
 Use the existing project structure and extend it rather than creating competing folders.
 
@@ -173,13 +173,13 @@ Implement a dedicated Parent service adapter.
 The UI must follow:
 
 React Page
-â†“
+↓
 Parent Feature Hook
-â†“
+↓
 Parent Service
-â†“
+↓
 MockDataService
-â†“
+↓
 Mock JSON
 
 Do NOT import large JSON datasets directly into Parent pages/components.
@@ -187,9 +187,9 @@ Do NOT import large JSON datasets directly into Parent pages/components.
 Design the service so it can later be replaced by:
 
 Parent UI
-â†“
+↓
 API Service
-â†“
+↓
 Django REST API
 
 without rewriting the presentation layer.
@@ -285,7 +285,7 @@ Formula:
 (PRESENT + ON_DUTY)
 /
 (PRESENT + ABSENT + ON_DUTY + LEAVE)
-Ã— 100
+× 100
 
 Reuse:
 
@@ -450,7 +450,7 @@ Example:
 
 Monday
 Period 1
-08:30â€“09:15
+08:30–09:15
 Mathematics
 R. Suresh
 Room XI-A2
@@ -536,7 +536,7 @@ Maintain the verified Indian School ERP presentation:
 - Traditional enterprise layout
 - Fixed sidebar
 - Clear top header
-- Academic Year 2026â€“27
+- Academic Year 2026–27
 - Tables as primary data surfaces
 - Clear badges
 - Minimal animation
@@ -616,7 +616,7 @@ Section:
 A2
 
 Academic Year:
-2026â€“27
+2026–27
 
 Do not create fictional relationships that do not exist in the current mock data.
 
@@ -754,13 +754,13 @@ Do NOT:
 Preserve:
 
 React
-â†“
+↓
 Feature / Hook
-â†“
+↓
 Service abstraction
-â†“
+↓
 MockDataService
-â†“
+↓
 Mock JSON
 
 ---

@@ -4,6 +4,7 @@ Encapsulates examination and academic evaluation calculations and report card ge
 Strictly adheres to CBSE/ICSE 8-tier letter grading (A1, A2, B1, B2, C1, C2, D, E).
 """
 
+import uuid
 from typing import Optional, List, Dict, Any
 from decimal import Decimal
 from django.db.models import QuerySet, Q
@@ -50,10 +51,14 @@ class MarksService(BaseService):
 
         if student_id:
             student_id = student_id.strip()
-            qs = qs.filter(
-                Q(enrollment__student__student_id=student_id)
-                | Q(enrollment__student_id=student_id)
-            )
+            try:
+                uuid_val = uuid.UUID(student_id)
+                qs = qs.filter(
+                    Q(enrollment__student__student_id=student_id)
+                    | Q(enrollment__student_id=uuid_val)
+                )
+            except (ValueError, AttributeError):
+                qs = qs.filter(enrollment__student__student_id=student_id)
 
         if subject_id:
             qs = qs.filter(subject_id=subject_id)
@@ -91,9 +96,8 @@ class MarksService(BaseService):
                     enrollment = Enrollment.objects.get(pk=item['enrollment_id'])
                 elif item.get('student_id'):
                     student_id = item['student_id'].strip()
-                    student = Student.objects.get(
-                        Q(student_id=student_id) | Q(id=student_id)
-                    )
+                    from apps.students.services import StudentService
+                    student = StudentService().get_student_by_id_or_business_id(student_id)
                     enrollment = Enrollment.objects.filter(student=student).first()
                     if not enrollment:
                         self.raise_business_error(f"No active enrollment found for student {student_id}")
@@ -130,9 +134,8 @@ class MarksService(BaseService):
         Computes cumulative marks, overall percentage, 8-tier letter grade, and subject breakdown.
         """
         student_id = student_id.strip()
-        student = Student.objects.select_related('user').filter(
-            Q(student_id=student_id) | Q(id=student_id)
-        ).first()
+        from apps.students.services import StudentService
+        student = StudentService().get_student_by_id_or_business_id(student_id)
 
         if not student:
             raise ResourceNotFoundError(f"Student '{student_id}' not found.")
@@ -179,8 +182,8 @@ class MarksService(BaseService):
             'academic_year': enrollment.academic_year.name if enrollment.academic_year else '',
             'class_name': enrollment.section.school_class.name if enrollment.section and enrollment.section.school_class else '',
             'section_name': enrollment.section.name if enrollment.section else '',
-            'total_marks_obtained': round(total_obtained, 2),
-            'total_max_marks': round(total_max, 2),
+            'total_marks_obtained': cumulative_eval['total_obtained'],
+            'total_max_marks': cumulative_eval['total_max'],
             'overall_percentage': cumulative_eval['percentage'],
             'overall_grade': cumulative_eval['grade'],
             'subject_count': len(mark_items),

@@ -4,6 +4,7 @@ Encapsulates attendance tracking, bulk recording, absentees queries, and percent
 Strictly adheres to Master Plan Amendment 2 (4-status model: PRESENT, ABSENT, ON_DUTY, LEAVE).
 """
 
+import uuid
 from typing import Optional, List, Dict, Any
 from django.db.models import QuerySet, Q, Count
 from common.services import BaseService
@@ -54,10 +55,14 @@ class AttendanceService(BaseService):
 
         if student_id:
             student_id = student_id.strip()
-            qs = qs.filter(
-                Q(enrollment__student__student_id=student_id)
-                | Q(enrollment__student_id=student_id)
-            )
+            try:
+                uuid_val = uuid.UUID(student_id)
+                qs = qs.filter(
+                    Q(enrollment__student__student_id=student_id)
+                    | Q(enrollment__student_id=uuid_val)
+                )
+            except (ValueError, AttributeError):
+                qs = qs.filter(enrollment__student__student_id=student_id)
 
         if class_id:
             qs = qs.filter(enrollment__section__school_class_id=class_id)
@@ -135,9 +140,8 @@ class AttendanceService(BaseService):
                 elif item.get('student_id'):
                     student_id = item['student_id'].strip()
                     # Find active enrollment for student
-                    student = Student.objects.get(
-                        Q(student_id=student_id) | Q(id=student_id)
-                    )
+                    from apps.students.services import StudentService
+                    student = StudentService().get_student_by_id_or_business_id(student_id)
                     enrollment = Enrollment.objects.filter(student=student).first()
                     if not enrollment:
                         self.raise_business_error(f"No active enrollment found for student {student_id}")

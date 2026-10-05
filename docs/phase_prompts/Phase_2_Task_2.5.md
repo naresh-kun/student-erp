@@ -3,502 +3,1310 @@
 
 ## Objective
 
-Deepen the **Admin** and **Principal** roles into authoritative, production-grade domain experiences for the Indian School ERP.
+Deepen the Admin and Principal roles into complete, professional institutional-management experiences for the Indian School ERP.
 
-This task delivers:
+This task covers:
 
-- **Admin Domain** (11 Dedicated Routes):
-  1. Admin Executive Dashboard (`/admin/dashboard`)
-  2. Student Master Directory (`/admin/students`)
-  3. Parent Master Directory (`/admin/parents`)
-  4. Faculty Master Directory (`/admin/faculty`)
-  5. Classes, Sections & Capacity Management (`/admin/classes`)
-  6. Course & Subjects Catalog (`/admin/subjects`)
-  7. School-Wide Attendance Oversight (`/admin/attendance`)
-  8. Examination Marks & Grade Audit Register (`/admin/marks`)
-  9. Master Timetable Overview (`/admin/timetable`)
-  10. Institutional Calendar & Event Publisher (`/admin/calendar`)
-  11. Class & Section Allocation Engine (`/admin/allocation`)
+ADMIN:
+- Dashboard
+- Student directory
+- Parent directory
+- Faculty directory
+- Classes
+- Subjects
+- Attendance oversight
+- Marks oversight
+- Timetable
+- Calendar/events
+- Class/section/stream allocation
+- Operational management surfaces
 
-- **Principal Domain** (5 Dedicated Routes):
-  1. Head of Institution Executive Console (`/principal/dashboard`)
-  2. Academic Syllabus & Cohort Analytics (`/principal/academics`)
-  3. School-Wide Attendance Telemetry & Progression (`/principal/attendance`)
-  4. Departmental Faculty Roster & Workload Oversight (`/principal/faculty`)
-  5. Executive Reports & Statutory Endorsement Dossier Archive (`/principal/reports`)
+PRINCIPAL:
+- Executive dashboard
+- Academic overview
+- Attendance analytics
+- Faculty directory oversight
+- Reports
+- Institutional summaries
+- Report/oversight actions where appropriate
 
-This remains a **PHASE 2 frontend/mock-data task**.
+This remains a PHASE 2 frontend + mock-data task.
 
-DO NOT start Phase 3 (Backend Integration).
-
----
-
-# 1. AUTHORITATIVE RULES & CONSTRAINTS
-
-The project technology stack remains:
-
-- **Frontend**: React 18+ with TypeScript, Vite 5+, Tailwind CSS
-- **Component Primitives**: shadcn/ui patterns & Radix UI accessible primitives
-- **Data Fetching / State**: TanStack Query (React Query)
-- **Forms & Validation**: React Hook Form with Zod schemas
-- **Data Visualization**: Recharts
-- **Iconography**: Lucide React
-- **Unit & Integration Testing**: Vitest & React Testing Library
-
-### Phase 2 Data Flow
-```text
-React Page Component
-        ↓
-  Feature Hook
-        ↓
-Domain Service Layer
-        ↓
- MockDataService (Async)
-        ↓
-   mock-data/*.json
-```
-
-Do not alter this architecture. UI components must consume data strictly via domain services and hooks.
-
-### Core Institutional Branding & Visual Language
-- **Application Branding**: School ERP
-- **Visual Standard**: Deep Navy (`bg-blue-900`) enterprise header, clean slate/zinc borders, WCAG AA contrast.
-- **Academic Year**: `2026–27` (configurable via `src/config/schoolConfig.ts`).
+DO NOT start Phase 3.
 
 ---
 
-# 2. MANDATORY PRE-REQUISITES & CONTEXT
+# 1. AUTHORITATIVE ARCHITECTURE
 
-Inspect and adhere to:
-1. `docs/PROJECT_STRUCTURE.md`
-2. `docs/ARCHITECTURE.md`
-3. `docs/FRONTEND_ARCHITECTURE.md`
-4. `docs/RBAC_PERMISSIONS.md`
-5. `docs/API_CONTRACT.md`
-6. `docs/DATABASE_SCHEMA.md`
-7. `docs/PROJECT_STATUS.md`
-8. `docs/DECISIONS.md`
-9. `docs/CHANGELOG.md`
-10. `docs/phase_prompts/PHASE_02.md`
-11. `docs/phases/PHASE_02_STATUS.md`
-12. `docs/phase_prompts/Phase_2_Task_2.4.md`
+Frontend:
+React + TypeScript + Vite
 
----
+Backend:
+Django + Django REST Framework + Django Channels
 
-# 3. NON-NEGOTIABLE GOVERNANCE RULES
+Database:
+PostgreSQL
 
-### 3.1 Permanent & Immutable Student ID
-- Every student has a permanent, unique, system-wide Student ID (e.g. `STU202600001`).
-- The Student ID is **permanent and immutable**. It can never be regenerated, edited, or reallocated.
-- The Student ID serves as the child linking key for the Parent Portal.
-- Admission Number (e.g. `ADM20240091`) and Roll Number (e.g. `11-A2-04`) are distinct institutional identifiers.
+Realtime / Cache:
+Redis
 
-### 3.2 Indian School Secondary & Senior Secondary Structure
-- **Grade 10**: General secondary curriculum. Strictly **NO stream** designation.
-- **Grades 11 & 12**: Senior secondary curriculum with exactly **4 approved streams**:
-  1. `Computer Science A`
-  2. `Bio-Maths B`
-  3. `Commerce C`
-  4. `Pure Science D`
-- Stream sections follow canonical designations (e.g. `A1`, `A2`, `A3` for Stream A; `B1`, `B2` for Stream B, etc.).
+Phase 2 data flow:
 
-### 3.3 Canonical 4-Status Attendance Model (Master Plan Amendment 2)
-The application strictly enforces the 4 canonical attendance statuses across all mock datasets, domain types, services, and UI presentations:
-1. `PRESENT` (Counts as Presence in numerator and denominator)
-2. `ABSENT` (Counts as Absence in denominator)
-3. `ON_DUTY` (Counts as Presence in numerator and denominator)
-4. `LEAVE` (Sanctioned institutional leave; counted in denominator as absence, visually purple/violet token)
+React
+↓
+Feature / Hook
+↓
+Service abstraction
+↓
+MockDataService
+↓
+Mock JSON
 
-Legacy statuses `LATE` and `EXCUSED` remain permanently removed.
+The architecture must remain unchanged.
 
-Calculation formula:
-$$\text{Attendance \%} = \frac{\text{PRESENT} + \text{ON\_DUTY}}{\text{PRESENT} + \text{ABSENT} + \text{ON\_DUTY} + \text{LEAVE}} \times 100$$
+Application branding:
 
-### 3.4 Indian School Academic Model (CBSE/ICSE)
-- Academic marks scored out of 100 (0–100 or 'AB' for Absent).
-- Cumulative marks (e.g. `435 / 500`), overall percentage (e.g. `87.00%`).
-- Canonical 8-tier letter grades derived via `src/utils/grading.ts`:
-  - `A1`: 91% – 100%
-  - `A2`: 81% – 90.99%
-  - `B1`: 71% – 80.99%
-  - `B2`: 61% – 70.99%
-  - `C1`: 51% – 60.99%
-  - `C2`: 41% – 50.99%
-  - `D`: 33% – 40.99%
-  - `E`: Below 33% (Needs Improvement)
-- **STRICTLY PROHIBITED**: University metrics — GPA, CGPA, credits, credit hours, quality points, semester majors/minors.
+School ERP
 
-### 3.5 Faculty Non-Evaluative Governance
-- The Faculty modules (under both Admin and Principal views) must contain **STRICTLY NO**:
-  - Faculty performance ratings
-  - Student reviews or appraisals
-  - Teaching scores or stars
-  - Teacher rankings or leaderboards
-  - AI performance commentary or attribution
-- Faculty records are purely descriptive: Name, Designation, Department, Qualifications, Assigned Classes, Assigned Sections, Weekly Period Workload (e.g. 24 Periods / wk), Room/Office.
+Indian school model:
+- Academic Year
+- Grade/Class
+- Stream
+- Section
+- Student ID
+- Marks /100
+- Cumulative Marks
+- Percentage
+- Letter Grade
+- PRESENT
+- ABSENT
+- ON_DUTY
+- LEAVE
 
 ---
 
-# 4. ADMIN ROLE SPECIFICATION (`/admin/*`)
+# 2. BEFORE IMPLEMENTATION
 
-The Administrator is the operational custodian of the school system. Admin capabilities cover master registries, structural configurations, audit oversight, calendar scheduling, and section allocation.
+Read:
 
-## 4.1 Admin Dashboard (`/admin/dashboard`)
-- **Key Metrics Overview**:
-  - Total Students Enrolled (1,248)
-  - Teaching Faculty Staff (86)
-  - Active Classes (6) & Total Sections (18)
-  - Overall School Attendance Rate
-  - Student-Teacher Ratio (`15:1`)
-  - Active Examinations
-  - Upcoming Events
-- **System Health & Operations Strip**:
-  - Academic session indicator (`2026–27`)
-  - Backup & synchronization status
-- **Longitudinal Trend Chart**:
-  - School-wide monthly attendance progression (Recharts AreaChart)
-- **Direct Navigation Panels**:
-  - Quick action links to Students, Faculty, Allocation Workspace, and Calendar Publisher.
+1. docs/PROJECT_STRUCTURE.md
+2. docs/ARCHITECTURE.md
+3. docs/FRONTEND_ARCHITECTURE.md
+4. docs/RBAC_PERMISSIONS.md
+5. docs/API_CONTRACT.md
+6. docs/DATABASE_SCHEMA.md
+7. docs/PROJECT_STATUS.md
+8. docs/DECISIONS.md
+9. docs/CHANGELOG.md
+10. docs/phase_prompts/PHASE_02.md
+11. docs/phases/PHASE_02_STATUS.md
+12. docs/phase_prompts/Phase_2_Task_2.4.md
 
-## 4.2 Student Master Directory (`/admin/students`)
-- **Search & Filters**:
-  - Real-time search by Student Name, Permanent Student ID, Admission Number, or Roll Number.
-  - Filter by Grade Level (Grade 9 through Grade 12).
-  - Filter by Senior Secondary Stream (`Computer Science A`, `Bio-Maths B`, `Commerce C`, `Pure Science D`).
-  - Filter by Enrollment Status (`Active`, `Inactive`).
-- **Student Master Register Table**:
-  - Permanent Student ID (locked, copyable)
-  - Admission Number
-  - Roll Number
-  - Student Full Name & Gender
-  - Class, Section & Stream
-  - Parent Name & Contact Phone
-  - Verified Attendance Rate (%)
-  - Academic Percentage & Derived 8-Tier CBSE Letter Grade
-  - Status Badge
-- **Student Profile Inspection Modal**:
-  - Full personal details (DOB in DD/MM/YYYY Indian format, Blood Group, Gender)
-  - Complete academic credentials (locked, immutable Student ID)
-  - Parent/Guardian details and emergency contacts
-- **Export Action**:
-  - Direct CSV download of the filtered or full student master registry.
+Also inspect:
 
-## 4.3 Parent Master Directory (`/admin/parents`)
-- **Lookup & Filter**:
-  - Search by Parent/Guardian Name, Phone Number, Email, or Ward's Student ID.
-- **Directory Table**:
-  - Guardian Name & Relation (`Father`, `Mother`, `Guardian`)
-  - Occupation
-  - Contact Details (Phone, Email, Residential Address)
-  - Linked Children Mappings:
-    - Child Name
-    - Permanent Student ID (verified link to Parent login)
-    - Class & Section
-    - Roll Number
-  - Account Status (`Active`)
+- Existing Admin implementation
+- Existing Principal implementation
+- Student feature module
+- Parent feature module
+- Faculty feature module
+- Mock services
+- Mock datasets
+- Navigation
+- Shared components
+- Attendance utility
+- Grading utility
+- School configuration
 
-## 4.4 Faculty Master Directory (`/admin/faculty`)
-- **Lookup & Filter**:
-  - Search by Faculty Name, Employee Code, or Subject Specialization.
-  - Filter by Department (`Mathematics`, `Physics`, `Computer Science`, `Chemistry`, `English`, `Commerce`, etc.).
-- **Directory Table**:
-  - Employee Code (e.g. `FAC-MATH-012`)
-  - Faculty Name & Official Email
-  - Department & Academic Designation (`Senior PGT & Department Head`, `PGT`, `TGT`)
-  - Qualifications (e.g. `M.Sc. Mathematics, B.Ed.`)
-  - Class Teacher Designation (e.g. `Class Teacher: Grade 11 — A2`)
-  - Assigned Classes & Sections (badges)
-  - Weekly Period Workload (e.g. `24 Periods / wk`)
-  - Status (`Active`, `On Leave`)
-- **Governance**:
-  - Strict compliance with Non-Evaluative Rule (zero ratings, rankings, or appraisal scores).
-
-## 4.5 Classes, Sections & Capacity Management (`/admin/classes`)
-- **Hierarchy Structure**:
-  - Grade 10: General curriculum without stream. Sections A, B, C.
-  - Grade 11: 4 Streams (`Computer Science A`, `Bio-Maths B`, `Commerce C`, `Pure Science D`). Sections A1–A3, B1–B3, etc.
-  - Grade 12: 4 Streams matching Grade 11.
-- **Class Card Grid**:
-  - Class Name, Code, Academic Year
-  - Stream designation (or `General / No Stream` for Grade 10)
-  - Class Teacher assignment
-  - Total Enrolled vs Total Room Capacity
-  - Section Breakdown:
-    - Section Name
-    - Room Number (e.g. `Room XI-A2`)
-    - Capacity & Enrolled Count
-    - Occupancy utilization progress bar
-
-## 4.6 Course & Subjects Catalog (`/admin/subjects`)
-- **Curriculum Grid**:
-  - Subject Name & Subject Code (e.g. `SUB-MAT-101`)
-  - Academic Department
-  - Weekly Instructional Periods (e.g. `6 Periods / wk`)
-  - Applicable Grades (e.g. `Grades 11, 12`)
-  - Applicable Streams (e.g. `Computer Science A, Bio-Maths B` or `All Streams`)
-  - Assigned Faculty Names
-  - Status (`Active`)
-- **Governance**:
-  - Strictly NO university credits, credit hours, or grade points.
-
-## 4.7 Institutional Attendance Oversight (`/admin/attendance`)
-- **Audit Register**:
-  - Date-filtered school-wide attendance log.
-  - Grade, Stream, and Section selector.
-- **4-Status Audit Breakdown**:
-  - Total Enrolled
-  - Present Count
-  - On Duty Count
-  - Approved Leave Count (purple badge)
-  - Absent Count (rose badge)
-  - Verified Attendance Rate (%) adhering to $(P + OD) / Total \times 100$
-  - Verification Authority (`Verified by Class Teacher: R. Suresh`)
-  - Roll Call Session Status (`Completed`, `Pending`)
-
-## 4.8 Examination Marks & Grade Audit Register (`/admin/marks`)
-- **Score Register**:
-  - Filter by Academic Examination (`Half-Yearly Examination 2026`, `Term 1`, `Unit Test 2`).
-  - Class, Stream, Section, and Subject selector.
-- **Academic Performance Metrics**:
-  - Total Students Evaluated
-  - Class Average Percentage (%)
-  - Highest Marks Achieved (/100)
-  - Pass Percentage (%)
-  - CBSE 8-Tier Grade Distribution breakdown (`A1`, `A2`, `B1`, `B2`, `C1`, `C2`, `D`, `E`)
-  - Publication Status (`Published`, `In Progress`)
-
-## 4.9 Master Timetable Overview (`/admin/timetable`)
-- **Scheduling View**:
-  - Filter by Class and Section.
-  - Monday through Friday weekly grid.
-  - Period timings (08:30 AM to 02:45 PM; Periods 1 through 8).
-  - Subject name, assigned faculty member, and classroom location.
-  - Room allocation verification to prevent scheduling collisions.
-
-## 4.10 Institutional Calendar & Event Publisher (`/admin/calendar`)
-- **Event Management**:
-  - Published institutional events list with chronological grouping.
-  - Event categories: `Examination`, `Academic`, `Holiday`, `PTM`, `Sports`, `Cultural`.
-  - Flags: `is_holiday` (school closed), `od_eligible` (participating students eligible for On Duty attendance credit).
-- **Zod-Validated Event Creation Modal**:
-  - Title, Category, Start/End Date, Start/End Time, Location, Description.
-  - Target Audience (`All School`, `Grades 11-12`, `Parents`).
-  - Form validation with reactive error states.
-
-## 4.11 Class & Section Allocation Engine (`/admin/allocation`)
-- **Allocation Parameters**:
-  - Target Academic Year (`2026–27`)
-  - Target Grade Cohort (`Grade 10`, `Grade 11`, `Grade 12`)
-  - Target Stream (strictly enforced for Grades 11–12): `Computer Science A`, `Bio-Maths B`, `Commerce C`, `Pure Science D`.
-  - Allocation Method:
-    1. **Merit-Based**: Ordered descending by qualifying marks score and distributed across selected target sections in round-robin sequence.
-    2. **Random**: Seeded balanced distribution ensuring even class sizes.
-  - Target Section Selection: Checkbox toggle for available sections with room capacities.
-- **Workflow & Safeguards**:
-  - Pre-allocation cohort verification.
-  - **Interactive Preview Modal**: Displays proposed section assignments, qualifying score, merit rank, and distribution method before committing.
-  - **Publish Action**: Generates confirmed allocation batch with success notification.
-  - **Historical Audit Log**: Complete history of past allocation batches with timestamp, method, student count, and administrator signature.
+Understand the existing implementation before making changes.
 
 ---
 
-# 5. PRINCIPAL ROLE SPECIFICATION (`/principal/*`)
+# 3. ADMIN ROLE — APPROVED SCOPE
 
-The Principal is the Head of Institution. The Principal portal provides executive oversight, institutional analytics, statutory compliance reviews, and formal document endorsement.
+Admin is responsible for operational school management.
 
-## 5.1 Head of Institution Executive Console (`/principal/dashboard`)
-- **Institutional Branding & Header**:
-  - Official institution name (`School ERP` / `Modern Public Senior Secondary School`).
-  - Executive badge: `Head of Institution Executive Console • Session 2026–27`.
-  - Quick access buttons to Academic Analytics and Pending Institutional Reports.
-- **KPI Summary Cards**:
-  - Total Student Enrollment (1,248)
-  - Academic Faculty Strength (86)
-  - Student-Teacher Ratio (`15:1`)
-  - School Attendance Rate (%)
-  - School Academic Average (%)
-  - Pending Statutory Reports
-- **Visual Analytics**:
-  - School-Wide 8-Tier CBSE Grade Distribution (Recharts BarChart).
-  - Longitudinal School Attendance Progression (Recharts AreaChart).
-- **Upcoming Institutional Milestones**:
-  - Board exam submissions, PTM dates, and executive review deadlines.
+Admin can manage:
 
-## 5.2 Academic Syllabus & Cohort Analytics (`/principal/academics`)
-- **Grade-Level Performance Comparison**:
-  - Grades 9, 10, 11, 12 average academic percentage, pass rates, highest marks, and derived letter grades.
-  - Zero university credits or GPA metrics.
-- **Senior Secondary Stream Comparison**:
-  - Comparative analytics across the 4 approved streams (`Computer Science A`, `Bio-Maths B`, `Commerce C`, `Pure Science D`) for Grades 11 and 12.
-  - Top performing subjects per stream.
-- **Subject-Wise Quality Assurance Table**:
-  - School-wide performance across Mathematics, Physics, Chemistry, Computer Science, English, etc.
-  - Average percentage, pass rate, and student count.
-- **CBSE 8-Tier Letter Grade Distribution Table**:
-  - Percentage and student volume in each tier (`A1` through `E`).
+- Students
+- Parents
+- Faculty
+- Classes
+- Sections
+- Streams
+- Subjects
+- Academic Years
+- Enrollment
+- Attendance
+- Marks
+- Timetable
+- Academic Calendar
+- Events
+- Class Allocation
+- Operational school records
 
-## 5.3 School-Wide Attendance Telemetry & Progression (`/principal/attendance`)
-- **Institutional Presence Telemetry**:
-  - Overall school presence rate adhering strictly to Master Plan Amendment 2.
-  - 4-Status Distribution Cards:
-    - `PRESENT` (counts as Presence)
-    - `ON_DUTY` (counts as Presence)
-    - `LEAVE` (approved leave; counts in denominator as absence, violet token)
-    - `ABSENT` (counts as Absence, rose token)
-  - Status distribution percentage bar and session volume telemetry.
-- **Longitudinal Cohort Progression**:
-  - Multi-line chart (Recharts LineChart) tracking Grade 9, 10, 11, and 12 monthly attendance rates over the academic session.
-
-## 5.4 Departmental Faculty Roster & Workload Oversight (`/principal/faculty`)
-- **Operational Staff Roster**:
-  - Faculty member name, Department, Academic Designation.
-  - Educational qualifications (e.g. `Ph.D. Physics`, `M.Sc., B.Ed.`).
-  - Assigned teaching classes and sections.
-  - Weekly period workload (e.g. `24 Periods / wk`).
-  - Contact information and official email.
-- **Non-Evaluative Governance**:
-  - Strictly non-evaluative: zero appraisal ratings, student reviews, or teacher rankings.
-
-## 5.5 Executive Reports & Statutory Endorsement Dossier Archive (`/principal/reports`)
-- **Institutional Reports Registry**:
-  - Official school dossiers across categories: `Academic`, `Attendance`, `Faculty`, `Governance`, `Event`.
-  - File formats (`PDF`, `XLSX`, `CSV`), file size, generation date.
-  - Approval state tracking: `Draft`, `Review`, `Approved`.
-- **Statutory Endorsement Workflow (`ReportReviewModal`)**:
-  - Principal reviews executive dossier metadata, description, and summary metrics.
-  - Statutory endorsement action: Transition from `Draft` / `Review` to `Approved`.
-  - Records official audit trail: `approved_by` (`Dr. K. Radhakrishnan (Principal)`), timestamp, and official review remarks (e.g. "Endorsed for official submission to CBSE Regional Directorate").
-- **Dossier Download Action**:
-  - Generates downloadable official institutional filing dossier text document.
+Admin is the primary operational-management role.
 
 ---
 
-# 6. MODULAR FEATURE DOMAIN ARCHITECTURE
+# 4. PRINCIPAL ROLE — APPROVED SCOPE
 
-Both roles are implemented under modular feature directories adhering to the project's standard barrel export pattern:
+Principal has school-wide oversight.
 
-### Admin Domain Module (`frontend/src/features/admin/`)
-```text
+Principal can view:
+
+- School-wide academic information
+- Student performance
+- Class-wise attendance
+- Section-wise attendance
+- Faculty directory information
+- Faculty subject/class assignments
+- Faculty timetable
+- Reports
+- Academic overview
+- School-wide dashboards
+- Student/class performance analytics
+
+Principal may have approval/oversight capabilities.
+
+Principal does NOT need unrestricted CRUD over every administrative record.
+
+---
+
+# 5. FEATURE ARCHITECTURE
+
+Create/extend:
+
 frontend/src/features/admin/
-├── types/
-│   └── index.ts                 # Admin domain interfaces (KPIs, Students, Parents, Faculty, Classes, Allocation, etc.)
-├── schemas/
-│   ├── allocationSchema.ts      # Zod validation schema for section allocation parameters
-│   └── eventSchema.ts           # Zod validation schema for calendar event publishing
-├── services/
-│   └── adminService.ts          # AdminService: typed domain adapter over MockDataService
-├── hooks/
-│   ├── useAdminDashboard.ts     # Hook for dashboard summary & KPIs
-│   ├── useAdminStudents.ts      # Hook for student master directory search/filter/export
-│   ├── useAdminParents.ts       # Hook for parent master directory
-│   ├── useAdminFaculty.ts       # Hook for faculty directory
-│   ├── useAdminClasses.ts       # Hook for classes & sections capacity
-│   ├── useAdminSubjects.ts      # Hook for subjects catalog
-│   ├── useAdminAttendance.ts    # Hook for attendance audits
-│   ├── useAdminMarks.ts         # Hook for examination marks oversight
-│   ├── useAdminTimetable.ts     # Hook for master timetable
-│   ├── useAdminCalendar.ts      # Hook for calendar event management
-│   ├── useAdminAllocation.ts    # Hook for allocation workspace, preview & history
-│   └── index.ts
-├── components/
-│   ├── AdminDashboard.tsx       # Executive dashboard layout with KPIs and Recharts
-│   ├── StudentDirectory.tsx     # Student master directory with search, filter, modal, CSV export
-│   ├── ParentDirectory.tsx      # Parent master directory with child linking
-│   ├── FacultyDirectory.tsx     # Non-evaluative faculty staff directory
-│   ├── ClassesOverview.tsx      # Classes, sections, and room capacity cards
-│   ├── SubjectsCatalog.tsx      # Subject catalog with weekly periods
-│   ├── AttendanceOversight.tsx  # 4-status attendance audit register
-│   ├── MarksOversight.tsx       # CBSE 8-tier marks register & pass rate audit
-│   ├── TimetableOverview.tsx    # Master timetable period grid
-│   ├── CalendarEventsManager.tsx# Institutional calendar publisher & Zod modal
-│   ├── AllocationWorkspace.tsx  # Section allocation engine with Merit/Random options
-│   ├── AllocationPreviewModal.tsx # Allocation preview modal before publication
-│   └── index.ts
-└── index.ts                     # Feature barrel export
-```
 
-### Principal Domain Module (`frontend/src/features/principal/`)
-```text
+and:
+
 frontend/src/features/principal/
+
+Use the established modular pattern:
+
+features/<domain>/
 ├── types/
-│   └── index.ts                 # Principal domain interfaces (Executive KPIs, Analytics, Reports, Telemetry)
 ├── schemas/
-│   └── reportReviewSchema.ts    # Zod validation schema for report endorsement
 ├── services/
-│   └── principalService.ts      # PrincipalService: typed domain adapter over MockDataService
 ├── hooks/
-│   ├── usePrincipalDashboard.ts # Hook for executive dashboard summary
-│   ├── useAcademicAnalytics.ts  # Hook for grade and stream academic analytics
-│   ├── useAttendanceAnalytics.ts# Hook for 4-status telemetry & cohort trends
-│   ├── usePrincipalFaculty.ts   # Hook for faculty oversight roster
-│   ├── useInstitutionalReports.ts# Hook for reports registry and endorsement
-│   └── index.ts
 ├── components/
-│   ├── PrincipalDashboard.tsx   # Executive console with KPIs, grade distribution, attendance progression
-│   ├── AcademicAnalytics.tsx    # Academic analytics with stream breakdown and 8-tier grades
-│   ├── AttendanceAnalytics.tsx  # Attendance telemetry with 4-status distribution & longitudinal trends
-│   ├── PrincipalFacultyDirectory.tsx # Non-evaluative departmental faculty roster
-│   ├── ReportsOverview.tsx      # Official reports registry and filter
-│   ├── ReportReviewModal.tsx    # Report endorsement modal with audit trail
-│   └── index.ts
-└── index.ts                     # Feature barrel export
-```
+└── index.ts
 
-### Page Views Layer (`frontend/src/pages/admin/` & `frontend/src/pages/principal/`)
-All page files under `frontend/src/pages/admin/` and `frontend/src/pages/principal/` are thin views consuming their respective domain feature components and hooks. Each directory contains a clean `index.tsx` barrel export:
-- Admin (11 pages): `AdminDashboardPage.tsx`, `AdminStudentsPage.tsx`, `AdminParentsPage.tsx`, `AdminFacultyPage.tsx`, `AdminClassesPage.tsx`, `AdminSubjectsPage.tsx`, `AdminAttendancePage.tsx`, `AdminMarksPage.tsx`, `AdminTimetablePage.tsx`, `AdminCalendarPage.tsx`, `AdminAllocationPage.tsx`.
-- Principal (5 pages): `PrincipalDashboardPage.tsx`, `PrincipalAcademicsPage.tsx`, `PrincipalAttendancePage.tsx`, `PrincipalFacultyPage.tsx`, `PrincipalReportsPage.tsx`.
+Follow the architecture already established in:
+
+features/students/
+features/parents/
+features/faculty/
+
+Do not create duplicate or competing structures.
 
 ---
 
-# 7. AUTOMATED VITEST TEST SUITE
+# 6. ADMIN DOMAIN TYPES
 
-The implementation includes 28 automated Vitest unit tests across 2 dedicated test files:
+Create strongly typed models only where needed:
 
-### `frontend/tests/admin.test.ts` (18 Tests)
-1. Loads authoritative admin dashboard KPIs and session context.
-2. Retrieves student list with query search and grade level filtering.
-3. Verifies permanent, immutable Student ID format (`STU\d{9}`) and admission number (`ADM\d{8}`) on all students.
-4. Respects senior secondary stream designations for Grades 11–12.
-5. Loads parents and verifies child Student ID linking to parent account.
-6. Searches parents by child Student ID.
-7. Loads faculty directory with descriptive operational data only.
-8. Strictly asserts absence of teacher appraisal ratings, reviews, rankings, or scores.
-9. Loads class hierarchy with Grade 10 no-stream and Grades 11–12 stream designations.
-10. Validates room capacity numbers across all class sections.
-11. Retrieves subjects catalog with weekly period allocations and strictly no credits or GPA.
-12. Validates attendance oversight across canonical 4 statuses (`PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`).
-13. Verifies marks register scored out of 100 with CBSE 8-tier letter grade distributions.
-14. Validates institutional calendar event creation schema via Zod.
-15. Allocates students based on merit ranking (highest qualifying score distributed first).
-16. Allocates students based on seeded random distribution.
-17. Strictly restricts Grade 11–12 allocations within the selected senior secondary stream.
-18. Generates complete preview records and preserves historical allocation logs.
+- AdminDashboardSummary
+- AdminStudentRecord
+- AdminParentRecord
+- AdminFacultyRecord
+- AdminClassRecord
+- AdminSectionRecord
+- AdminSubjectRecord
+- AdminAcademicYear
+- AdminAttendanceSummary
+- AdminMarksSummary
+- AdminAllocationRequest
+- AllocationPreview
+- AllocationHistory
+- AdminCalendarEvent
+- any other genuinely required model
 
-### `frontend/tests/principal.test.ts` (10 Tests)
-1. Loads authoritative executive dashboard summary and KPIs.
-2. Loads grade-level academic performance scored out of 100 with 8-tier letter grade derivation.
-3. Asserts strictly no university metrics (`gpa`, `cgpa`, `credits`, `grade_points`).
-4. Provides stream-specific performance breakdown for Grades 11 and 12.
-5. Provides 8-tier CBSE letter grade distribution across the institution.
-6. Evaluates attendance telemetry across canonical 4 statuses and matches `calculateAttendancePercentage`.
-7. Tracks longitudinal monthly attendance trends by grade cohort.
-8. Loads faculty directory with qualifications and workload period counts.
-9. Strictly asserts absence of teacher ratings, scores, stars, appraisal grades, or rankings.
-10. Retrieves institutional reports and executes report endorsement workflow updating status, approver signature, and audit remarks.
+Reuse shared domain types wherever possible.
 
 ---
 
-# 8. VERIFICATION & ACCEPTANCE CHECKLIST
+# 7. PRINCIPAL DOMAIN TYPES
 
-- [x] All 11 Admin routes (`/admin/*`) render without runtime errors or broken layouts.
-- [x] All 5 Principal routes (`/principal/*`) render without runtime errors or broken layouts.
-- [x] Permanent Student ID (`STU2026...`) is displayed, locked, and immutable across all views.
-- [x] Secondary vs. Senior Secondary rules enforced: Grade 10 has no stream; Grades 11–12 support 4 streams.
-- [x] Canonical 4-status attendance model (`PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`) enforced with correct formula.
-- [x] CBSE 8-tier grading (`A1`–`E`) used exclusively; university GPA/CGPA/credits completely absent.
-- [x] Faculty governance strictly non-evaluative (zero ratings, rankings, or appraisal scores).
-- [x] Section allocation engine supports Merit and Random distribution with interactive preview and historical logs.
-- [x] Principal statutory report review and endorsement workflow functional.
-- [x] Vitest test suite passes 128/128 tests across all 7 test suites with zero regressions.
-- [x] Production build (`npm run build`) compiles with zero TypeScript errors or warnings.
+Create strongly typed models only where needed:
+
+- PrincipalDashboardSummary
+- AcademicOverview
+- PrincipalAttendanceSummary
+- GradePerformanceSummary
+- SectionPerformanceSummary
+- PrincipalFacultyDirectoryItem
+- PrincipalReport
+- ReportApprovalState
+- PrincipalEventSummary
+- any other genuinely required model
+
+Do not create faculty performance-scoring models.
+
+---
+
+# 8. ADMIN SERVICE
+
+Create/extend:
+
+frontend/src/features/admin/services/adminService.ts
+
+The UI must use:
+
+React
+↓
+Admin Hook
+↓
+Admin Service
+↓
+MockDataService
+↓
+Mock JSON
+
+Service capabilities should include:
+
+- Dashboard summaries
+- Student directory
+- Parent directory
+- Faculty directory
+- Class/section data
+- Subject catalog
+- Attendance summaries
+- Marks summaries
+- Timetable information
+- Calendar/events
+- Allocation preview
+- Allocation execution in mock state
+- Allocation history
+
+Do not import large JSON files directly into pages.
+
+---
+
+# 9. PRINCIPAL SERVICE
+
+Create/extend:
+
+frontend/src/features/principal/services/principalService.ts
+
+Service should provide:
+
+- Executive dashboard data
+- Academic overview
+- Attendance analytics
+- Faculty directory
+- Reports
+- School events
+- Institutional summaries
+- Oversight state where required
+
+Keep Principal data read/oversight oriented.
+
+---
+
+# 10. ADMIN DASHBOARD
+
+Deepen:
+
+/admin/dashboard
+
+The dashboard should feel like an Indian school office-management dashboard.
+
+Display useful institutional KPIs such as:
+
+- Total Students
+- Total Parents
+- Total Faculty
+- Total Classes
+- Total Sections
+- Current Academic Year
+- Today's Attendance
+- Recent Examination Activity
+- Upcoming School Events
+- Pending Operational Actions
+- Class Allocation Entry Point
+
+Use concise school-management language.
+
+Do not overload the dashboard with unnecessary analytics.
+
+---
+
+# 11. ADMIN STUDENT DIRECTORY
+
+Deepen:
+
+/admin/students
+
+Provide a professional student master register.
+
+Show:
+
+- Student ID
+- Admission Number
+- Roll Number
+- Student Name
+- Class / Grade
+- Stream where applicable
+- Section
+- Academic Year
+- Attendance %
+- Academic %
+- Letter Grade
+- Parent/Guardian
+- Status
+
+Provide:
+
+- Search
+- Filtering
+- Sorting
+- Pagination where appropriate
+- Student detail action
+- Export action if supported by current architecture
+
+Student ID must remain permanent and immutable.
+
+Do not expose editing of the Student ID itself.
+
+---
+
+# 12. ADMIN PARENT DIRECTORY
+
+Deepen:
+
+/admin/parents
+
+Show:
+
+- Parent name
+- Relationship
+- Linked child/children
+- Student ID
+- Contact information where appropriate
+- Account/status information appropriate for the mock UI
+
+Ensure parent-child relationships come from mock data.
+
+Do not expose unrelated private records.
+
+---
+
+# 13. ADMIN FACULTY DIRECTORY
+
+Deepen:
+
+/admin/faculty
+
+Display descriptive faculty information:
+
+- Faculty Name
+- Faculty ID / Employee Code where available
+- Designation
+- Subject
+- Class Teacher assignment
+- Assigned Classes
+- Timetable/workload
+- Contact information where appropriate
+- Status
+
+DO NOT include:
+
+- Rating
+- Performance score
+- Review score
+- Appraisal stars
+- Teacher ranking
+- Teaching-performance leaderboard
+- AI-generated teacher evaluation
+
+Faculty information is descriptive and operational only.
+
+---
+
+# 14. ADMIN CLASSES & SECTIONS
+
+Deepen:
+
+/admin/classes
+
+Represent school hierarchy:
+
+Academic Year
+→ Grade/Class
+→ Stream (Grades 11–12)
+→ Section
+→ Students
+
+Grades below 11:
+- No stream
+
+Grades 11–12:
+- Computer Science A → A1, A2, A3
+- Bio-Maths B → B1, B2, B3
+- Commerce C → C1, C2, C3
+- Pure Science D → D1, D2, D3
+
+Display:
+
+- Grade
+- Stream
+- Section
+- Class Teacher
+- Student Count
+- Subject Count where appropriate
+- Weekly Periods where appropriate
+
+Do not use university department/degree terminology.
+
+---
+
+# 15. ADMIN SUBJECT CATALOG
+
+Deepen:
+
+/admin/subjects
+
+Show a school curriculum-style subject catalog.
+
+Fields may include:
+
+- Subject
+- Subject Code where appropriate
+- Grade applicability
+- Stream applicability
+- Assigned faculty count
+- Weekly Periods
+
+Use school terminology.
+
+Do not use:
+
+- Credits
+- Credit Hours
+- GPA weighting
+
+---
+
+# 16. ADMIN ATTENDANCE OVERVIEW
+
+Deepen:
+
+/admin/attendance
+
+Provide school-wide operational attendance oversight.
+
+Use exactly:
+
+PRESENT
+ABSENT
+ON_DUTY
+LEAVE
+
+Rules:
+
+PRESENT = presence
+ON_DUTY = presence
+LEAVE = absence
+ABSENT = absence
+
+Formula:
+
+(PRESENT + ON_DUTY)
+/
+(PRESENT + ABSENT + ON_DUTY + LEAVE)
+× 100
+
+Reuse:
+
+frontend/src/utils/attendance.ts
+
+Display:
+
+- Overall attendance
+- Class-wise attendance
+- Section-wise attendance
+- Present count
+- On Duty count
+- Approved Leave count
+- Absent count
+- Date
+- Academic Year
+- Grade
+- Stream
+- Section
+- Attendance session state
+
+LEAVE must remain visually distinct from ABSENT.
+
+Do not reintroduce LATE or EXCUSED.
+
+---
+
+# 17. ADMIN MARKS OVERVIEW
+
+Deepen:
+
+/admin/marks
+
+Provide operational examination oversight.
+
+Show:
+
+- Academic Year
+- Exam Type
+- Grade
+- Stream
+- Section
+- Subject
+- Students assessed
+- Marks completion
+- Average percentage
+- Grade distribution
+
+Student-level records may display:
+
+- Student ID
+- Student Name
+- Marks /100
+- Percentage
+- Letter Grade
+
+Do not allow this task to introduce:
+
+- GPA
+- CGPA
+- Credits
+- Grade Points
+
+---
+
+# 18. ADMIN TIMETABLE
+
+Deepen:
+
+/admin/timetable
+
+Show/manage the school timetable structure.
+
+Include:
+
+- Academic Year
+- Grade
+- Stream
+- Section
+- Day
+- Period
+- Time
+- Subject
+- Faculty
+- Room
+
+Use school period terminology.
+
+The timetable must remain compatible with the Faculty attendance-slot architecture.
+
+---
+
+# 19. ADMIN CALENDAR & EVENTS
+
+Deepen:
+
+/admin/calendar
+
+Admin can manage mock school calendar information:
+
+- Examinations
+- Parent-Teacher Meetings
+- Holidays
+- Academic activities
+- Science exhibitions
+- Sports events
+- Cultural events
+- School functions
+- Other school-important dates
+
+Events may include:
+
+- Date
+- Start time
+- End time
+- Event type
+- Venue
+- Description
+- Audience
+- Academic relevance
+- OD eligibility where already supported
+
+Do not invent new approval policies.
+
+---
+
+# 20. CLASS / SECTION ALLOCATION
+
+Deepen:
+
+/admin/allocation
+
+This is a core Task 2.5 feature.
+
+Provide a school-oriented allocation workspace.
+
+Required allocation methods:
+
+1. Merit-based allocation
+2. Random allocation
+
+## Merit-based
+
+Students are ordered by the relevant marks/performance measure from highest to lowest according to the existing documented allocation model.
+
+## Random
+
+Students are assigned randomly.
+
+Where practical, use reproducible/seeded behavior for the mock implementation.
+
+The UI must provide:
+
+- Academic Year selector
+- Grade selector
+- Stream selector where applicable
+- Source student list
+- Target sections
+- Allocation method
+- Allocation preview
+- Allocation result
+- Publish action
+- Allocation history
+
+---
+
+# 21. STREAM-AWARE ALLOCATION
+
+For Grades 11–12:
+
+Allocation must stay within the selected stream.
+
+Example:
+
+Grade 11
+Computer Science A
+→ A1 / A2 / A3
+
+Do not mix students from:
+
+Computer Science
+Bio-Maths
+Commerce
+Pure Science
+
+into one allocation operation unless the existing documented business rules explicitly support it.
+
+---
+
+# 22. ALLOCATION PREVIEW
+
+Before publishing:
+
+Show a clear preview.
+
+Example:
+
+Student | Current Section | Proposed Section | Basis
+
+Arun Kumar | Unassigned | A2 | Merit
+Priya S | Unassigned | A2 | Merit
+
+Allow:
+
+Cancel
+Back
+Publish Allocation
+
+Do NOT silently overwrite existing allocations.
+
+---
+
+# 23. ALLOCATION HISTORY
+
+Display previous allocation actions where mock support exists.
+
+Include:
+
+- Date
+- Academic Year
+- Grade
+- Stream
+- Allocation Method
+- Number of Students
+- Published By
+- Status
+
+This is mock history only in Phase 2.
+
+---
+
+# 24. PRINCIPAL DASHBOARD
+
+Deepen:
+
+/principal/dashboard
+
+The Principal dashboard should look like an institutional oversight screen.
+
+Show:
+
+- Total Students
+- Total Faculty
+- Total Classes
+- Total Sections
+- Overall Attendance
+- Overall Academic Performance
+- Current Academic Year
+- Grade distribution
+- Attendance trend
+- Recent school events
+- Pending oversight/report actions
+
+Do not display faculty ratings.
+
+---
+
+# 25. PRINCIPAL ACADEMICS
+
+Deepen:
+
+/principal/academics
+
+Show school-wide academic analytics:
+
+- Grade-wise academic average %
+- Section-wise academic average %
+- Stream-wise performance for Grades 11–12
+- Grade distribution
+- Pass percentage
+- Assessment-cycle trends
+- Subject performance overview
+
+Use:
+
+Marks
+Percentage
+Letter Grade
+
+Do not use GPA/CGPA/credits.
+
+Do not rank individual faculty.
+
+---
+
+# 26. PRINCIPAL ATTENDANCE
+
+Deepen:
+
+/principal/attendance
+
+Show:
+
+- School-wide attendance
+- Grade-wise attendance
+- Section-wise attendance
+- Stream-wise attendance where applicable
+- Present
+- On Duty
+- Approved Leave
+- Absent
+- Attendance trends
+
+Use the canonical attendance utility and four-status model.
+
+Do not show faculty performance rankings.
+
+---
+
+# 27. PRINCIPAL FACULTY DIRECTORY
+
+Deepen:
+
+/principal/faculty
+
+Provide descriptive institutional faculty visibility.
+
+Show:
+
+- Faculty name
+- Designation
+- Subject
+- Class Teacher role
+- Assigned classes
+- Assigned sections
+- Timetable
+- Workload counts
+
+DO NOT show:
+
+- Teacher rating
+- Appraisal score
+- Performance rank
+- Student feedback score
+- Teaching-quality score
+- AI teacher evaluation
+
+This remains descriptive only.
+
+---
+
+# 28. PRINCIPAL REPORTS
+
+Deepen:
+
+/principal/reports
+
+Provide a professional institutional reports area.
+
+Examples:
+
+- School Attendance Report
+- Class Attendance Report
+- Section Attendance Report
+- Student Performance Report
+- Grade Distribution Report
+- Academic Summary
+- Subject Performance Report
+- School Event Summary
+- Faculty Directory / Assignment Summary
+
+Report tables should emphasize:
+
+Marks /100
+Total
+Maximum Marks
+Percentage
+Letter Grade
+
+Attendance reports should include:
+
+Present
+On Duty
+Leave
+Absent
+Attendance %
+
+Potential exports:
+
+- PDF
+- Excel
+- CSV
+
+Only implement/mock these where appropriate to current Phase 2 scope.
+
+Do not claim server-generated reports.
+
+---
+
+# 29. REPORT APPROVAL / OVERSIGHT
+
+Where an oversight action is implemented:
+
+Use a mock state such as:
+
+Draft
+→ Review
+→ Approved
+
+Do not represent this as real backend approval.
+
+Principal may review/approve institutional report mock states where appropriate.
+
+Do not create unrestricted CRUD for Principal.
+
+---
+
+# 30. PRINCIPAL SCHOOL OVERVIEW
+
+The Principal should be able to understand at a glance:
+
+How many students?
+How many faculty?
+How many classes?
+How is attendance?
+How is academic performance?
+What are the current assessment trends?
+What events are upcoming?
+What reports require attention?
+
+Keep this concise and executive-oriented.
+
+---
+
+# 31. INDIAN SCHOOL TERMINOLOGY
+
+Use:
+
+School ERP
+Student
+Parent
+Faculty
+Principal
+Admin
+Academic Year
+Grade
+Class
+Section
+Stream
+Subject
+Attendance
+Marks
+Percentage
+Letter Grade
+Examination
+Report Card
+Timetable
+School Calendar
+Allocation
+
+Avoid:
+
+University
+Degree
+Department as an academic program concept
+Semester GPA
+Credits
+Grade Points
+Transcript
+Major
+Minor
+
+---
+
+# 32. SCHOOL ACADEMIC MODEL
+
+Continue using:
+
+Marks out of 100
++
+Cumulative Marks
++
+Overall Percentage
++
+Letter Grade
+
+Use the existing centralized grading utility:
+
+frontend/src/utils/grading.ts
+
+No duplicate grading formula.
+
+---
+
+# 33. STUDENT ID
+
+Student ID remains:
+
+- Permanent
+- Unique
+- Immutable
+- System-generated
+
+Use Student ID in:
+
+- Admin student directory
+- Parent relationships
+- Faculty rosters
+- Principal reports where relevant
+- Operational tables
+
+Do not let Admin/Principal UI imply that Student ID can be casually changed.
+
+---
+
+# 34. SCHOOL STRUCTURE
+
+Use:
+
+Academic Year
+→ Grade
+→ Stream
+→ Section
+→ Student
+
+For Grades 11–12 use the approved four streams.
+
+For lower grades no stream should be displayed.
+
+---
+
+# 35. SERVICE ABSTRACTION
+
+DO NOT bypass services.
+
+Keep:
+
+React
+↓
+Feature Hooks
+↓
+Domain Service
+↓
+MockDataService
+↓
+Mock JSON
+
+No large hardcoded datasets inside pages.
+
+---
+
+# 36. ACCESS BOUNDARIES — PHASE 2
+
+Admin:
+
+Operational management across school records.
+
+Principal:
+
+School-wide oversight and appropriate approval/review actions.
+
+Principal does not need unrestricted CRUD.
+
+Student/Parent/Faculty data must remain scoped according to their existing role boundaries.
+
+These restrictions are frontend demonstration boundaries in Phase 2.
+
+Real server-side authorization belongs to Phase 4.
+
+---
+
+# 37. TESTING
+
+Add/update tests for:
+
+ADMIN:
+
+- Student directory
+- Parent directory
+- Faculty directory
+- Class/section/stream hierarchy
+- Subject catalog
+- Attendance summaries
+- Marks summaries
+- Allocation calculations
+- Merit allocation ordering
+- Random allocation behavior
+- Allocation preview
+- Allocation history
+- Admin access boundaries
+
+PRINCIPAL:
+
+- Dashboard summaries
+- Academic analytics
+- Attendance analytics
+- Stream/section filtering
+- Faculty directory descriptive constraints
+- Report data
+- Oversight state handling
+- Prohibition of faculty performance metrics
+
+Also verify:
+
+- Four attendance statuses
+- LEAVE counts as absence
+- Marks /100
+- Percentage
+- Letter Grade
+- No GPA/CGPA/credits
+
+Run:
+
+npm run test:run
+
+npm run build
+
+Do not remove/weaken existing tests.
+
+---
+
+# 38. VISUAL QA
+
+Inspect:
+
+ADMIN
+/admin/dashboard
+/admin/students
+/admin/parents
+/admin/faculty
+/admin/classes
+/admin/subjects
+/admin/attendance
+/admin/marks
+/admin/timetable
+/admin/calendar
+/admin/allocation
+
+PRINCIPAL
+/principal/dashboard
+/principal/academics
+/principal/attendance
+/principal/faculty
+/principal/reports
+
+Verify:
+
+- School ERP branding
+- Indian school terminology
+- Academic Year
+- Grade / Stream / Section
+- Student ID
+- Marks /100
+- Percentage
+- Letter grades
+- Four attendance statuses
+- Allocation UI
+- Reports
+- No GPA/CGPA/credits
+- No faculty ratings/reviews
+- No futuristic UI
+- Responsive layout
+- Clear tables/filters
+- Consistent navigation
+
+---
+
+# 39. DOCUMENTATION
+
+Update:
+
+docs/PROJECT_STATUS.md
+docs/phases/PHASE_02_STATUS.md
+docs/CHANGELOG.md
+
+Update docs/DECISIONS.md only if a genuine new business/architectural decision is introduced.
+
+Document:
+
+- Admin feature module
+- Principal feature module
+- Operational management surfaces
+- Allocation workflow
+- Principal oversight
+- Report views
+- Mock limitations
+- Tests
+- Visual QA
+
+Clearly distinguish:
+
+IMPLEMENTED
+MOCKED
+PLANNED
+NOT IMPLEMENTED
+BLOCKED
+
+---
+
+# 40. SCOPE PROTECTION
+
+Do NOT:
+
+- Start Phase 3
+- Build Django APIs
+- Build PostgreSQL
+- Implement real authentication
+- Implement real server-side RBAC
+- Implement Redis/WebSockets
+- Add Firebase
+- Add Supabase
+- Add MongoDB
+- Create duplicate frontend/backend structures
+- Rewrite the completed Student/Parent/Faculty features unnecessarily
+- Introduce unnecessary dependencies
+
+---
+
+# 41. FINAL ACCEPTANCE CRITERIA
+
+Task 2.5 is complete only when:
+
+1. Admin dashboard is complete and school-oriented.
+2. Admin student directory is usable.
+3. Admin parent directory is usable.
+4. Admin faculty directory is descriptive and non-evaluative.
+5. Admin classes/sections/streams are represented correctly.
+6. Admin subjects are represented correctly.
+7. Admin attendance oversight uses the canonical four-status model.
+8. Admin marks oversight uses marks /100, percentage and letter grade.
+9. Admin timetable is available.
+10. Admin calendar/events are available.
+11. Admin allocation supports merit-based and random allocation.
+12. Allocation preview exists.
+13. Allocation history exists or is appropriately mocked.
+14. Grade 11–12 allocation is stream-aware.
+15. Principal dashboard provides school-wide institutional oversight.
+16. Principal academics provides grade/section/stream analytics.
+17. Principal attendance provides school/class/section insights.
+18. Principal faculty view contains no ratings/reviews/rankings.
+19. Principal reports provide school-level report views.
+20. No GPA/CGPA/credits/grade points remain in active UI.
+21. School ERP branding remains consistent.
+22. Mock/service architecture remains intact.
+23. Existing Student, Parent and Faculty functionality has no regression.
+24. Tests pass.
+25. Production build passes.
+26. Documentation is synchronized.
+
+---
+
+# 42. FINAL REPORT
+
+Return:
+
+## Implemented
+
+## Admin Feature Structure
+
+## Admin Dashboard
+
+## Student / Parent / Faculty Directories
+
+## Classes / Sections / Streams / Subjects
+
+## Attendance
+
+## Marks
+
+## Timetable & Calendar
+
+## Allocation
+
+## Principal Feature Structure
+
+## Principal Dashboard
+
+## Academic Analytics
+
+## Attendance Analytics
+
+## Faculty Directory
+
+## Reports / Oversight
+
+## Access Boundaries
+
+## Files Changed
+
+## Tests
+
+## Build
+
+## Visual QA
+
+## Documentation Updated
+
+## Known Issues
+
+## Next Task
+
+Recommend ONLY the next Phase 2 task.
+
+Do NOT proceed to Phase 3 automatically.
