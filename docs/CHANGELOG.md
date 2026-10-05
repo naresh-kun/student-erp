@@ -2,6 +2,59 @@
 
 All notable changes to the Student ERP project will be documented in this file.
 
+## [Phase 4: Task 4.3 — RBAC Architecture & Permission Model] - 2026-10-05
+
+### Summary
+Established the authoritative Role-Based Access Control (RBAC) architecture, explicit permission model, and queryset scoping engine for Student ERP across all 5 system roles (`Admin`, `Principal`, `Faculty`, `Student`, `Parent`). Standardized canonical permission identifiers (`<domain>.<action>`) in `common.constants` and declared explicit role-permission sets in `ROLE_PERMISSIONS_MATRIX` with zero automatic role inheritance. Defined formal operational scopes (`SCOPE_GLOBAL`, `SCOPE_FACULTY_ASSIGNED`, `SCOPE_SELF`, `SCOPE_LINKED_CHILD`). Implemented `AuthorizationService` (`common.authorization`) providing live database role inspection, permission checking, scope resolution, object-level ownership checks, and database-level queryset scoping for list and search endpoints. Authored reusable DRF permission classes (`HasRequiredPermission`, `require_permission`, `Is*Role`, `IsOwnerOrScopedAccess`) in `common.permissions`. Enforced Task 2.7 allocation governance reserving section and Class Teacher allocation mutations strictly for `Admin` and `Principal`, while restricting `Faculty` to view-only access. Implemented security hardening against client payload tampering, stale-token privilege escalation, and account deactivation. Authored 27 automated tests in `test_rbac_task43.py`, expanding the backend test suite to 228/228 passing tests (100%). Confirmed frontend non-regression with 158/158 Vitest tests passing and a clean production build in 6.59s.
+
+### Added
+- **Canonical Permission Identifiers & Scopes (`backend/common/constants.py`)**:
+  - Defined 28 canonical permission constants formatted as `<domain>.<action>` across 10 functional modules (`users`, `students`, `academics`, `attendance`, `marks`, `timetable`, `calendar`, `allocation`, `reports`, `audit`).
+  - Defined 5 scope constants: `SCOPE_GLOBAL`, `SCOPE_FACULTY_ASSIGNED`, `SCOPE_SELF`, `SCOPE_LINKED_CHILD`, `SCOPE_NONE`.
+- **RBAC Matrix & Scope Engine (`backend/common/authorization.py`)**:
+  - `ROLE_PERMISSIONS_MATRIX`: Explicit permission mappings for all 5 roles with zero automatic inheritance.
+  - `ROLE_DOMAIN_SCOPES`: Mapping of role-domain combinations to operational scopes.
+  - `AuthorizationService(BaseService)`:
+    - `get_user_role(user)`: Evaluates live DB user role state, ignoring client payloads and stale claims.
+    - `has_permission(user, permission)`: Evaluates permissions against matrix.
+    - `get_user_permissions(user)`: Returns full permission set.
+    - `resolve_scope(user, domain)`: Returns operational scope.
+    - `can_access_object(user, obj, action)`: Verifies object-level ownership and faculty assignments.
+    - `filter_queryset_for_user(queryset, user, domain)`: Scopes querysets across `Student`, `Attendance`, `LeaveApplication`, `Mark`, `Section`, `Enrollment`, `Parent`, and `Faculty`.
+- **DRF Permission Classes (`backend/common/permissions.py`)**:
+  - `HasRequiredPermission`: Dynamic view and object-level permission evaluator.
+  - `require_permission(perm)`: Class factory helper.
+  - Role-specific classes: `IsAdminRole`, `IsPrincipalRole`, `IsFacultyRole`, `IsStudentRole`, `IsParentRole`.
+  - Composite classes: `IsAdminOrPrincipal`, `IsStaffOrExecutive`.
+  - Scoped object access: `IsOwnerOrScopedAccess`.
+  - Backward-compatible aliases: `IsAdminUser`, `IsPrincipalUser`, `IsFacultyUser`, `IsStudentUser`, `IsParentUser`.
+- **Re-export in Accounts Domain (`backend/apps/accounts/services.py`)**:
+  - Exposed `AuthorizationService` alongside `AuthService` and `AccountService`.
+- **ADR 012 (`docs/DECISIONS.md`)**:
+  - Documented explicit 5-role RBAC architecture, scope resolution, live database role checking, and queryset scoping engine.
+- **Task 4.3 Automated Pytest Suite (`backend/tests/test_rbac_task43.py`)**:
+  - 27 comprehensive automated tests covering:
+    - 5-role explicit permission assignment and non-inheritance.
+    - Scope resolution across all roles and domains.
+    - Faculty assignment-aware scoping (Class Teacher access vs unrelated class denial).
+    - Student self-ownership verification and cross-student denial.
+    - Parent linked-child verification and unrelated student denial.
+    - Admin/Principal global access and Task 2.7 allocation permissions.
+    - Queryset scoping for list endpoints and search filters.
+    - DRF permission classes with simulated HTTP requests and 401/403 denial semantics.
+    - Security hardening: role tampering resistance, live DB role change reflection, account deactivation handling, zero superuser shortcut.
+  - Backend test suite expanded from 201 to **228 passing tests (100%)**.
+
+### Verified (Non-Regression)
+- **Django System Check**: `python manage.py check` passes with 0 issues.
+- **Database Migrations**: `makemigrations --check` reports 0 unmigrated changes; schema unchanged (zero migrations).
+- **Backend Test Suite**: 228 passed out of 228 tests across 15 test modules in 94.24s.
+- **Frontend Test Suite**: 158 passed out of 158 Vitest tests in 5.06s (`npm test -- --run`).
+- **Frontend Build**: Production bundle compiles cleanly in 6.59s (`npm run build`).
+- **Architectural Invariants**: Broad endpoint enforcement reserved for Task 4.4; Student/Parent special authentication reserved for Task 4.5; frontend remains mock-driven.
+
+---
+
 ## [Phase 4: Task 4.2 — Custom User & Login] - 2026-10-05
 
 ### Summary

@@ -247,6 +247,43 @@
   - Full adherence to security requirements: no passwords or hashes serialized, zero enumeration risk.
   - 100% backward compatibility with Task 4.1 foundation tests.
 
+---
+
+## ADR 012: Explicit 5-Role RBAC Architecture, Scope Resolution, and Queryset Scoping
+
+- **Status**: ACCEPTED / AUTHORITATIVE
+- **Phase**: Phase 4 (Authentication + RBAC) — Task 4.3
+- **Context**: 
+  - Educational ERP security demands strict operational segregation across exactly 5 roles: `Admin`, `Principal`, `Faculty`, `Student`, `Parent`.
+  - Implicit role hierarchies (e.g. `Admin > Principal > Faculty > Student > Parent`) risk accidental privilege leakage (such as granting Faculty student-deletion rights or allowing Principal to overwrite raw attendance).
+  - Object-level authorization alone cannot secure list endpoints or search queries, leading to data leakage across classes or unrelated students if querysets are unconstrained.
+  - Stale JWT token claims could lead to privilege escalation if authorization decisions relied on claims rather than live database role state.
+- **Decision**:
+  1. **Canonical Identifiers & Explicit Matrix**: Standardize all permissions on `<domain>.<action>` format (e.g. `students.view`, `attendance.mark`, `allocation.update_student_section`). Declare explicit permission sets per role in `ROLE_PERMISSIONS_MATRIX` with zero automatic role inheritance.
+  2. **Reusable Scope Model**: Define formal scopes:
+     - `SCOPE_GLOBAL`: Full institutional scope (`Admin`, `Principal`).
+     - `SCOPE_FACULTY_ASSIGNED`: Scoped strictly to academic assignments (sections where faculty is designated Class Teacher, or subjects evaluated/recorded).
+     - `SCOPE_SELF`: Scoped to authenticated user's own profile (`Student`).
+     - `SCOPE_LINKED_CHILD`: Scoped strictly to verified linked children (`Parent`).
+  3. **Task 2.7 Allocation Governance**:
+     - Student section and Class Teacher allocation `Update` and `Delete` belong strictly to `Admin` and `Principal`.
+     - `Faculty` holds view-only access to assigned allocations and is strictly denied modification controls.
+  4. **Queryset Scoping Engine**: Implement `AuthorizationService.filter_queryset_for_user(queryset, user, domain)` ensuring list endpoints and search filters are constrained at the database layer before serialization.
+  5. **Live Database Freshness & Zero Stale-Token Escalation**:
+     - `AuthorizationService.get_user_role(user)` always evaluates `user.role.name` from the authenticated database user model.
+     - Stale JWT token claims and client payload overrides (e.g. `{"role": "Admin"}`) are completely ignored for authorization decisions.
+     - User deactivation (`is_active = False`) immediately denies all permissions.
+     - Zero Django `is_superuser` shortcut: `Admin` and `Principal` authorities operate purely via ERP roles.
+  6. **DRF Permission Classes**: Implement reusable classes in `backend/common/permissions.py`:
+     - `HasRequiredPermission(perm)` and `require_permission(perm)`
+     - `IsAdminRole`, `IsPrincipalRole`, `IsFacultyRole`, `IsStudentRole`, `IsParentRole`
+     - `IsAdminOrPrincipal`, `IsStaffOrExecutive`, `IsOwnerOrScopedAccess`
+- **Consequences**:
+  - Authoritative, non-bypassable security boundary adhering strictly to `docs/RBAC_PERMISSIONS.md`.
+  - Zero schema migrations needed (relies on existing `Role` and `User` foreign keys).
+  - Foundation ready for broad endpoint enforcement in Task 4.4 without structural rework.
+
+
 
 
 

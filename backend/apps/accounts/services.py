@@ -12,6 +12,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.exceptions import AuthenticationFailed
 
 from common.services import BaseService
+from common.authorization import AuthorizationService
 from apps.accounts.models import User, Role, Parent, Faculty
 
 

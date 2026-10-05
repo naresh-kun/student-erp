@@ -73,19 +73,42 @@ In the Student ERP architecture, there is a strict separation between navigation
 ### 4.1 Frontend UX Route Guards
 Frontend routes are wrapped in an `<AuthGuard allowedRoles={['Admin', 'Principal']} />` component. If a Student navigates to `/admin/allocation`, the client-side router redirects them to `/dashboard/student`. This provides an intuitive user experience and prevents UI clutter.
 
-### 4.2 Backend Enforcement Architecture
-Each DRF API view specifies explicit permission classes:
+### 4.2 Backend Enforcement Architecture (Task 4.3 Implementation)
+The backend authorization engine is implemented in `backend/common/authorization.py` and `backend/common/permissions.py`:
+
 ```python
-# Conceptual DRF permission architecture
-class IsFacultyOrAdminForClass(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role in ['Faculty', 'Admin']
-        
-    def has_object_permission(self, request, view, obj):
-        if request.user.role == 'Admin':
-            return True
-        # Faculty can only edit attendance for their assigned section
-        return obj.section.class_teacher == request.user.faculty_profile
+# Authoritative DRF permission architecture (Task 4.3)
+from common.permissions import HasRequiredPermission, require_permission, IsOwnerOrScopedAccess
+from common.constants import PERM_ATTENDANCE_MARK
+from common.authorization import AuthorizationService
+
+# View-level permission evaluation
+class AttendanceRecordView(APIView):
+    permission_classes = [require_permission(PERM_ATTENDANCE_MARK), IsOwnerOrScopedAccess]
+
+    def get_queryset(self):
+        # Database-level queryset scoping: Faculty assigned only, Student self, Parent child
+        qs = Attendance.objects.all()
+        return AuthorizationService.filter_queryset_for_user(qs, self.request.user, domain='attendance')
+```
+
+Key Enforcement Flow:
+```text
+HTTP Request
+  ↓
+Authenticated & Active? (401 if unauthenticated/inactive)
+  ↓
+Role Resolution (from live DB user.role, immune to client tampering or stale claims)
+  ↓
+Permission Check (ROLE_PERMISSIONS_MATRIX in common/authorization.py)
+  ↓
+Scope Resolution (GLOBAL, FACULTY_ASSIGNED, SELF, LINKED_CHILD)
+  ↓
+Object Ownership Verification (can_access_object)
+  ↓
+Queryset Scoping (filter_queryset_for_user on list/search endpoints)
+  ↓
+ALLOW / DENY (403 if forbidden)
 ```
 
 ---

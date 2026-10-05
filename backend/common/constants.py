@@ -143,3 +143,82 @@ ENROLLMENT_STATUS_PROMOTED = 'Promoted'
 ENROLLMENT_STATUS_TRANSFERRED = 'Transferred'
 ENROLLMENT_STATUS_GRADUATED = 'Graduated'
 ENROLLMENT_STATUS_WITHDRAWN = 'Withdrawn'
+
+
+# ============================================================================
+# 6. RBAC Scope Constants (Task 4.3)
+# ============================================================================
+SCOPE_GLOBAL = 'GLOBAL'
+SCOPE_FACULTY_ASSIGNED = 'FACULTY_ASSIGNED'
+SCOPE_SELF = 'SELF'
+SCOPE_LINKED_CHILD = 'LINKED_CHILD'
+SCOPE_NONE = 'NONE'
+
+ALL_SCOPES: Tuple[str, ...] = (
+    SCOPE_GLOBAL,
+    SCOPE_FACULTY_ASSIGNED,
+    SCOPE_SELF,
+    SCOPE_LINKED_CHILD,
+    SCOPE_NONE,
+)
+
+
+# ============================================================================
+# 7. RBAC Canonical Permission Identifiers (Task 4.3)
+# ============================================================================
+# Format: <domain>.<action> per docs/RBAC_PERMISSIONS.md
+
+# Users & Profile
+PERM_USERS_VIEW = 'users.view'
+PERM_USERS_CREATE = 'users.create'
+PERM_USERS_UPDATE = 'users.update'
+PERM_USERS_DELETE = 'users.delete'
+
+# Student Directory & Records
+PERM_STUDENTS_VIEW = 'students.view'
+PERM_STUDENTS_CREATE = 'students.create'
+PERM_STUDENTS_UPDATE = 'students.update'
+PERM_STUDENTS_DELETE = 'students.delete'
+
+# Academic Setup (Classes, Sections, Subjects)
+PERM_ACADEMICS_VIEW = 'academics.view'
+PERM_ACADEMICS_MANAGE = 'academics.manage'
+
+# Attendance Management
+PERM_ATTENDANCE_VIEW = 'attendance.view'
+PERM_ATTENDANCE_MARK = 'attendance.mark'
+PERM_ATTENDANCE_APPROVE_LEAVE = 'attendance.approve_leave'
+PERM_ATTENDANCE_VIEW_ABSENTEES = 'attendance.view_absentees'
+PERM_ATTENDANCE_VIEW_NOT_ENTERED = 'attendance.view_not_entered'
+PERM_ATTENDANCE_OVERRIDE = 'attendance.override'
+
+# Marks & Grading
+PERM_MARKS_VIEW = 'marks.view'
+PERM_MARKS_ENTER = 'marks.enter'
+PERM_MARKS_OVERRIDE = 'marks.override'
+PERM_MARKS_APPROVE = 'marks.approve'
+
+# Timetable Management
+PERM_TIMETABLE_VIEW = 'timetable.view'
+PERM_TIMETABLE_MANAGE = 'timetable.manage'
+
+# Institutional Calendar
+PERM_CALENDAR_VIEW = 'calendar.view'
+PERM_CALENDAR_CREATE = 'calendar.create'
+PERM_CALENDAR_PUBLISH = 'calendar.publish'
+
+# Allocation Engine (Task 2.7 Approved Functional Amendment)
+PERM_ALLOCATION_VIEW = 'allocation.view'
+PERM_ALLOCATION_UPDATE_STUDENT_SECTION = 'allocation.update_student_section'
+PERM_ALLOCATION_DELETE_STUDENT_SECTION = 'allocation.delete_student_section'
+PERM_ALLOCATION_UPDATE_CLASS_TEACHER = 'allocation.update_class_teacher'
+PERM_ALLOCATION_DELETE_CLASS_TEACHER = 'allocation.delete_class_teacher'
+
+# Reports & Analytics
+PERM_REPORTS_VIEW = 'reports.view'
+PERM_REPORTS_EXPORT = 'reports.export'
+PERM_REPORTS_APPROVE = 'reports.approve'
+
+# Audit Logs
+PERM_AUDIT_VIEW = 'audit.view'
+

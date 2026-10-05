@@ -1,9 +1,9 @@
 # Phase 4 Execution Status: Authentication + RBAC
 
 > **Phase**: Phase 4 (Authentication + Role-Based Access Control)  
-> **Current Task**: **Task 4.2 Completed (Custom User & Login)**  
-> **Next Task**: **Task 4.3 (Token Refresh & Invalidation / RBAC Architecture)**  
-> **Status**: **IN PROGRESS (Tasks 4.1 & 4.2 DONE; 201/201 backend pytest tests passing; 158/158 frontend tests passing; clean build)**  
+> **Current Task**: **Task 4.3 Completed (RBAC Architecture & Permission Model)**  
+> **Next Task**: **Task 4.4 (RBAC Broad Endpoint Enforcement)**  
+> **Status**: **IN PROGRESS (Tasks 4.1, 4.2 & 4.3 DONE; 228/228 backend pytest tests passing; 158/158 frontend tests passing; clean build)**  
 > **Date**: 2026-10-05  
 
 ---
@@ -20,8 +20,8 @@ Establish the authoritative backend authentication and authorization engine for 
 | :--- | :--- | :--- | :--- |
 | **Task 4.1** | **Authentication Foundation** | SimpleJWT configuration, environment variables, AuthService boundary, auth serializers, `/api/v1/auth/` URL namespace, password security, test suite | **COMPLETED** |
 | **Task 4.2** | **Custom User & Login** | Custom login endpoint, token claims, safe profile payload, envelope normalization, live smoke tests | **COMPLETED** |
-| **Task 4.3** | **Token Refresh & Invalidation** | Stateless refresh token workflow, token expiration handling, logout/blacklist boundaries | **PENDING** |
-| **Task 4.4** | **RBAC Permission Classes** | Custom DRF BasePermission classes (`IsAdmin`, `IsPrincipal`, `IsFaculty`, `IsStudent`, `IsParent`, object-level ownership) | **PENDING** |
+| **Task 4.3** | **RBAC Architecture & Permission Model** | Canonical permission identifiers, 5-role explicit matrix, scope model, AuthorizationService, DRF permission classes, queryset scoping | **COMPLETED** |
+| **Task 4.4** | **RBAC Broad Endpoint Enforcement** | Application of permission classes and queryset scoping across all ERP endpoints, views, and services | **PENDING** |
 | **Task 4.5** | **Student & Parent Authentication** | Alphanumeric Student ID login, parent authentication via linked child's Student ID | **PENDING** |
 | **Task 4.6** | **Security Hardening & Rate Limiting** | DRF throttling, brute-force mitigation, audit logging on auth failures | **PENDING** |
 | **Task 4.7** | **Final Phase 4 Verification & Sign-Off** | Comprehensive auth/RBAC verification, security audit, regression check, Phase 4 sign-off | **PENDING** |
@@ -125,10 +125,53 @@ Establish the authoritative backend authentication and authorization engine for 
 
 ---
 
-## 5. Phase 4 Invariants & Architectural Boundaries
+## 5. Completed Work (Task 4.3: RBAC Architecture & Permission Model)
+
+- [x] **Authoritative 5-Role RBAC Model (`backend/common/authorization.py`)**:
+  - Exactly 5 system roles (`Admin`, `Principal`, `Faculty`, `Student`, `Parent`).
+  - Explicit role assignments in `ROLE_PERMISSIONS_MATRIX` with zero automatic role inheritance.
+  - Standardized permission identifiers (`<domain>.<action>`).
+- [x] **Reusable Scope Engine (`backend/common/constants.py` & `authorization.py`)**:
+  - Declared `SCOPE_GLOBAL`, `SCOPE_FACULTY_ASSIGNED`, `SCOPE_SELF`, `SCOPE_LINKED_CHILD`, `SCOPE_NONE`.
+  - Implemented `AuthorizationService.resolve_scope(user, domain)`.
+  - Assignment-aware Faculty scoping (Class Teacher assignments and recorded/evaluated items).
+  - Student identity self-ownership and Parent verified child relationships.
+- [x] **Task 2.7 Allocation Governance**:
+  - Student section allocation and Class Teacher allocation `Update` and `Delete` assigned strictly to `Admin` and `Principal`.
+  - `Faculty` restricted to view-only allocation access.
+  - Principal access works without Django `is_superuser = True` shortcut.
+- [x] **Authorization Domain Service (`AuthorizationService`)**:
+  - `get_user_role(user)`: Evaluates live DB user role state, ignoring client payloads and stale token claims.
+  - `has_permission(user, permission)`: Evaluates permissions against matrix.
+  - `can_access_object(user, obj, action)`: Verifies object-level ownership and faculty assignments.
+  - `filter_queryset_for_user(queryset, user, domain)`: Scopes querysets across `Student`, `Attendance`, `LeaveApplication`, `Mark`, `Section`, `Enrollment`, `Parent`, and `Faculty`.
+- [x] **DRF Permission Architecture (`backend/common/permissions.py`)**:
+  - `HasRequiredPermission(perm)`: Base evaluator.
+  - `require_permission(perm)`: Class factory.
+  - Role-specific classes: `IsAdminRole`, `IsPrincipalRole`, `IsFacultyRole`, `IsStudentRole`, `IsParentRole`.
+  - Composite classes: `IsAdminOrPrincipal`, `IsStaffOrExecutive`.
+  - Scoped object access: `IsOwnerOrScopedAccess`.
+- [x] **Security Hardening & Tampering Mitigation**:
+  - Payload overrides (`{"role": "Admin"}`) strictly ignored.
+  - Immediate role revocation upon database role changes or account deactivation (`is_active = False`).
+  - Clear denial semantics: 401 unauthenticated vs 403 forbidden.
+- [x] **Automated Testing Suite (`backend/tests/test_rbac_task43.py`)**:
+  - 27 comprehensive automated tests covering all 5 roles, scope resolution, queryset scoping, object ownership, denial semantics, and security hardening.
+  - **Backend test suite expanded from 201 to 228 tests passing (100%)**.
+- [x] **Full Regression Verification**:
+  - `python manage.py check`: 0 issues.
+  - `python manage.py makemigrations --check`: 0 changes (zero migrations needed).
+  - `pytest -q`: 228/228 passing in 94.24s.
+  - `npm test -- --run`: 158/158 passing in 5.06s.
+  - `npm run build`: Clean production build in 6.59s.
+
+---
+
+## 6. Phase 4 Invariants & Architectural Boundaries
 
 1. **Django + DRF + SimpleJWT Sole Authority**: No competing authentication framework (Firebase, Supabase, Auth0, FastAPI) is permitted.
 2. **Stateless JWT Architecture**: Access tokens are stateless, short-lived (15 minutes), signed with HMAC-SHA256.
-3. **No Premature RBAC in Task 4.2**: Role permission enforcement classes are reserved for Task 4.4.
-4. **No Premature Student/Parent Workflows in Task 4.2**: Alphanumeric Student ID login and Parent linked-student auth are reserved for Task 4.5.
+3. **No Premature Broad Endpoint Enforcement in Task 4.3**: Task 4.3 establishes the reusable architecture; endpoint-by-endpoint enforcement is reserved for Task 4.4.
+4. **No Premature Student/Parent Special Auth in Task 4.3**: Alphanumeric Student ID login and Parent linked-student auth are reserved for Task 4.5.
 5. **Frontend Decoupling**: React frontend remains completely mock-driven (`VITE_USE_MOCK_DATA=true`) until Phase 5.
+

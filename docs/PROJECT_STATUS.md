@@ -1,7 +1,7 @@
 # Project Status & Milestone Ledger
 
 > **Current Phase**: **Phase 4 IN PROGRESS (Authentication + RBAC)**  
-> **Authoritative State**: Phase 3 COMPLETE & SIGNED OFF; Phase 4 Tasks 4.1 & 4.2 COMPLETE (Authentication Foundation, Custom User & Login Workflow, SimpleJWT Configuration, AuthService Domain Boundary, Token Refresh, Safe Profile Context; 201/201 backend tests passing; 158/158 frontend tests passing; clean build)  
+> **Authoritative State**: Phase 3 COMPLETE & SIGNED OFF; Phase 4 Tasks 4.1, 4.2 & 4.3 COMPLETE (Authentication Foundation, Custom User & Login Workflow, SimpleJWT Configuration, AuthService Domain Boundary, Token Refresh, Safe Profile Context, 5-Role RBAC Architecture, Canonical Permissions & Scopes, AuthorizationService, DRF Permission Classes, Queryset Scoping; 228/228 backend tests passing; 158/158 frontend tests passing; clean build)  
 > **Last Updated**: 2026-10-05
 
 ---
