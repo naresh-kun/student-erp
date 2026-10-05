@@ -185,4 +185,32 @@
   - Clean role separation preventing unauthorized faculty mutations.
   - Zero violation of Phase 2 architectural boundaries or attendance 4-status invariants.
 
+---
+
+## ADR 010: Backend Authentication Foundation with Stateless SimpleJWT
+
+- **Status**: ACCEPTED / AUTHORITATIVE
+- **Context**: 
+  - Educational ERP security demands robust credential verification, safe session/token lifecycles, and protection against credential stuffing and privilege escalation.
+  - Need a unified, battle-tested token architecture for REST API consumers under `/api/v1/` without introducing complex third-party identity dependencies (Auth0, Firebase, Supabase).
+- **Decision**:
+  1. **Framework Standardization**: Adopt `djangorestframework-simplejwt` as the sole JWT provider for DRF endpoints. Custom cryptography or parallel auth databases are strictly rejected.
+  2. **Token Lifespans & Algorithms**:
+     - Access Token: 15-minute lifespan, stateless HMAC-SHA256 signed JWT.
+     - Refresh Token: 7-day lifespan with rotation enabled (`ROTATE_REFRESH_TOKENS = True`).
+     - Standard Claims: `user_id` (UUID), `role` (canonical system role), `username`.
+  3. **Credential & Password Security**:
+     - Standardize on Django's PBKDF2 password hasher (`pbkdf2_sha256$`). Plaintext passwords must never be stored, logged, or returned in serialized outputs.
+     - Enforce all 4 standard Django password validators in settings.
+     - Disabled/inactive accounts (`is_active=False`) are strictly rejected during authentication and token issuance.
+  4. **Domain Service Encapsulation**:
+     - Implement `AuthService` inside `apps/accounts/services.py` to handle credential verification, token generation, and password validation cleanly separated from DRF views and serializers.
+  5. **Decoupled Frontend**:
+     - The React frontend remains in mock mode (`VITE_USE_MOCK_DATA=true`) during Phase 4. Live frontend authentication wiring is strictly deferred to Phase 5.
+- **Consequences**:
+  - Fully standardized and reproducible JWT authentication conforming to `docs/API_CONTRACT.md`.
+  - Zero database bloat or unneeded migrations for token management in Task 4.1.
+  - High developer velocity and strict preservation of Phase 3 invariants.
+
+
 

@@ -1,7 +1,7 @@
 # Project Status & Milestone Ledger
 
-> **Current Phase**: **Phase 3 COMPLETE & SIGNED OFF (Backend Foundation + Database)**  
-> **Authoritative State**: Phase 3 Tasks 3.1–3.7 COMPLETE (Backend Foundation, Scaffolding, 13 3NF PostgreSQL Models, Hardened Migrations, Idempotent Seed Data Command, Initial REST API Foundation under `/api/v1/`; 154/154 backend tests passing; live PostgreSQL database seeded & verified; 158/158 frontend tests passing, clean build)  
+> **Current Phase**: **Phase 4 IN PROGRESS (Authentication + RBAC)**  
+> **Authoritative State**: Phase 3 COMPLETE & SIGNED OFF; Phase 4 Task 4.1 COMPLETE (Authentication Foundation, SimpleJWT Configuration, AuthService Domain Boundary, Password Security & Validation, Auth Serializers, /api/v1/auth/ Routing; 181/181 backend tests passing; 158/158 frontend tests passing; clean build)  
 > **Last Updated**: 2026-10-05
 
 ---
@@ -74,11 +74,13 @@ To ensure strict engineering honesty, features and modules are classified into e
 | **Modular App Domain Boundaries** | `IMPLEMENTED` | 11 app modules under `backend/apps/` configured with `models.py`, `services.py`, `serializers.py`, `views.py`, `urls.py` |
 | **Domain Services & Base Architecture** | `IMPLEMENTED` | `BaseService` foundation, 11 dedicated service classes, CBSE 8-tier grading, 4-status attendance formula, Student ID format helpers |
 | **Health Check Endpoint (`/api/health/`)** | `IMPLEMENTED` | Unauthenticated liveness probe with honest, non-crashing database connectivity status (`status: ok`) |
-| **Backend Test Infrastructure** | `IMPLEMENTED` | `backend/pytest.ini` and 154 unit/model/API tests passing (154/154 passing, 100% test pass rate across all 12 modules) |
+| **Backend Test Infrastructure** | `IMPLEMENTED` | `backend/pytest.ini` and 181 unit/model/API tests passing (181/181 passing, 100% test pass rate across all 13 modules) |
 | **Backend Container Blueprint** | `IMPLEMENTED` | `backend/Dockerfile` created conforming to `infra/docker-compose.yml` |
 | **REST API Endpoints (`/api/v1/`)** | `IMPLEMENTED` | Initial REST API foundation implemented across `auth`, `students`, `parents`, `faculty`, `classes`, `subjects`, `attendance`, and `marks` with standard envelopes, pagination, and error formatting |
+| **Authentication Foundation (Task 4.1)** | `IMPLEMENTED` | Stateless SimpleJWT setup (15m access / 7d refresh), AuthService boundary, password validators & PBKDF2 hashing, safe profile serializers, 27 dedicated tests |
 | **Realtime WebSockets (Channels)** | `PLANNED` | Documented in `docs/BACKEND_ARCHITECTURE.md`; scheduled for Phase 6 |
 | **Database Migrations & Models** | `IMPLEMENTED` | 13 concrete 3NF PostgreSQL models (`Role`, `User`, `Faculty`, `Parent`, `Student`, `AcademicYear`, `SchoolClass`, `Section`, `Subject`, `Enrollment`, `Attendance`, `LeaveApplication`, `ExamType`, `Mark`), hardened migrations, and live PostgreSQL seeded dataset |
+
 
 ### 2.5 Infrastructure & Database
 | Component / Area | Status | Notes |

@@ -3,8 +3,97 @@ Student ERP — Accounts DRF Serializers
 Serializer-layer contract for authentication, users, roles, faculty, and parents.
 """
 
+from typing import Optional
 from rest_framework import serializers
 from apps.accounts.models import Role, User, Parent, Faculty
+
+
+class AuthTokenResponseSerializer(serializers.Serializer):
+    """
+    Standard schema for JWT token response (Phase 4 Foundation).
+    """
+    access = serializers.CharField(help_text="Short-lived JWT access token (15 minutes).")
+    refresh = serializers.CharField(help_text="Long-lived JWT refresh token (7 days).")
+    token_type = serializers.CharField(default="Bearer", help_text="Authentication scheme type.")
+
+
+class LoginCredentialsSerializer(serializers.Serializer):
+    """
+    Input validation serializer for authentication credentials.
+    Password is write-only and never exposed in serialized representations.
+    """
+    username = serializers.CharField(
+        required=True,
+        trim_whitespace=True,
+        help_text="Institutional username or alphanumeric identifier.",
+    )
+    password = serializers.CharField(
+        required=True,
+        write_only=True,
+        style={'input_type': 'password'},
+        help_text="Plaintext password for authentication. Never logged or stored plaintext.",
+    )
+
+
+class CurrentUserProfileSerializer(serializers.ModelSerializer):
+    """
+    Safe serializer for authenticated user profile context (/api/v1/auth/me/).
+    Guarantees password, password hash, and security secrets are NEVER exposed.
+    """
+    role_name = serializers.CharField(source='role.name', read_only=True, default='Unknown')
+    profile_details = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'role',
+            'role_name',
+            'phone',
+            'avatar_url',
+            'is_active',
+            'date_joined',
+            'last_login',
+            'profile_details',
+        ]
+        read_only_fields = fields
+
+    def get_profile_details(self, obj: User) -> Optional[dict]:
+        if hasattr(obj, 'faculty_profile') and obj.faculty_profile:
+            fac = obj.faculty_profile
+            return {
+                'type': 'faculty',
+                'id': str(fac.id),
+                'employee_code': fac.employee_code,
+                'department': fac.department,
+                'designation': fac.designation,
+                'office_room': fac.office_room,
+            }
+        elif hasattr(obj, 'parent_profile') and obj.parent_profile:
+            par = obj.parent_profile
+            return {
+                'type': 'parent',
+                'id': str(par.id),
+                'relation': par.relation,
+                'occupation': par.occupation,
+                'address': par.address,
+            }
+        elif hasattr(obj, 'student_profile') and obj.student_profile:
+            stu = obj.student_profile
+            return {
+                'type': 'student',
+                'id': str(stu.id),
+                'student_id': stu.student_id,
+                'admission_number': stu.admission_number,
+                'roll_number': stu.roll_number,
+                'status': stu.status,
+            }
+        return None
+
 
 
 class RoleSerializer(serializers.ModelSerializer):

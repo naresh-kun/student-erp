@@ -3,10 +3,80 @@ Student ERP — Accounts Domain Service
 Encapsulates user identity, role resolution, faculty, and parent profile queries.
 """
 
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from django.db.models import QuerySet, Q
+from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.exceptions import AuthenticationFailed
+
 from common.services import BaseService
 from apps.accounts.models import User, Role, Parent, Faculty
+
+
+class AuthService(BaseService):
+    """
+    Dedicated authentication domain service (Phase 4 Authentication Foundation).
+    Encapsulates credential verification, token generation, and password validation.
+    """
+    service_name = "auth"
+
+    def get_service_status(self) -> dict:
+        return {"service": self.service_name, "status": "active"}
+
+    def authenticate_user(self, username: str, password: str) -> Optional[User]:
+        """
+        Safely validates user credentials using Django authentication.
+        Rejects empty credentials and inactive accounts.
+        Returns authenticated User or None.
+        """
+        if not username or not password:
+            return None
+        user = authenticate(username=username, password=password)
+        if user is not None and not user.is_active:
+            return None
+        return user
+
+    def generate_tokens_for_user(self, user: User) -> Dict[str, Any]:
+        """
+        Generates JWT access and refresh token pair for an authenticated user.
+        Injects standard claims (role, username) into the token payload.
+        """
+        if not user.is_active:
+            raise AuthenticationFailed("User is inactive.")
+
+        refresh = RefreshToken.for_user(user)
+        role_name = user.role.name if user.role else 'Unknown'
+        refresh['role'] = role_name
+        refresh['username'] = user.username
+
+        return {
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'token_type': 'Bearer',
+        }
+
+    def validate_password_strength(self, password: str, user: Optional[User] = None) -> List[str]:
+        """
+        Validates password against configured AUTH_PASSWORD_VALIDATORS.
+        Returns empty list if valid, or list of error messages.
+        """
+        errors = []
+        try:
+            validate_password(password, user=user)
+        except DjangoValidationError as exc:
+            errors = list(exc.messages)
+        return errors
+
+    def get_user_by_id(self, user_id: Any) -> Optional[User]:
+        """
+        Safely retrieves a user by UUID id. Returns None if not found or invalid UUID.
+        """
+        try:
+            return User.objects.select_related('role').get(id=user_id)
+        except (User.DoesNotExist, DjangoValidationError, ValueError):
+            return None
 
 
 class AccountService(BaseService):

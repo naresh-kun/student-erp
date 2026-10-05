@@ -2,6 +2,43 @@
 
 All notable changes to the Student ERP project will be documented in this file.
 
+## [Phase 4: Task 4.1 — Authentication Foundation] - 2026-10-05
+
+### Summary
+Established the secure authentication foundation for the Student ERP backend tier using Django 5, Django REST Framework, and `djangorestframework-simplejwt`. Configured stateless JWT token settings with 15-minute access and 7-day refresh lifetimes, HMAC-SHA256 signing with environment variable fallback, token rotation, and standard claims (`user_id`, `role`, `username`). Verified Django password hashing using PBKDF2 with SHA-256 and confirmed all 4 standard password validators are active. Implemented dedicated `AuthService` domain boundary encapsulating credential verification, inactive account protection, token issuance, and password strength validation. Authored secure authentication serializers (`AuthTokenResponseSerializer`, `LoginCredentialsSerializer`, `CurrentUserProfileSerializer`) strictly excluding passwords and hashes. Scaffolded `/api/v1/auth/` URL namespace (`login/`, `refresh/`, `me/`). Added 27 automated tests in `test_auth_foundation_task41.py`, bringing total backend test suite to 181/181 passing tests (100%). Verified frontend non-regression with 158/158 Vitest tests passing and a clean production build.
+
+### Added
+- **SimpleJWT Token Configuration (`backend/config/settings.py`)**:
+  - `SIMPLE_JWT` configuration with `ACCESS_TOKEN_LIFETIME = 15m`, `REFRESH_TOKEN_LIFETIME = 7d`, `ROTATE_REFRESH_TOKENS = True`, `ALGORITHM = HS256`.
+  - Signing key configured with fallback: `JWT_SIGNING_KEY or SECRET_KEY`.
+  - Header scheme: `Bearer` (`AUTH_HEADER_TYPES = ('Bearer',)`).
+  - User ID mapping: `USER_ID_FIELD = 'id'`, `USER_ID_CLAIM = 'user_id'`.
+- **Environment Configuration (`backend/.env` & `backend/.env.example`)**:
+  - Added placeholders for `JWT_ACCESS_TOKEN_LIFETIME_MINUTES`, `JWT_REFRESH_TOKEN_LIFETIME_DAYS`, `JWT_ROTATE_REFRESH_TOKENS`, `JWT_SIGNING_KEY`, `JWT_ISSUER`.
+- **AuthService Domain Boundary (`backend/apps/accounts/services.py`)**:
+  - `AuthService` inheriting from `BaseService`:
+    - `authenticate_user(username, password)`: Verifies credentials, strictly rejecting inactive accounts and empty inputs.
+    - `generate_tokens_for_user(user)`: Issues JWT token pair with standard safe claims (`user_id`, `role`, `username`).
+    - `validate_password_strength(password, user)`: Validates passwords against Django's 4 configured validators.
+    - `get_user_by_id(user_id)`: Safely loads user by UUID.
+- **Authentication Serializers (`backend/apps/accounts/serializers.py`)**:
+  - `AuthTokenResponseSerializer`: Declares standard token output schema (`access`, `refresh`, `token_type`).
+  - `LoginCredentialsSerializer`: Declares `username` and `password` with `password` marked `write_only=True`.
+  - `CurrentUserProfileSerializer`: Safe profile representation for `/api/v1/auth/me/` strictly excluding password, password hash, and security secrets.
+- **Task 4.1 Pytest Suite (`backend/tests/test_auth_foundation_task41.py`)**:
+  - 27 comprehensive tests verifying settings, token configuration, password hashing, password validation, inactive user rejection, AuthService, serializer security, URL resolution, and endpoints under `/api/v1/auth/`.
+  - Total backend tests expanded from 154 to **181 passing tests (100%)**.
+
+### Verified (Non-Regression)
+- **Django System Check**: `python manage.py check` passes with 0 issues.
+- **Database Migrations**: `makemigrations --check` reports 0 unmigrated changes; all migrations applied.
+- **Backend Test Suite**: 181 passed out of 181 tests across all 13 test modules.
+- **Frontend Test Suite**: 158 passed out of 158 Vitest tests (`npm test -- --run`).
+- **Frontend Build**: Production bundle compiles cleanly in 13.26s (`npm run build`).
+- **Architectural Invariants**: Frontend remains purely mock-driven (`VITE_USE_MOCK_DATA=true`); zero token integration or auth coupling; full RBAC and student/parent auth reserved for later Phase 4 tasks.
+
+---
+
 ## [Phase 3: Task 3.7 — Final Verification, Hardening & Phase 3 Sign-Off] - 2026-10-05
 
 ### Summary
