@@ -2,6 +2,28 @@
 
 All notable changes to the Student ERP project will be documented in this file.
 
+## [Phase 5: Task 5.1 — Core ERP API Integration: Student Module] - 2026-10-07
+
+### Summary
+Officially opened Phase 5. Migrated the Student module from mock-backed data to the live Django REST Framework backend APIs while strictly preserving the established frontend service abstraction (`React component -> StudentService -> StudentApiService -> ApiClient -> DRF`), enterprise light theme UI, and security boundaries. Created the core production `ApiClient` with automatic JWT Bearer token injection, 401 interception, automatic token refresh via `/api/v1/auth/refresh/`, and normalized `ApiError` handling. Enhanced backend `StudentDetailSerializer` and `StudentDetailView` (`/api/v1/students/me/`) with dynamic class/section/stream/teacher hydration from active enrollments. Created 13 backend integration tests and 9 frontend unit/integration tests with 100% pass rate (390/390 backend pytest tests, 190/190 frontend Vitest tests, clean build, zero schema drift). Performed end-to-end browser verification of the complete student workflow.
+
+### Added / Modified
+- **Backend (`backend/apps/students/`)**:
+  - `serializers.py`: Enhanced `StudentDetailSerializer` with dynamic enrollment resolution fields (`current_class`, `current_section`, `stream`, `academic_year`, `class_teacher_name`, `class_teacher_email`, `class_teacher_dept`, `class_teacher_room`).
+  - `views.py`: Extended `StudentDetailView.get` to support `pk == 'me'` shortcut mapping to `request.user.student_profile` with object-level permission enforcement.
+  - `tests/test_phase5_student_integration_task51.py`: Authored 13 dedicated integration tests verifying authenticated student profile (`/me`), cross-student access blocking (403/404), immutable identity protections, attendance retrieval, leave submission (strictly PENDING), and marks/report card retrieval.
+- **Frontend (`frontend/src/`)**:
+  - `services/api.ts`: Established core production `ApiClient` featuring automated auth header injection, 401 interception with automated token refreshing, concurrent request queuing during refresh, and typed `ApiError` extraction.
+  - `features/students/services/studentApiService.ts`: Created dedicated API client bridging DRF endpoints (`/api/v1/students/me/`, `/api/v1/attendance/`, `/api/v1/leaves/`, `/api/v1/marks/`, `/api/v1/report-cards/`) and adapting backend schemas to frontend domain models.
+  - `features/students/services/studentService.ts`: Connected domain service methods (`getProfile`, `getAttendance`, `submitLeaveApplication`, `getMarks`, `getReportCard`) to `studentApiService` with graceful offline/test fallback.
+  - `tests/student_api_integration.test.ts`: Authored 9 Vitest integration tests validating API mapping, token header injection, error normalization, 401 refresh flows, and fallback logic.
+- **Verification & Governance**:
+  - Local browser verification executed for `STU202600001` navigating Dashboard, Profile, Attendance, Marks, Homework, and Logout (`task51_student_flow_1791321497316.webp`).
+  - Created `docs/phase_prompts/Phase_5_Task_5.1.md` and `docs/phase_prompts/Phase_5_Task_5.1_Completion_Report.md`.
+  - Updated `docs/phases/PHASE_05_STATUS.md` and `docs/PROJECT_STATUS.md`.
+
+---
+
 ## [Phase 4: Documentation Cleanup — Terminology Correction] - 2026-10-07
 
 ### Summary

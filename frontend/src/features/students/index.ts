@@ -7,5 +7,6 @@ export * from './types';
 export * from './schemas/leaveRequestSchema';
 export * from './schemas/studentProfileSchema';
 export * from './services/studentService';
+export * from './services/studentApiService';
 export * from './hooks';
 export * from './components';

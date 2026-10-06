@@ -82,7 +82,14 @@ class StudentDetailView(APIView):
 
     def get(self, request, pk, *args, **kwargs):
         service = StudentService()
-        student = service.get_student_by_id_or_business_id(pk)
+        if str(pk).lower() == 'me':
+            if hasattr(request.user, 'student_profile') and request.user.student_profile:
+                student = request.user.student_profile
+            else:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied("Authenticated user does not have an associated student profile.")
+        else:
+            student = service.get_student_by_id_or_business_id(pk)
         self.check_object_permissions(request, student)
         serializer = StudentDetailSerializer(student)
         return success_response(data=serializer.data)

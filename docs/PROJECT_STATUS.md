@@ -1,8 +1,8 @@
 # Project Status & Milestone Ledger
 
-> **Current Phase**: **Phase 4 COMPLETED (Task 4.8 Verified & Signed Off) | MOD_001 COMPLETED | Phase 5 NOT STARTED**  
-> **Authoritative State**: Phase 1 COMPLETE, Phase 2 COMPLETE, Phase 3 COMPLETE, Phase 4 COMPLETE & SIGNED OFF (All Tasks 4.1–4.8 complete; 5-role local browser UI verified; 377 total backend tests passing; 181/181 frontend tests passing; clean production build; zero migration drift); MOD_001 COMPLETED (Faculty/Class Teacher Assignment Architecture + Homework Management); Phase 5 NOT STARTED  
-> **Last Updated**: 2026-10-06
+> **Current Phase**: **Phase 5 IN PROGRESS (Task 5.1 COMPLETE) | Phase 4 COMPLETE & SIGNED OFF | MOD_001 COMPLETED**  
+> **Authoritative State**: Phase 1 COMPLETE, Phase 2 COMPLETE, Phase 3 COMPLETE, Phase 4 COMPLETE & SIGNED OFF; MOD_001 COMPLETED; Phase 5 IN PROGRESS (Task 5.1 Complete: Student module migrated to live DRF APIs, ApiClient established, 390 backend tests passing, 190 frontend tests passing, clean build, live browser verified)  
+> **Last Updated**: 2026-10-07
 
 ---
 
@@ -84,7 +84,7 @@ To ensure strict engineering honesty, features and modules are classified into e
 | **Faculty Assignment & Homework Domain (MOD_001)** | `IMPLEMENTED` | Approved Project Modification: Class Teacher cardinality (max 1 per year), Subject Faculty TeachingAssignment model, marks and attendance reconciliation, complete Homework REST API under `/api/v1/homework/` (GET, POST, GET/:id, PATCH, DELETE 204), server-side teaching scope verification, 32 dedicated tests (32/32 passing; 319 total backend tests passing; 167 frontend tests passing) |
 | **Phase-Wide Security & Hardening (Task 4.7)** | `IMPLEMENTED` | Comprehensive auth/RBAC hardening suite (`backend/tests/test_phase4_security_hardening_task47.py`): 58 dedicated tests across all 11 security classes, live server smoke verification across all 5 roles, 377 backend tests passing, 181 frontend tests passing, clean build, zero schema drift; Phase 4 signed off; Phase 5 remains NOT STARTED |
 | **Phase 4 Final Sign-off & Gate (Task 4.8)** | `IMPLEMENTED` | Comprehensive release-gate audit: local browser UI verified for all 5 roles (`task48_ui_verification_1791316080446.webp`), MOD_001 active enrollment scoping verified, 377/377 backend pytest passing, 181/181 frontend vitest passing, clean build, zero migration drift; Phase 4 signed off; Phase 5 remains NOT STARTED |
-| **Phase 5 (Core ERP API Integration & Advanced Workflows)** | `NOT STARTED` | Scope defined in roadmap; pending official Phase 5 kickoff |
+| **Phase 5 (Core ERP API Integration & Advanced Workflows)** | `IN PROGRESS` | Phase 5 officially opened. Task 5.1 (Student Module Real API Integration) COMPLETE: Student profile, attendance, leaves, marks, and report cards migrated to real Django REST APIs via ApiClient and StudentApiService. 390 backend tests passing, 190 frontend tests passing, clean build, live browser verified. Task 5.2 (Parent Module) pending. |
 | **Realtime WebSockets (Channels)** | `PLANNED` | Documented in `docs/BACKEND_ARCHITECTURE.md`; scheduled for Phase 6 |
 | **Database Migrations & Models** | `IMPLEMENTED` | 14 concrete 3NF PostgreSQL models (`Role`, `User`, `Faculty`, `Parent`, `Student`, `AcademicYear`, `SchoolClass`, `Section`, `Subject`, `Enrollment`, `TeachingAssignment`, `Attendance`, `LeaveApplication`, `ExamType`, `Mark`, `Homework`), hardened migrations, and live PostgreSQL seeded dataset |
 

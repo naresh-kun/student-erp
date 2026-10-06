@@ -434,6 +434,38 @@
   - Zero schema drift or external cache requirements introduced in Phase 4.
   - Clear architectural boundary established for Phase 6 production rate-limiting configuration.
 
+---
+
+## ADR 018: Core ERP API Integration Pattern — Student Module & ApiClient (Task 5.1)
+
+- **Status**: ACCEPTED / AUTHORITATIVE
+- **Scope**: Phase 5 Task 5.1 (Core ERP API Integration — Student Module)
+- **Context**:
+  - In Phases 1–4, frontend modules utilized `MockService` and mock JSON datasets, except for authentication (`AuthContext`) and homework (`HomeworkService`).
+  - Phase 5 initiates the migration of core ERP modules to live Django REST Framework endpoints.
+  - A clean, reusable production API client pattern is required so that UI presentation components remain completely decoupled from network transport details, headers, token refresh mechanics, and DRF response envelope unpacking.
+- **Decision**:
+  1. **Layered Service Architecture**:
+     - `React Component` -> `Domain Service (StudentService)` -> `API Service (StudentApiService)` -> `HTTP Client (ApiClient)` -> `Django REST Framework`.
+     - UI presentation components continue to invoke standard domain methods (`getProfile()`, `getAttendance()`, etc.) without altering component signatures or importing network utilities.
+  2. **Singleton `ApiClient` Abstraction**:
+     - Centralizes JWT Bearer token injection from `localStorage['access_token']`.
+     - Automatically handles 401 Unauthorized responses by dispatching a refresh request to `/api/v1/auth/refresh/` using `localStorage['refresh_token']`, queueing pending requests during token renewal, and retrying failed requests.
+     - Automatically unwraps standardized DRF response envelopes (`data.data` or raw data) and normalizes backend error structures into a strongly typed `ApiError`.
+  3. **Backend Dynamic Enrollment Hydration (`/api/v1/students/me/`)**:
+     - Enhanced `StudentDetailSerializer` with dynamic fields (`current_class`, `current_section`, `stream`, `academic_year`, `class_teacher_name`, `class_teacher_email`, `class_teacher_dept`, `class_teacher_room`) computed from active `enrollments`.
+     - Extended `StudentDetailView` to recognize the `me` shortcut, directly mapping to `request.user.student_profile` while strictly enforcing object-level authorization and blocking cross-student access.
+  4. **Strict Domain Invariants**:
+     - Attendance strictly preserves the canonical 4 statuses (`PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`) and calculation formula `(P + OD) / Total * 100`.
+     - Marks strictly adhere to marks out of 100 with CBSE 8-tier grading (`A1`–`E`), with zero GPA or credit calculations.
+     - Student leave submissions are strictly initialized to `PENDING` (no self-approval).
+- **Consequences**:
+  - Reusable foundation (`ApiClient`) ready for subsequent Phase 5 tasks (Parents, Faculty, etc.).
+  - Student module operates against live DRF backend APIs with full end-to-end authentication and RBAC scoping.
+  - Zero database schema migrations required.
+  - 13 backend integration tests and 9 frontend unit/integration tests added (390/390 backend passed, 190/190 frontend passed, clean build, live browser verified).
+
+
 
 
 
