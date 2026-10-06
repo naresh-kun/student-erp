@@ -183,9 +183,9 @@ Build a complete, responsive, role-tailored presentation layer that demonstrates
     - 4-status institutional presence telemetry; cohort progression curves across Grades 9–12.
   - **Departmental Faculty Roster & Workload Oversight**:
     - Non-evaluative staff directory showing designations, qualifications, and weekly periods.
-  - **Statutory Report Endorsement Workflow**:
+  - **Institutional Report Review Workflow**:
     - Official reports registry across Academic, Attendance, Faculty, and Governance categories.
-    - Endorsement workflow (`ReportReviewModal.tsx`): Status transition from `Draft` / `Review` to `Approved` with principal signature (`Dr. K. Radhakrishnan (Principal)`), timestamp, and official review remarks.
+    - Review workflow (`ReportReviewModal.tsx`): Status transition from `Draft` / `Review` to `Approved` with principal signature (`Dr. K. Radhakrishnan (Principal)`), timestamp, and official review remarks.
     - Downloadable official dossier text file generation.
   - **Automated Vitest Test Suite**:
     - 10 automated unit tests in `frontend/tests/principal.test.ts`.

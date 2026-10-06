@@ -411,6 +411,30 @@
   - Zero database schema migrations required.
   - 14 Vitest tests added; 181/181 passing. Clean production build verified.
 
+---
+
+## ADR 017: Authentication Rate Limiting & Brute Force Defense Strategy (Task 4.7)
+
+- **Status**: ACCEPTED / AUTHORITATIVE
+- **Scope**: Phase 4 Task 4.7 (Phase-Wide Security Verification & Regression Hardening)
+- **Context**:
+  - Task 4.7 audited security boundaries across the complete Phase 4 authentication lifecycle.
+  - Repeated invalid login attempts must not leak account existence or allow timing-based username enumeration.
+  - In production deployments, brute-force denial-of-service and credential-stuffing attacks are typically mitigated via rate limiting (e.g. `django-ratelimit`, Redis-backed DRF throttling, or reverse proxy / Cloudflare WAF policies).
+  - Introducing Redis infrastructure, distributed lock stores, or IP-based cache throttling during Phase 4 would violate governance boundaries (Phase 4 focuses on Django/DRF/SimpleJWT authentication and core RBAC, while Redis and deployment infrastructure are scheduled for Phase 6).
+- **Decision**:
+  1. **Generic Timing-Parity Response Contract**:
+     - Maintain strict timing parity across non-existent accounts and invalid passwords: `AuthService.authenticate_by_identifier()` executes dummy password hashing (`User().set_password(password)`) when an identifier is not found, ensuring uniform response latency.
+     - Always return identical generic HTTP 401 response envelopes (`{"success": false, "error": {"code": "AUTHENTICATION_FAILED", "message": "No active account found with the given credentials."}}`) for all authentication failures. Zero account or Student ID enumeration is permitted.
+  2. **Infrastructure-Level Rate Limiting Deferral**:
+     - Distributed rate-limiting middleware (Redis token bucket / sliding window via `django-redis` or Nginx `limit_req`) is formally scheduled for Phase 6 (Deployment & Operational Hardening).
+     - Automated test `test_brute_force_generic_responses_documented` in `test_phase4_security_hardening_task47.py` verifies that repeated failed requests receive consistent, generic 401 responses without server degradation or informative leakage.
+- **Consequences**:
+  - Predictable authentication security posture without unapproved infrastructure dependencies.
+  - Zero schema drift or external cache requirements introduced in Phase 4.
+  - Clear architectural boundary established for Phase 6 production rate-limiting configuration.
+
+
 
 
 

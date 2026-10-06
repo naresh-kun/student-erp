@@ -2,6 +2,88 @@
 
 All notable changes to the Student ERP project will be documented in this file.
 
+## [Phase 4: Documentation Cleanup — Terminology Correction] - 2026-10-07
+
+### Summary
+Documentation-only cleanup correcting unsupported "statutory report endorsement" terminology across project documentation to accurately reflect the actual RBAC implementation. Principal role authority is limited to school-wide oversight, institutional report review, and marks/report approval where explicitly permitted by RBAC — not statutory endorsement powers.
+
+### Changed
+- **`PROJECT_STATUS.md`**: Principal module description corrected from "statutory report endorsement workflow" to "institutional report review workflow".
+- **`Phase_4_Task_4.8_Completion_Report.md`**: Principal RBAC summary corrected from "statutory report endorsement" to "institutional report oversight".
+- **`PHASE_02_STATUS.md`**: Section heading corrected from "Statutory Report Endorsement Workflow" to "Institutional Report Review Workflow"; sub-bullet "Endorsement workflow" corrected to "Review workflow".
+- **`CHANGELOG.md`**: Phase 2 Task 2.5 entry corrected from "Statutory Report Endorsement Workflow" to "Institutional Report Review Workflow".
+
+### Not Changed (Correct Historical References)
+- `Phase_2_Task_2.6.md`: Task spec instructing audit/removal of "statutory" claims — preserved as authoritative specification.
+- `PHASE_03_STATUS.md`: Past-tense record of purging "statutory" references — preserved as historical record.
+- `CHANGELOG.md` Task 2.6/3.2 entries: Audit confirmations that statutory claims were removed — preserved as remediation evidence.
+
+### Governance
+- Phase 4: COMPLETE & SIGNED OFF (unchanged)
+- Phase 5: NOT STARTED (unchanged)
+- No code, migrations, tests, or configuration modified.
+
+---
+
+## [Phase 4: Task 4.8 — Final Sign-off, Governance Closure & Phase 5 Gate] - 2026-10-06
+
+### Summary
+Conducted final Phase 4 release-gate verification, governance audit, and Phase 5 transition checks. Successfully executed local browser UI verification across all 5 canonical roles (**Admin**, **Principal**, **Faculty**, **Student**, **Parent**), validating authentication, role-based dashboard redirects, UI hydration, and clean logout. Verified MOD_001 active enrollment scoping on Homework and strict separation from Phase 5. Executed full regression testing with 100% pass rate: 377/377 backend pytest tests (1217.81s), 181/181 frontend Vitest tests (5.30s), 0 Django system issues, 0 migration drift, and clean production build. Formally signed off Phase 4. Phase 5 remains explicitly NOT STARTED.
+
+### Added / Modified
+- **Local Browser UI Verification**:
+  - Executed automated browser verification against `http://localhost:5173` with backend on `http://127.0.0.1:8000`.
+  - Verified login, role redirect, dashboard render, and session cleanup for:
+    - Admin (`admin_demo` -> `/admin/dashboard`)
+    - Principal (`principal_demo` -> `/principal/dashboard`)
+    - Faculty (`faculty_suresh` -> `/faculty/dashboard`)
+    - Student (`STU202600001` -> `/student/dashboard`)
+    - Parent (`parent_ramanathan` -> `/parent/dashboard`)
+  - Artifact recording saved: `task48_ui_verification_1791316080446.webp`.
+- **MOD_001 Active Enrollment Audit**:
+  - Verified `AuthorizationService._scope_homework_queryset` actively filters by `status__in=['Active', 'ACTIVE', 'Enrolled', 'enrolled']` for Student and Parent. Confirmed PASS.
+- **Documentation & Governance**:
+  - Authored `docs/phase_prompts/Phase_4_Task_4.8.md` and `docs/phase_prompts/Phase_4_Task_4.8_Completion_Report.md`.
+  - Updated `docs/phases/PHASE_04_STATUS.md` and `docs/PROJECT_STATUS.md` to reflect Phase 4 COMPLETE & SIGNED OFF and Phase 5 NOT STARTED.
+
+---
+
+## [Phase 4: Task 4.7 — Phase-Wide Testing, Security Verification & Regression Hardening] - 2026-10-06
+
+### Summary
+Executed Phase 4 Task 4.7 comprehensive security hardening, multi-role verification, and regression testing across the complete authentication and RBAC architecture. Created an authoritative 58-test security test suite (`backend/tests/test_phase4_security_hardening_task47.py`) verifying all 5 canonical roles (Admin, Principal, Faculty, Student, Parent), JWT claims and lifecycle, HTTP 401 vs 403 semantics, object-level authorization, server-side queryset scoping, privilege escalation defense, and cross-role denial. Executed automated live server smoke testing against running Django (`127.0.0.1:8000`) and Vite (`localhost:5173`) dev servers. Achieved 100% green regression results across both backend (377/377 passed) and frontend (181/181 passed) suites with clean production build and zero migration drift.
+
+### Added / Modified
+- **Security Hardening & Verification Suite (`backend/tests/test_phase4_security_hardening_task47.py`)**:
+  - 58 automated tests across 11 verification classes:
+    1. `TestFiveRoleAuthentication`: Complete login lifecycle for all 5 roles, invalid password rejection, non-existent user handling, and inactive account denial.
+    2. `TestStudentIDAuthentication`: Case-insensitive resolution, whitespace trimming, inactive user denial, and withdrawn student lifecycle rejection.
+    3. `TestParentAuthentication`: Single and multi-child resolution via child's Student ID, unrelated child rejection, and inactive parent denial.
+    4. `TestJWTLifecycle`: Access/refresh token issuance, claim verification (`role`, `username`, `user_id`), refresh rotation, signature tampering rejection, and `/me/` safe serialization without secret leakage.
+    5. `TestHTTPSemantics`: Strict 401 Unauthorized (unauthenticated/malformed) vs 403 Forbidden (authenticated but unauthorized) semantics; generic 401 timing parity without account enumeration.
+    6. `TestRBACMatrix`: Positive and negative CRUD entitlement boundaries across all 5 roles (Admin full access, Principal oversight with mutation denial, Faculty assigned-section scope, Student/Parent staff boundary denial).
+    7. `TestObjectLevelAuthorization`: Rejection of cross-student, cross-parent, and cross-faculty detail access and mutation.
+    8. `TestQuerysetLevelScoping`: Server-side filtering ensuring students see only self, parents see linked children, and draft homework is hidden from students.
+    9. `TestPrivilegeEscalation`: Rejection of client-supplied `role` injection on login and updates; forged HMAC signature rejection.
+    10. `TestCrossRoleAccessDenial`: Denial of attendance marking and marks entry for Student, Parent, and unassigned Faculty.
+    11. `TestSecurityRegression`: Zero password or PBKDF2 hash leakage in `/auth/me/` or `/auth/login/`, public accessibility of `/api/health/`, and deactivated user token invalidation.
+- **Backend Test Expansion**:
+  - Test suite grew from 319 to 377 passing tests (377/377, 100% pass rate in 18m 40s).
+- **Live Smoke Testing (`scratch/live_auth_verification.py`)**:
+  - Verified live Django backend on `127.0.0.1:8000` and Vite dev server on `localhost:5173`.
+  - Confirmed live login, role derivation, and `/api/v1/auth/me/` for `admin_demo`, `principal_demo`, `faculty_suresh`, `STU202600001` (Student), and `parent_ramanathan` (Parent).
+- **Regression & Build Verification**:
+  - Django system check: 0 issues.
+  - Migration check: 0 pending migrations.
+  - Frontend Vitest: 181/181 passed.
+  - Production build: Clean compilation in 10.19s.
+- **Architectural Decisions (`docs/DECISIONS.md`)**:
+  - Recorded ADR 017: Authentication Rate Limiting & Brute Force Defense Strategy (deferring Redis infrastructure to Phase 6 while enforcing current generic 401 timing parity).
+- **Documentation**:
+  - Updated `PHASE_04_STATUS.md`, `PROJECT_STATUS.md`, and authored `Phase_4_Task_4.7_Completion_Report.md`.
+
+---
+
 ## [Phase 4: Task 4.6 — Faculty / Admin / Principal Access + Real Frontend Authentication Integration] - 2026-10-06
 
 ### Summary
@@ -577,7 +659,7 @@ Final Phase 2 hardening and quality assurance pass across all modules (Tasks 2.1
   - **Academic & Cohort Analytics**: Grade-level comparisons, senior secondary stream comparisons (Grades 11 & 12), subject performance quality assurance, and CBSE 8-tier distribution.
   - **Attendance Telemetry & Longitudinal Cohort Trends**: 4-status institutional presence telemetry and longitudinal cohort progression curves (Grades 9–12).
   - **Departmental Faculty Roster & Workload Oversight**: Descriptive staff roster with qualifications and weekly workloads (strictly non-evaluative).
-  - **Statutory Report Endorsement Workflow**: Institutional reports registry across Academic, Attendance, Faculty, and Governance categories. Report review modal (`ReportReviewModal.tsx`) supporting status transitions (`Draft` / `Review` -> `Approved`) with principal signature (`Dr. K. Radhakrishnan (Principal)`), timestamp, and official review remarks, plus downloadable official dossier text file generation.
+  - **Institutional Report Review Workflow**: Institutional reports registry across Academic, Attendance, Faculty, and Governance categories. Report review modal (`ReportReviewModal.tsx`) supporting status transitions (`Draft` / `Review` -> `Approved`) with principal signature (`Dr. K. Radhakrishnan (Principal)`), timestamp, and official review remarks, plus downloadable official dossier text file generation.
   - **Automated Vitest Test Suite**: 10 automated unit tests in `frontend/tests/principal.test.ts`.
 
 - **Authoritative Phase 2 Task 2.5 Specification**:

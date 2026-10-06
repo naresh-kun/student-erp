@@ -1,9 +1,9 @@
 # Phase 4 Execution Status: Authentication + RBAC
 
 > **Phase**: Phase 4 (Authentication + Role-Based Access Control)  
-> **Current Task**: **Task 4.6 Completed (Faculty / Admin / Principal Access + Real Frontend Authentication Integration)**  
-> **Next Task**: **Task 4.7 (Final Phase 4 Verification & Sign-Off)**  
-> **Status**: **IN PROGRESS (Tasks 4.1 through 4.6 DONE; 319/319 backend pytest tests passing; 181/181 frontend tests passing; clean production build)**  
+> **Current Task**: **Task 4.8 Completed (Final Sign-off, Governance Closure & Phase 5 Gate)**  
+> **Next Task**: **Phase 5 (Pending Authorized Kickoff)**  
+> **Status**: **COMPLETE & SIGNED OFF (All Phase 4 Tasks 4.1–4.8 DONE; 377/377 backend pytest tests passing; 181/181 frontend tests passing; clean production build; Phase 5 NOT STARTED)**  
 > **Date**: 2026-10-06  
 
 ---
@@ -24,7 +24,8 @@ Establish the authoritative backend authentication and authorization engine for 
 | **Task 4.4** | **RBAC Broad Endpoint Enforcement** | Application of permission classes and queryset scoping across all ERP endpoints, views, and services | **COMPLETED** |
 | **Task 4.5** | **Student & Parent Authentication** | Alphanumeric Student ID login, parent authentication via linked child's Student ID | **COMPLETED** |
 | **Task 4.6** | **Faculty / Admin / Principal Real Frontend Auth** | Real Django login integration in AuthContext, JWT persistence, session restoration, homework service token attachment | **COMPLETED** |
-| **Task 4.7** | **Final Phase 4 Verification & Sign-Off** | Comprehensive auth/RBAC verification, security audit, regression check, Phase 4 sign-off | **PENDING** |
+| **Task 4.7** | **Phase-Wide Security & Hardening** | 11 security classes, privilege escalation rejection, timing parity, cross-tenant denial, live server smoke verification | **COMPLETED** |
+| **Task 4.8** | **Final Sign-off & Phase 5 Gate** | 5-role local browser UI verification, MOD_001 active enrollment audit, full regression gate, Phase 4 sign-off | **COMPLETED** |
 
 ---
 
@@ -334,13 +335,82 @@ Establish the authoritative backend authentication and authorization engine for 
 
 ---
 
-## 9. Phase 4 Invariants & Architectural Boundaries
+## 9. Completed Work (Task 4.7: Final Phase 4 Verification & Sign-Off)
+
+- [x] **Kickoff Audit Gate**:
+  - Verified 23 authoritative architectural documents.
+  - Confirmed baseline: 319/319 pytest passed, 181/181 Vitest passed, 0 migration drift, clean build.
+  - Authored kickoff audit report: `docs/phase_prompts/Phase_4_Task_4.7_Kickoff_Audit.md`.
+- [x] **Phase-Wide Security Test Suite (`backend/tests/test_phase4_security_hardening_task47.py`)**:
+  - 58 automated tests across 11 verification classes:
+    - `TestFiveRoleAuthentication`: Login lifecycle for all 5 canonical roles, invalid credentials generic 401, inactive user denial.
+    - `TestStudentIDAuthentication`: Case-insensitivity, whitespace trimming, inactive student denial, withdrawn status denial.
+    - `TestParentAuthentication`: Single and multi-child resolution via child Student ID, unrelated child rejection, inactive parent denial.
+    - `TestJWTLifecycle`: Claims verification (`role`, `username`, `user_id`), token refresh, signature tampering rejection, `/me/` safe serialization.
+    - `TestHTTPSemantics`: 401 Unauthorized vs 403 Forbidden semantics, timing parity without account enumeration.
+    - `TestRBACMatrix`: Full CRUD matrix for Admin, Principal read oversight with mutation denial, Faculty assigned-section scope, Student/Parent staff boundary denial.
+    - `TestObjectLevelAuthorization`: Cross-student, cross-parent, and cross-faculty detail access rejection.
+    - `TestQuerysetLevelScoping`: Self-scoping for students, linked-child scoping for parents, draft homework hidden from students.
+    - `TestPrivilegeEscalation`: Role/user_id injection ignored on login and updates; forged HMAC token signature rejected.
+    - `TestCrossRoleAccessDenial`: Negative tests confirming attendance marking and marks entry denied for unauthorized roles.
+    - `TestSecurityRegression`: Zero password/hash exposure, public health check, deactivated user token invalidation.
+  - **All 58 tests passing in 8m 43s (58/58, 100%)**.
+- [x] **Live Server Smoke Testing (`scratch/live_auth_verification.py`)**:
+  - Tested live running Django server (`127.0.0.1:8000`) and Vite dev server (`localhost:5173`).
+  - Successfully authenticated all 5 roles (`admin_demo`, `principal_demo`, `faculty_suresh`, `STU202600001`/`student_arun`, `parent_ramanathan`).
+  - Confirmed `/api/v1/auth/me/` for all roles returns expected role context without secret leakage.
+  - Confirmed token refresh and invalid credentials handling on live server.
+- [x] **Full Regression & Quality Gate**:
+  - `python manage.py check`: 0 issues (0 silenced).
+  - `python manage.py makemigrations --check`: No changes detected (0 pending migrations).
+  - `pytest`: **377/377 passing (100% pass rate in 18m 40s)** (319 baseline + 58 Task 4.7 tests).
+  - `npm test -- --run`: **181/181 Vitest tests passing (100%)**.
+  - `npm run build`: Clean production build in 10.19s with zero errors.
+- [x] **Architectural Decision Recorded**:
+  - Authored ADR 017: Authentication Rate Limiting & Brute Force Defense Strategy in `docs/DECISIONS.md`.
+
+---
+
+## 10. Completed Work (Task 4.8: Final Sign-off, Governance Closure & Phase 5 Gate)
+
+- [x] **Local Browser UI Verification**:
+  - Executed automated browser UI verification across all 5 canonical roles on `http://localhost:5173` with Django backend on `http://127.0.0.1:8000`.
+  - Confirmed login page submission, role-based URL redirect, protected dashboard hydration, and clean logout for:
+    - Admin: `admin_demo` -> `/admin/dashboard`
+    - Principal: `principal_demo` -> `/principal/dashboard`
+    - Faculty: `faculty_suresh` -> `/faculty/dashboard`
+    - Student: `STU202600001` -> `/student/dashboard`
+    - Parent: `parent_ramanathan` -> `/parent/dashboard`
+  - Browser recording saved: `task48_ui_verification_1791316080446.webp`.
+- [x] **MOD_001 Active Enrollment Audit**:
+  - Verified `AuthorizationService._scope_homework_queryset()` enforces active enrollment filtering (`status__in=['Active', 'ACTIVE', 'Enrolled', 'enrolled']`) for Student and Parent roles.
+  - Confirmed MOD_001 remains an isolated, completed project modification, completely separate from Phase 5.
+- [x] **Final Full Regression Suite**:
+  - `python manage.py check`: 0 issues (0 silenced).
+  - `python manage.py makemigrations --check`: No changes detected (0 pending migrations).
+  - `pytest`: **377/377 passing (100% pass rate in 20m 17s)**.
+  - `npm test -- --run`: **181/181 Vitest tests passing (100% in 5.30s)**.
+  - `npm run build`: Clean production build in 10.06s with zero errors.
+- [x] **Task Documentation & Release Gate**:
+  - Authored `docs/phase_prompts/Phase_4_Task_4.8.md`.
+  - Authored comprehensive completion report: `docs/phase_prompts/Phase_4_Task_4.8_Completion_Report.md`.
+  - Updated `docs/CHANGELOG.md` and `docs/PROJECT_STATUS.md`.
+
+---
+
+## 11. Phase 4 Invariants & Completion Governance
 
 1. **Django + DRF + SimpleJWT Sole Authority**: No competing authentication framework (Firebase, Supabase, Auth0, FastAPI) is permitted.
 2. **Stateless JWT Architecture**: Access tokens are stateless, short-lived (15 minutes), signed with HMAC-SHA256.
 3. **Endpoint Enforcement Complete in Task 4.4**: All API endpoints enforce authentication, RBAC permissions, queryset scoping, and object-level checks.
 4. **Student/Parent Special Auth Complete in Task 4.5**: Alphanumeric Student ID login and Parent linked-student auth are authoritative.
-5. **Real Frontend Authentication in Task 4.6**: Frontend session layer uses real Django authentication and JWT tokens; Phase 5 remains NOT STARTED.
+5. **Real Frontend Authentication in Task 4.6**: Frontend session layer uses real Django authentication and JWT tokens.
+6. **Task 4.7 Hardening Complete**: 377 backend tests and 181 frontend tests passing; zero regressions; zero schema drift.
+7. **Task 4.8 Sign-Off Complete**: 5-role local browser verification confirmed; all quality gates green.
+8. **PHASE 4 = COMPLETE & SIGNED OFF**: Phase 4 governance is formally closed.
+9. **PHASE 5 REMAINS NOT STARTED**: Governance stop point respected. Phase 5 work will begin only under separate approved kickoff prompt.
+
+
 
 
 
