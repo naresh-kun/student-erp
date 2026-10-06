@@ -5,6 +5,7 @@ Provides endpoints for authentication profile, parent directory, and faculty dir
 
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import PermissionDenied
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from rest_framework_simplejwt.views import (
@@ -12,6 +13,16 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView as SimpleJWTTokenRefreshView,
 )
 
+from common.constants import (
+    ROLE_ADMIN,
+    ROLE_FACULTY,
+    PERM_STUDENTS_VIEW,
+    PERM_USERS_VIEW,
+    PERM_USERS_CREATE,
+    PERM_USERS_UPDATE,
+)
+from common.authorization import AuthorizationService
+from common.permissions import HasRequiredPermission, IsOwnerOrScopedAccess, require_permission
 from common.responses import success_response
 from common.pagination import StandardResultsSetPagination
 from apps.accounts.models import Parent, Faculty
@@ -73,13 +84,14 @@ class ParentListView(APIView):
     GET /api/v1/parents/
     Lists parent profiles with optional search query parameter.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [require_permission(PERM_STUDENTS_VIEW)]
     pagination_class = StandardResultsSetPagination
 
     def get(self, request, *args, **kwargs):
         service = AccountService()
         search = request.query_params.get('search')
         qs = service.get_parents_queryset(search=search)
+        qs = AuthorizationService.filter_queryset_for_user(qs, request.user, domain='students')
 
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(qs, request, view=self)
@@ -96,10 +108,11 @@ class ParentDetailView(APIView):
     GET /api/v1/parents/{id}/
     Returns details for a specific parent profile.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [require_permission(PERM_STUDENTS_VIEW), IsOwnerOrScopedAccess]
 
     def get(self, request, pk, *args, **kwargs):
         parent = get_object_or_404(Parent.objects.select_related('user'), pk=pk)
+        self.check_object_permissions(request, parent)
         serializer = ParentSerializer(parent)
         return success_response(data=serializer.data)
 
@@ -109,12 +122,14 @@ class ParentChildrenView(APIView):
     GET /api/v1/parents/{id}/children/
     Returns verified student profiles linked to this parent.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [require_permission(PERM_STUDENTS_VIEW), IsOwnerOrScopedAccess]
 
     def get(self, request, pk, *args, **kwargs):
         parent = get_object_or_404(Parent, pk=pk)
+        self.check_object_permissions(request, parent)
         from apps.students.serializers import StudentListSerializer
         children = parent.children.select_related('user', 'parent').all()
+        children = AuthorizationService.filter_queryset_for_user(children, request.user, domain='students')
         serializer = StudentListSerializer(children, many=True)
         return success_response(data=serializer.data)
 
@@ -125,7 +140,11 @@ class FacultyListView(APIView):
     POST /api/v1/faculty/
     Lists and creates faculty profiles.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [HasRequiredPermission]
+    permission_map = {
+        'GET': PERM_USERS_VIEW,
+        'POST': PERM_USERS_CREATE,
+    }
     pagination_class = StandardResultsSetPagination
 
     def get(self, request, *args, **kwargs):
@@ -138,6 +157,7 @@ class FacultyListView(APIView):
             is_active = is_active_param.lower() in ('true', '1', 'yes')
 
         qs = service.get_faculty_queryset(department=department, is_active=is_active, search=search)
+        qs = AuthorizationService.filter_queryset_for_user(qs, request.user, domain='users')
 
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(qs, request, view=self)
@@ -164,15 +184,30 @@ class FacultyDetailView(APIView):
     PATCH /api/v1/faculty/{id}/
     Retrieves and updates faculty profile.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [HasRequiredPermission, IsOwnerOrScopedAccess]
+    permission_map = {
+        'GET': PERM_USERS_VIEW,
+        'PATCH': PERM_USERS_UPDATE,
+    }
 
     def get(self, request, pk, *args, **kwargs):
         faculty = get_object_or_404(Faculty.objects.select_related('user'), pk=pk)
+        self.check_object_permissions(request, faculty)
         serializer = FacultySerializer(faculty)
         return success_response(data=serializer.data)
 
     def patch(self, request, pk, *args, **kwargs):
         faculty = get_object_or_404(Faculty.objects.select_related('user'), pk=pk)
+        self.check_object_permissions(request, faculty)
+
+        # Faculty self-edit cannot modify administrative account fields
+        user_role = AuthorizationService.get_user_role(request.user)
+        if user_role == ROLE_FACULTY:
+            privileged_fields = {'employee_code', 'is_active', 'department', 'designation', 'joining_date', 'user_id', 'user'}
+            disallowed = [f for f in privileged_fields if f in request.data]
+            if disallowed:
+                raise PermissionDenied(f"Faculty cannot modify administrative account fields: {', '.join(disallowed)}")
+
         serializer = FacultySerializer(faculty, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         faculty = serializer.save()

@@ -51,9 +51,14 @@ class HasRequiredPermission(permissions.BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
 
-        perm = getattr(self, 'required_permission', None) or getattr(view, 'required_permission', None)
+        perm = getattr(self, 'required_permission', None)
+        if not perm and hasattr(view, 'permission_map') and isinstance(view.permission_map, dict):
+            perm = view.permission_map.get(request.method)
         if not perm:
-            # If no permission declared, default to requiring authentication
+            perm = getattr(view, 'required_permission', None)
+
+        if not perm:
+            # If no permission declared, default to requiring authentication and active user
             return request.user.is_authenticated and request.user.is_active
 
         return AuthorizationService.has_permission(request.user, perm)
@@ -62,15 +67,31 @@ class HasRequiredPermission(permissions.BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
 
-        action = getattr(view, 'action', 'view')
-        # Map DRF view actions to standard domain action names
+        action = getattr(view, 'action', None)
+        if not action:
+            method_map = {
+                'GET': 'view',
+                'HEAD': 'view',
+                'OPTIONS': 'view',
+                'POST': 'create',
+                'PUT': 'update',
+                'PATCH': 'update',
+                'DELETE': 'delete',
+            }
+            action = method_map.get(request.method, 'view')
+
         action_map = {
             'retrieve': 'view',
             'list': 'view',
+            'get': 'view',
             'create': 'create',
+            'post': 'create',
             'update': 'update',
+            'put': 'update',
+            'patch': 'update',
             'partial_update': 'update',
             'destroy': 'delete',
+            'delete': 'delete',
         }
         domain_action = action_map.get(action, action or 'view')
 
@@ -174,8 +195,34 @@ class IsOwnerOrScopedAccess(permissions.BasePermission):
     def has_object_permission(self, request, view, obj) -> bool:
         if not request.user or not request.user.is_authenticated:
             return False
-        action = getattr(view, 'action', 'view') or 'view'
-        return AuthorizationService.can_access_object(request.user, obj, action=action)
+        action = getattr(view, 'action', None)
+        if not action:
+            method_map = {
+                'GET': 'view',
+                'HEAD': 'view',
+                'OPTIONS': 'view',
+                'POST': 'create',
+                'PUT': 'update',
+                'PATCH': 'update',
+                'DELETE': 'delete',
+            }
+            action = method_map.get(request.method, 'view')
+
+        action_map = {
+            'retrieve': 'view',
+            'list': 'view',
+            'get': 'view',
+            'create': 'create',
+            'post': 'create',
+            'update': 'update',
+            'put': 'update',
+            'patch': 'update',
+            'partial_update': 'update',
+            'destroy': 'delete',
+            'delete': 'delete',
+        }
+        domain_action = action_map.get(action, action or 'view')
+        return AuthorizationService.can_access_object(request.user, obj, action=domain_action)
 
 
 # Backward-compatible alias definitions

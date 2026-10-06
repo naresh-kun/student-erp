@@ -4,10 +4,11 @@ Provides directory endpoints for classes, sections, subjects, and academic years
 """
 
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 
+from common.constants import PERM_ACADEMICS_VIEW, PERM_ACADEMICS_MANAGE
+from common.permissions import HasRequiredPermission, require_permission
 from common.responses import success_response
 from common.pagination import StandardResultsSetPagination
 from apps.academics.models import SchoolClass, Section, Subject, AcademicYear
@@ -27,7 +28,11 @@ class ClassListView(APIView):
     POST /api/v1/classes/
     Lists school classes and associated sections, or creates a new class definition.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [HasRequiredPermission]
+    permission_map = {
+        'GET': PERM_ACADEMICS_VIEW,
+        'POST': PERM_ACADEMICS_MANAGE,
+    }
     pagination_class = StandardResultsSetPagination
 
     def get(self, request, *args, **kwargs):
@@ -60,7 +65,7 @@ class ClassDetailView(APIView):
     GET /api/v1/classes/{id}/
     Returns details of a specific class.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [require_permission(PERM_ACADEMICS_VIEW)]
 
     def get(self, request, pk, *args, **kwargs):
         school_class = get_object_or_404(
@@ -79,7 +84,7 @@ class ClassSectionsView(APIView):
     GET /api/v1/classes/{id}/sections/
     Lists sections, room numbers, capacities, and assigned class teachers for a class.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [require_permission(PERM_ACADEMICS_VIEW)]
 
     def get(self, request, pk, *args, **kwargs):
         service = AcademicService()
@@ -96,7 +101,11 @@ class SubjectListView(APIView):
     POST /api/v1/subjects/
     Lists school subjects and weekly periods, or registers a new subject.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [HasRequiredPermission]
+    permission_map = {
+        'GET': PERM_ACADEMICS_VIEW,
+        'POST': PERM_ACADEMICS_MANAGE,
+    }
     pagination_class = StandardResultsSetPagination
 
     def get(self, request, *args, **kwargs):
@@ -134,7 +143,7 @@ class SubjectDetailView(APIView):
     GET /api/v1/subjects/{id}/
     Returns details for a specific subject.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [require_permission(PERM_ACADEMICS_VIEW)]
 
     def get(self, request, pk, *args, **kwargs):
         subject = get_object_or_404(Subject, pk=pk)
@@ -147,7 +156,7 @@ class AcademicYearListView(APIView):
     GET /api/v1/academics/years/
     Lists academic years.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [require_permission(PERM_ACADEMICS_VIEW)]
 
     def get(self, request, *args, **kwargs):
         service = AcademicService()

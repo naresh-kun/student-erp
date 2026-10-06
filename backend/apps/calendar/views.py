@@ -4,7 +4,8 @@ Provides calendar and event feed endpoints.
 """
 
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from common.constants import PERM_CALENDAR_VIEW
+from common.permissions import require_permission
 from common.responses import success_response
 from apps.calendar.services import CalendarService
 
@@ -14,7 +15,7 @@ class CalendarEventListView(APIView):
     GET /api/v1/calendar/events/
     Lists institutional events and holidays. Scaffolding returns structured empty dataset prior to Task 3.3 models.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [require_permission(PERM_CALENDAR_VIEW)]
 
     def get(self, request, *args, **kwargs):
         service = CalendarService()

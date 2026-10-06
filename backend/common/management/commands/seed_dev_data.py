@@ -10,6 +10,7 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 from apps.accounts.models import Role, Faculty, Parent
 from apps.students.models import Student
@@ -245,7 +246,7 @@ class Command(BaseCommand):
                 'reason': 'High fever and doctor advised rest.',
                 'status': 'APPROVED',
                 'reviewed_by': faculty_profile,
-                'reviewed_at': base_date + timedelta(days=2),
+                'reviewed_at': timezone.now(),
                 'review_remarks': 'Approved medical leave request.',
             }
         )

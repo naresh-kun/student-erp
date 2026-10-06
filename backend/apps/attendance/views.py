@@ -4,15 +4,28 @@ Provides attendance overview, bulk logging, absentees listing, and leave applica
 Strictly adheres to Master Plan Amendment 2 (4-status model: PRESENT, ABSENT, ON_DUTY, LEAVE).
 """
 
+import uuid
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import PermissionDenied
 from rest_framework import status
 from django.shortcuts import get_object_or_404
+from django.db.models import Q
 
+from common.constants import (
+    ROLE_ADMIN,
+    ROLE_FACULTY,
+    ROLE_STUDENT,
+    PERM_ATTENDANCE_VIEW,
+    PERM_ATTENDANCE_MARK,
+    PERM_ATTENDANCE_VIEW_ABSENTEES,
+)
+from common.authorization import AuthorizationService
+from common.permissions import HasRequiredPermission, IsOwnerOrScopedAccess, require_permission
 from common.responses import success_response
 from common.pagination import StandardResultsSetPagination
 from apps.attendance.models import Attendance, LeaveApplication
 from apps.attendance.services import AttendanceService
+from apps.academics.models import Enrollment
 from apps.attendance.serializers import (
     AttendanceRecordSerializer,
     BulkAttendanceCreateSerializer,
@@ -25,7 +38,7 @@ class AttendanceOverviewView(APIView):
     GET /api/v1/attendance/
     Lists attendance records with filters. Includes canonical attendance % calculation in response metadata.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [require_permission(PERM_ATTENDANCE_VIEW)]
     pagination_class = StandardResultsSetPagination
 
     def get(self, request, *args, **kwargs):
@@ -45,6 +58,7 @@ class AttendanceOverviewView(APIView):
             month=month,
             status=att_status,
         )
+        qs = AuthorizationService.filter_queryset_for_user(qs, request.user, domain='attendance')
 
         # Calculate statistics across the filtered queryset
         stats = service.calculate_attendance_summary(qs)
@@ -68,11 +82,34 @@ class BulkAttendanceCreateView(APIView):
     Bulk records attendance for an entire class/section/date.
     Allowed statuses: PRESENT, ABSENT, ON_DUTY, LEAVE (rejects LATE, EXCUSED).
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [require_permission(PERM_ATTENDANCE_MARK)]
 
     def post(self, request, *args, **kwargs):
         serializer = BulkAttendanceCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        user_role = AuthorizationService.get_user_role(request.user)
+        if user_role == ROLE_FACULTY:
+            faculty = getattr(request.user, 'faculty_profile', None)
+            if not faculty:
+                raise PermissionDenied("Faculty profile not found.")
+            for item in serializer.validated_data['records']:
+                enrollment = None
+                if item.get('enrollment_id'):
+                    enrollment = Enrollment.objects.select_related('section').filter(id=item['enrollment_id']).first()
+                elif item.get('student_id'):
+                    sid = item['student_id'].strip()
+                    try:
+                        val_uuid = uuid.UUID(sid)
+                        enrollment = Enrollment.objects.select_related('section').filter(
+                            Q(student__student_id=sid) | Q(student_id=val_uuid)
+                        ).first()
+                    except (ValueError, AttributeError):
+                        enrollment = Enrollment.objects.select_related('section').filter(
+                            student__student_id=sid
+                        ).first()
+                if not enrollment or enrollment.section.class_teacher_id != faculty.id:
+                    raise PermissionDenied("Faculty can only record attendance for their assigned section.")
 
         service = AttendanceService()
         saved = service.record_bulk_attendance(
@@ -98,7 +135,11 @@ class AttendanceDetailView(APIView):
     PATCH /api/v1/attendance/{id}/
     Retrieves or updates single attendance record state.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [HasRequiredPermission, IsOwnerOrScopedAccess]
+    permission_map = {
+        'GET': PERM_ATTENDANCE_VIEW,
+        'PATCH': PERM_ATTENDANCE_MARK,
+    }
 
     def get(self, request, pk, *args, **kwargs):
         att = get_object_or_404(
@@ -110,11 +151,13 @@ class AttendanceDetailView(APIView):
             ),
             pk=pk,
         )
+        self.check_object_permissions(request, att)
         serializer = AttendanceRecordSerializer(att)
         return success_response(data=serializer.data)
 
     def patch(self, request, pk, *args, **kwargs):
         att = get_object_or_404(Attendance, pk=pk)
+        self.check_object_permissions(request, att)
         serializer = AttendanceRecordSerializer(att, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         att = serializer.save()
@@ -127,7 +170,7 @@ class StudentAbsenteesView(APIView):
     Dedicated visibility surface returning ONLY students with attendance status ABSENT.
     Excludes PRESENT, ON_DUTY, and LEAVE per ADR 007 / ADR 009.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [require_permission(PERM_ATTENDANCE_VIEW_ABSENTEES)]
     pagination_class = StandardResultsSetPagination
 
     def get(self, request, *args, **kwargs):
@@ -142,6 +185,7 @@ class StudentAbsenteesView(APIView):
             date=date,
             status='ABSENT',
         )
+        qs = AuthorizationService.filter_queryset_for_user(qs, request.user, domain='attendance')
 
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(qs, request, view=self)
@@ -159,7 +203,7 @@ class LeaveApplicationListView(APIView):
     POST /api/v1/attendance/leaves/
     Lists and submits leave applications.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [require_permission(PERM_ATTENDANCE_VIEW)]
     pagination_class = StandardResultsSetPagination
 
     def get(self, request, *args, **kwargs):
@@ -172,6 +216,8 @@ class LeaveApplicationListView(APIView):
         if leave_status:
             qs = qs.filter(status=leave_status.strip())
 
+        qs = AuthorizationService.filter_queryset_for_user(qs, request.user, domain='attendance')
+
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(qs, request, view=self)
         if page is not None:
@@ -182,7 +228,21 @@ class LeaveApplicationListView(APIView):
         return success_response(data=serializer.data)
 
     def post(self, request, *args, **kwargs):
-        serializer = LeaveApplicationSerializer(data=request.data)
+        user_role = AuthorizationService.get_user_role(request.user)
+        if user_role == ROLE_STUDENT:
+            student = getattr(request.user, 'student_profile', None)
+            if not student:
+                raise PermissionDenied("Student profile not found.")
+            if 'student' in request.data and str(request.data['student']) != str(student.id):
+                raise PermissionDenied("Students may only submit leave applications for themselves.")
+            data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+            data['student'] = str(student.id)
+            serializer = LeaveApplicationSerializer(data=data)
+        elif user_role in (ROLE_ADMIN, ROLE_FACULTY):
+            serializer = LeaveApplicationSerializer(data=request.data)
+        else:
+            raise PermissionDenied("Role not permitted to submit leave applications.")
+
         serializer.is_valid(raise_exception=True)
         leave_app = serializer.save()
         return success_response(

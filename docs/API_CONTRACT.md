@@ -2,9 +2,9 @@
 
 > **Status**: Authoritative API Specification  
 > **API Version**: `v1`  
-> **Current Status**: **IN PROGRESS** (Phase 3 Task 3.6 establishes initial REST API foundation across core domain endpoints; frontend integration deferred to Phase 5)  
+> **Current Status**: **Phase 4 Task 4.4 COMPLETE** (Comprehensive endpoint-level RBAC enforcement, query scoping, and object-level authorization across all 33 API routes; frontend integration deferred to Phase 5)  
 > **Base URL**: `/api/v1`  
-> **Last Updated**: 2026-09-30
+> **Last Updated**: 2026-10-06
 
 ---
 
@@ -12,16 +12,16 @@
 
 | Status Token | Definition | Current Count |
 | :--- | :--- | :--- |
-| **`IMPLEMENTED`** | Endpoint exists, unit tested, accessible via network | 18 Endpoints (Task 3.6 Foundation) |
-| **`MOCKED`** | Simulated in frontend via `mock-data/` & `services/mockService.ts` | 10 Datasets |
-| **`PLANNED`** | Fully documented schema & contract, scheduled for future backend phases | Remaining v1 endpoints below |
+| **`IMPLEMENTED`** | Endpoint exists, unit & RBAC tested, accessible via network | 33 Endpoints (Task 4.4 Broad RBAC Enforcement) |
+| **`MOCKED`** | Simulated in frontend via `mock-data/` & `services/mockService.ts` | 10 Datasets (Phase 2 Prototyping) |
+| **`PLANNED`** | Fully documented schema & contract, scheduled for future backend phases | Advanced background pipelines (Task 4.5+ / Phase 6) |
 
 ---
 
 ## 2. Global Standards & Conventions
 
 1. **Format**: All payloads must be formatted as UTF-8 encoded `application/json`.
-2. **Authentication**: All endpoints (except public `/auth/login/`) require an `Authorization: Bearer <JWT_ACCESS_TOKEN>` header.
+2. **Authentication**: All endpoints (except public `/api/health/`, `/api/v1/auth/login/`, and `/api/v1/auth/refresh/`) require an `Authorization: Bearer <JWT_ACCESS_TOKEN>` header.
 3. **Response Envelope**: Standard responses adhere to the following schema:
    ```json
    {
@@ -45,116 +45,178 @@
      }
    }
    ```
+5. **Denial Semantics**:
+   - `401 Unauthorized`: Missing, expired, invalid JWT, or inactive user.
+   - `403 Forbidden`: Authenticated user lacks required permission or fails object-level scope checks.
 
 ---
 
 ## 3. Endpoint Specifications
 
-### 3.1 Authentication & Profile (`/api/v1/auth/`)
-- `POST /api/v1/auth/login/` `[PLANNED]`
+### 3.1 Public Liveness Check (`/api/`)
+- `GET /api/health/` `[IMPLEMENTED]`
+  - Authentication: Unauthenticated (Public)
+  - Returns: Liveness probe with database connectivity status (`status: ok`).
+
+### 3.2 Authentication & Profile (`/api/v1/auth/`)
+- `POST /api/v1/auth/login/` `[IMPLEMENTED]`
+  - Authentication: Unauthenticated (Public)
   - Request: `{ "username": "...", "password": "..." }`
   - Response: `{ "access": "<jwt>", "refresh": "<jwt>", "user": { "id": "...", "role": "..." } }`
-- `POST /api/v1/auth/refresh/` `[PLANNED]`
+- `POST /api/v1/auth/refresh/` `[IMPLEMENTED]`
+  - Authentication: Unauthenticated (Public)
   - Request: `{ "refresh": "<jwt>" }`
   - Response: `{ "access": "<jwt>" }`
-- `GET /api/v1/auth/me/` `[PLANNED]`
-  - Returns authenticated user profile, permissions, and active role context.
+- `GET /api/v1/auth/me/` `[IMPLEMENTED]`
+  - Authentication: Required (`IsAuthenticated`, active user)
+  - Permitted Roles: All 5 roles (`Admin`, `Principal`, `Faculty`, `Student`, `Parent`)
+  - Returns: Safe authenticated user profile and role context.
 
-### 3.2 Students (`/api/v1/students/`)
-- `GET /api/v1/students/` `[PLANNED]`
-  - Filters: `class_id`, `section_id`, `academic_year`, `search`
-  - Permitted Roles: Admin, Principal, Faculty
-- `GET /api/v1/students/{id}/` `[PLANNED]`
-  - Permitted Roles: Admin, Principal, Faculty, Student (self), Parent (linked child)
-- `POST /api/v1/students/` `[PLANNED]`
-  - Permitted Roles: Admin
-- `PATCH /api/v1/students/{id}/` `[PLANNED]`
-  - Permitted Roles: Admin
+### 3.3 Students (`/api/v1/students/`)
+- `GET /api/v1/students/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `students.view`
+  - Scoping: Admin/Principal: Global; Faculty: Assigned section; Student: Self; Parent: Linked child.
+  - Query Parameters: `class_id`, `section_id`, `academic_year`, `search`, `status`
+- `POST /api/v1/students/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `students.create`
+  - Permitted Roles: Admin only
+- `GET /api/v1/students/{id}/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `students.view` + Object Check (`IsOwnerOrScopedAccess`)
+  - Permitted Roles: Admin, Principal, Faculty (assigned section), Student (self), Parent (linked child)
+- `PATCH /api/v1/students/{id}/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `students.update` + Object Check (`IsOwnerOrScopedAccess`)
+  - Permitted Roles: Admin only
 
-### 3.3 Parents (`/api/v1/parents/`)
-- `GET /api/v1/parents/` `[PLANNED]`
-  - Permitted Roles: Admin, Principal
-- `GET /api/v1/parents/{id}/` `[PLANNED]`
+### 3.4 Parents (`/api/v1/parents/`)
+- `GET /api/v1/parents/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `students.view`
+  - Scoping: Admin/Principal: Global; Faculty: Assigned section parents; Parent: Self.
+- `GET /api/v1/parents/{id}/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `students.view` + Object Check (`IsOwnerOrScopedAccess`)
+  - Permitted Roles: Admin, Principal, Faculty (if student in section), Parent (self)
+- `GET /api/v1/parents/{id}/children/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `students.view` + Object Check (`IsOwnerOrScopedAccess`)
   - Permitted Roles: Admin, Principal, Parent (self)
-- `GET /api/v1/parents/{id}/children/` `[PLANNED]`
-  - Returns list of verified student profiles linked to this parent.
 
-### 3.4 Faculty (`/api/v1/faculty/`)
-- `GET /api/v1/faculty/` `[PLANNED]`
-  - Permitted Roles: Admin, Principal, Faculty, Student
-- `GET /api/v1/faculty/{id}/` `[PLANNED]`
-  - Permitted Roles: Admin, Principal, Faculty
-- `POST /api/v1/faculty/` `[PLANNED]`
-  - Permitted Roles: Admin
-- `PATCH /api/v1/faculty/{id}/` `[PLANNED]`
-  - Permitted Roles: Admin, Faculty (self for biographical fields)
+### 3.5 Faculty (`/api/v1/faculty/`)
+- `GET /api/v1/faculty/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `users.view`
+  - Scoping: Descriptive active directory lookup for all authenticated roles (`is_active=True`).
+- `POST /api/v1/faculty/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `users.create`
+  - Permitted Roles: Admin only
+- `GET /api/v1/faculty/{id}/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `users.view` + Object Check (`IsOwnerOrScopedAccess`)
+  - Permitted Roles: All roles (active profile), self
+- `PATCH /api/v1/faculty/{id}/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `users.update` + Object Check (`IsOwnerOrScopedAccess`)
+  - Permitted Roles: Admin (all fields), Faculty (self bio/office only; administrative fields protected)
 
-### 3.5 Classes & Sections (`/api/v1/classes/`)
-- `GET /api/v1/classes/` `[PLANNED]`
-  - Permitted Roles: All authenticated roles
-- `POST /api/v1/classes/` `[PLANNED]`
-  - Permitted Roles: Admin
-- `GET /api/v1/classes/{id}/sections/` `[PLANNED]`
-  - Lists sections, capacities, and assigned class teachers.
+### 3.6 Classes & Sections (`/api/v1/classes/` and `/api/v1/academics/classes/`)
+- `GET /api/v1/classes/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `academics.view` (All authenticated roles)
+- `POST /api/v1/classes/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `academics.manage` (Admin and Principal)
+- `GET /api/v1/classes/{id}/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `academics.view` (All authenticated roles)
+- `GET /api/v1/classes/{id}/sections/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `academics.view` (All authenticated roles)
 
-### 3.6 Subjects (`/api/v1/subjects/`)
-- `GET /api/v1/subjects/` `[PLANNED]`
-  - Lists institutional courses, credit hours, and syllabus metadata.
-- `POST /api/v1/subjects/` `[PLANNED]`
-  - Permitted Roles: Admin, Principal
+### 3.7 Subjects (`/api/v1/subjects/` and `/api/v1/academics/subjects/`)
+- `GET /api/v1/subjects/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `academics.view` (All authenticated roles)
+- `POST /api/v1/subjects/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `academics.manage` (Admin and Principal)
+- `GET /api/v1/subjects/{id}/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `academics.view` (All authenticated roles)
 
-### 3.7 Attendance (`/api/v1/attendance/`)
-- `GET /api/v1/attendance/` `[PLANNED]`
-  - Query parameters: `student_id`, `class_id`, `date`, `month`
-  - Permitted Roles: Admin, Principal, Faculty, Student (self only), Parent (child only)
-  - Calculation Rule: Attendance % strictly follows Master Plan Amendment 2:
-    `Attendance % = (PRESENT + ON_DUTY) / (PRESENT + ABSENT + ON_DUTY + LEAVE) * 100`
-- `POST /api/v1/attendance/bulk/` `[PLANNED]`
-  - Bulk records session or daily attendance for an entire class/section.
-  - Allowed Statuses: `['PRESENT', 'ABSENT', 'ON_DUTY', 'LEAVE']` (`LATE` and `EXCUSED` strictly prohibited).
-  - Attributes: When `status === 'LEAVE'`, `approved_by_faculty_id` is required.
-  - Permitted Roles: Faculty (assigned class), Admin
-- `PATCH /api/v1/attendance/{id}/` `[PLANNED]`
-  - Updates attendance state (e.g. faculty approving and marking `LEAVE`).
-  - Allowed Statuses: `['PRESENT', 'ABSENT', 'ON_DUTY', 'LEAVE']`.
-  - Permitted Roles: Faculty, Admin
+### 3.8 Academic Years (`/api/v1/academics/years/`)
+- `GET /api/v1/academics/years/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `academics.view` (All authenticated roles)
 
-### 3.8 Marks & Examinations (`/api/v1/marks/`)
-- `GET /api/v1/marks/` `[PLANNED]`
-  - Query parameters: `student_id`, `subject_id`, `exam_type_id`
-  - Permitted Roles: Admin, Principal, Faculty, Student (self only), Parent (child only)
-- `POST /api/v1/marks/bulk/` `[PLANNED]`
-  - Records student evaluation marks for a test.
-  - Permitted Roles: Faculty, Admin
-- `GET /api/v1/marks/report-card/{student_id}/` `[PLANNED]`
-  - Returns calculated cumulative marks out of maximum, overall percentage, 8-tier letter grade, and term report card.
+### 3.9 Attendance (`/api/v1/attendance/`)
+- `GET /api/v1/attendance/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `attendance.view`
+  - Scoping: Admin/Principal: Global; Faculty: Assigned section; Student: Self; Parent: Linked child.
+  - Formula: `(PRESENT + ON_DUTY) / (PRESENT + ABSENT + ON_DUTY + LEAVE) * 100`
+- `POST /api/v1/attendance/bulk/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `attendance.mark`
+  - Permitted Roles: Admin/Principal (Global), Faculty (Assigned section only; cross-section rejected with 403)
+  - Allowed Statuses: `PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE` (`LATE` and `EXCUSED` strictly rejected)
+- `GET /api/v1/attendance/absentees/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `attendance.view_absentees`
+  - Permitted Roles: Admin, Principal, Faculty (Assigned scope). Student/Parent denied.
+- `GET /api/v1/attendance/leaves/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `attendance.view` (Scoped by user)
+- `POST /api/v1/attendance/leaves/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: Student (Self only), Faculty, Admin
+- `GET /api/v1/attendance/{id}/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `attendance.view` + Object Check (`IsOwnerOrScopedAccess`)
+- `PATCH /api/v1/attendance/{id}/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `attendance.mark` + Object Check (`IsOwnerOrScopedAccess`)
 
-### 3.9 Timetable (`/api/v1/timetable/`)
-- `GET /api/v1/timetable/class/{class_id}/` `[PLANNED]`
-  - Returns weekly schedule grid for a class section.
-- `GET /api/v1/timetable/faculty/{faculty_id}/` `[PLANNED]`
-  - Returns weekly schedule grid for an instructor.
-- `POST /api/v1/timetable/` `[PLANNED]`
-  - Creates or modifies timetable slots.
-  - Permitted Roles: Admin
+### 3.10 Marks & Examinations (`/api/v1/marks/`)
+- `GET /api/v1/marks/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `marks.view`
+  - Scoping: Admin/Principal: Global; Faculty: Assigned section; Student: Self; Parent: Linked child.
+- `POST /api/v1/marks/bulk/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `marks.enter`
+  - Permitted Roles: Admin/Principal (Global), Faculty (Assigned section only; cross-section rejected with 403)
+- `GET /api/v1/marks/exam-types/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `marks.view` (All authenticated roles)
+- `POST /api/v1/marks/exam-types/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `marks.override` (Admin only)
+- `GET /api/v1/marks/report-card/{student_id}/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `reports.view` + Object Check (`can_access_object`)
+  - Permitted Roles: Admin, Principal, Faculty (Assigned section), Student (Self), Parent (Linked child)
+- `GET /api/v1/marks/{id}/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `marks.view` + Object Check (`IsOwnerOrScopedAccess`)
+- `PATCH /api/v1/marks/{id}/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `marks.enter` + Object Check (`IsOwnerOrScopedAccess`)
 
-### 3.10 Institutional Calendar (`/api/v1/calendar/`)
-- `GET /api/v1/calendar/events/` `[PLANNED]`
-  - Returns institutional calendar entries filtered by date range and role relevance.
-- `POST /api/v1/calendar/events/` `[PLANNED]`
-  - Permitted Roles: Admin, Principal
-
-### 3.11 Allocation Engine (`/api/v1/allocation/`)
-- `POST /api/v1/allocation/run/` `[PLANNED]`
-  - Executes batch allocation algorithms to balance student section distribution.
-  - Permitted Roles: Admin, Principal
-- `GET /api/v1/allocation/status/{run_id}/` `[PLANNED]`
-  - Checks state of background allocation computation.
-
-### 3.12 Reports & Analytics (`/api/v1/reports/`)
-- `GET /api/v1/reports/attendance-summary/` `[PLANNED]`
-  - Aggregates school-wide or class-specific attendance percentages.
-- `GET /api/v1/reports/academic-performance/` `[PLANNED]`
-  - Aggregates grading distribution, passing rates, and subject rankings.
-- `GET /api/v1/reports/export/{type}/` `[PLANNED]`
-  - Generates downloadable CSV or PDF institutional transcripts/reports.
+### 3.11 Scaffolding Endpoints
+- `GET /api/v1/allocation/` `[IMPLEMENTED]`
+  - Required Permission: `allocation.view` (Admin, Principal, Faculty)
+- `GET /api/v1/audit/` `[IMPLEMENTED]`
+  - Required Permission: `audit.view` (Admin, Principal only)
+- `GET /api/v1/calendar/events/` `[IMPLEMENTED]`
+  - Required Permission: `calendar.view` (All authenticated roles)
+- `GET /api/v1/timetable/` `[IMPLEMENTED]`
+  - Required Permission: `timetable.view` (All authenticated roles)
+- `GET /api/v1/reports/` `[IMPLEMENTED]`
+  - Required Permission: `reports.view` (All authenticated roles)
+- `GET /api/v1/notifications/` `[IMPLEMENTED]`
+  - Required Permission: `users.view` (All authenticated roles)

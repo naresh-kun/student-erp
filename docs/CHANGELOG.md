@@ -2,6 +2,50 @@
 
 All notable changes to the Student ERP project will be documented in this file.
 
+## [Phase 4: Task 4.4 — Endpoint-Level RBAC Enforcement] - 2026-10-06
+
+### Summary
+Connected the authoritative RBAC architecture from Task 4.3 to all REST API endpoints and views across the Student ERP backend tier. Enforced complete defense-in-depth: authentication verification, inactive user denial, permission checking via `HasRequiredPermission` and `permission_map`, database-level queryset scoping via `AuthorizationService.filter_queryset_for_user()`, and object-level authorization via `IsOwnerOrScopedAccess` and `check_object_permissions()`. Maintained intentional public endpoint access (`/api/health/`, `POST /api/v1/auth/login/`, `POST /api/v1/auth/refresh/`) while strictly guarding all remaining 30 endpoints with 401 unauthenticated and 403 forbidden semantics. Implemented strict mutation boundaries: Faculty bulk attendance and bulk marks entry are locked strictly to their assigned sections (rejecting cross-section attempts with 403), Faculty self-profile editing is barred from modifying administrative fields (`employee_code`, `is_active`, `department`, `designation`, `joining_date`, `user_id`), and student leave applications are validated against the authenticated student identity. Mitigated role tampering via request payload overrides and eliminated pagination warnings with deterministic ordering. Expanded automated backend test suite by 33 tests in `test_endpoint_rbac_task44.py`, achieving 261/261 tests passing (100% pass rate, 0 warnings, 0 failures), and verified frontend non-regression with 158/158 Vitest tests passing and a clean production build in 15.92s.
+
+### Added / Modified
+- **Broad View RBAC Wiring (`backend/apps/*/views.py`)**:
+  - `accounts`: `ParentListView` (scoped queryset), `ParentDetailView` & `ParentChildrenView` (`IsOwnerOrScopedAccess`), `FacultyListView` (active directory scoping), `FacultyDetailView` (self-profile update with administrative field guards).
+  - `students`: `StudentListView` (GET `students.view` with queryset scoping, POST `students.create` Admin-only), `StudentDetailView` (GET `students.view`, PATCH `students.update`, `IsOwnerOrScopedAccess`).
+  - `academics`: `ClassListView` & `SubjectListView` (GET `academics.view`, POST `academics.manage`), `ClassDetailView`, `ClassSectionsView`, `SubjectDetailView`, `AcademicYearListView` (GET `academics.view`).
+  - `attendance`: `AttendanceOverviewView` (GET `attendance.view` with queryset scoping), `BulkAttendanceCreateView` (POST `attendance.mark` with Faculty class teacher assignment validation), `StudentAbsenteesView` (GET `attendance.view_absentees` scoped), `LeaveApplicationListView` (GET `attendance.view`, POST with student self-identity validation), `AttendanceDetailView` (GET/PATCH with `IsOwnerOrScopedAccess`).
+  - `marks`: `MarkListView` (GET `marks.view` with queryset scoping), `BulkMarkCreateView` (POST `marks.enter` with Faculty assignment validation), `ExamTypeListView` (GET `marks.view`, POST `marks.override`), `ReportCardView` (GET `reports.view` with `can_access_object` verification), `MarkDetailView` (GET/PATCH with `IsOwnerOrScopedAccess`).
+  - `allocation`, `audit`, `calendar`, `timetable`, `reports`, `notifications`: Scaffolding endpoints protected by canonical domain permissions (`allocation.view`, `audit.view`, `calendar.view`, `timetable.view`, `reports.view`, `users.view`).
+- **DRF Permission Enhancements (`backend/common/permissions.py`)**:
+  - Extended `HasRequiredPermission` and `IsOwnerOrScopedAccess` to inspect `view.permission_map` (HTTP method dispatch) when present, falling back to standard DRF actions and request methods.
+- **Service & Queryset Scoping Hardening (`backend/common/authorization.py` & `backend/apps/accounts/services.py`)**:
+  - Added deterministic `.order_by('created_at', 'id')` on Parent and Faculty querysets, eliminating `UnorderedObjectListWarning`.
+  - Refined object access verification for `Faculty` and `Parent` entities across all 5 roles.
+- **Development Seed Data Hygiene (`backend/common/management/commands/seed_dev_data.py`)**:
+  - Replaced naive datetime on `LeaveApplication.reviewed_at` with timezone-aware `timezone.now()`, eliminating `RuntimeWarning`.
+- **ADR 013 (`docs/DECISIONS.md`)**:
+  - Documented endpoint-level RBAC enforcement, queryset scoping before serialization, object authorization, and mutation protection.
+- **Task 4.4 Automated Pytest Suite (`backend/tests/test_endpoint_rbac_task44.py`)**:
+  - 33 comprehensive integration tests covering:
+    - Public vs authenticated endpoints.
+    - All 5 canonical roles: Admin, Principal, Faculty, Student, Parent.
+    - List queryset scoping across students, parents, faculty, attendance, absentees, marks.
+    - Detail endpoint object ownership and URL/ID manipulation prevention.
+    - Faculty assignment boundaries and administrative field protection.
+    - Student leave application identity enforcement.
+    - Scaffolding endpoint RBAC.
+    - Role tampering mitigation via request payloads and inactive user denial.
+  - Backend test suite expanded from 228 to **261 passing tests (100%)**.
+
+### Verified (Non-Regression)
+- **Django System Check**: `python manage.py check` passes with 0 issues.
+- **Database Migrations**: `makemigrations --check` reports 0 unmigrated changes; schema unchanged.
+- **Backend Test Suite**: 261 passed out of 261 tests across 16 test modules in 222.64s.
+- **Frontend Test Suite**: 158 passed out of 158 Vitest tests in 25.55s (`npm test -- --run`).
+- **Frontend Build**: Production bundle compiles cleanly in 15.92s (`npm run build`).
+- **Architectural Invariants**: Frontend remains mock-driven; Student/Parent special authentication (Task 4.5) untouched.
+
+---
+
 ## [Phase 4: Task 4.3 — RBAC Architecture & Permission Model] - 2026-10-05
 
 ### Summary

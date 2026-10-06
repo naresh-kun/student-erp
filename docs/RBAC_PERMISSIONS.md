@@ -164,3 +164,56 @@ Task 2.7 establishes explicit operational allocation, search, and attendance vis
    - All mutations in Task 2.7 operate on client-side state via the `AllocationService` domain layer.
    - Backend persistence (Django/DRF/PostgreSQL) remains scheduled for Phase 3.
 
+---
+
+## 7. Authoritative REST Endpoint RBAC Inventory & Enforcement Mapping (Task 4.4)
+
+Every implemented API route is strictly enforced with authentication, role permissions, queryset scoping, and object ownership:
+
+| Endpoint | Method | View Class | Authentication | Required Permission | Operational Scope | Object-Level Check |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `/api/health/` | GET | `HealthCheckView` | No (Public) | None | N/A | None |
+| `/api/v1/auth/login/` | POST | `TokenObtainPairView` | No (Public) | None | N/A | None |
+| `/api/v1/auth/refresh/` | POST | `TokenRefreshView` | No (Public) | None | N/A | None |
+| `/api/v1/auth/me/` | GET | `CurrentUserProfileView` | Yes | Authenticated Active | `SCOPE_SELF` | Self identity only |
+| `/api/v1/students/` | GET | `StudentListView` | Yes | `students.view` | Scoped per role | Queryset scoped |
+| `/api/v1/students/` | POST | `StudentListView` | Yes | `students.create` | `SCOPE_GLOBAL` | Admin only |
+| `/api/v1/students/{id}/` | GET | `StudentDetailView` | Yes | `students.view` | Scoped per role | `IsOwnerOrScopedAccess` |
+| `/api/v1/students/{id}/` | PATCH | `StudentDetailView` | Yes | `students.update` | `SCOPE_GLOBAL` | `IsOwnerOrScopedAccess` (Admin only) |
+| `/api/v1/parents/` | GET | `ParentListView` | Yes | `students.view` | Scoped per role | Queryset scoped |
+| `/api/v1/parents/{id}/` | GET | `ParentDetailView` | Yes | `students.view` | Scoped per role | `IsOwnerOrScopedAccess` |
+| `/api/v1/parents/{id}/children/` | GET | `ParentChildrenView` | Yes | `students.view` | Scoped per role | `IsOwnerOrScopedAccess` |
+| `/api/v1/faculty/` | GET | `FacultyListView` | Yes | `users.view` | Active directory | `is_active=True` |
+| `/api/v1/faculty/` | POST | `FacultyListView` | Yes | `users.create` | `SCOPE_GLOBAL` | Admin only |
+| `/api/v1/faculty/{id}/` | GET | `FacultyDetailView` | Yes | `users.view` | Active directory / self | `IsOwnerOrScopedAccess` |
+| `/api/v1/faculty/{id}/` | PATCH | `FacultyDetailView` | Yes | `users.update` | Admin global / Self bio | `IsOwnerOrScopedAccess` (Admin fields protected) |
+| `/api/v1/classes/` | GET | `ClassListView` | Yes | `academics.view` | All authenticated | None |
+| `/api/v1/classes/` | POST | `ClassListView` | Yes | `academics.manage` | Admin / Principal | Role matrix |
+| `/api/v1/classes/{id}/` | GET | `ClassDetailView` | Yes | `academics.view` | All authenticated | None |
+| `/api/v1/classes/{id}/sections/` | GET | `ClassSectionsView` | Yes | `academics.view` | All authenticated | None |
+| `/api/v1/subjects/` | GET | `SubjectListView` | Yes | `academics.view` | All authenticated | None |
+| `/api/v1/subjects/` | POST | `SubjectListView` | Yes | `academics.manage` | Admin / Principal | Role matrix |
+| `/api/v1/subjects/{id}/` | GET | `SubjectDetailView` | Yes | `academics.view` | All authenticated | None |
+| `/api/v1/academics/years/` | GET | `AcademicYearListView` | Yes | `academics.view` | All authenticated | None |
+| `/api/v1/attendance/` | GET | `AttendanceOverviewView` | Yes | `attendance.view` | Scoped per role | Queryset scoped |
+| `/api/v1/attendance/bulk/` | POST | `BulkAttendanceCreateView` | Yes | `attendance.mark` | Faculty assigned section | Assignment check (cross-section 403) |
+| `/api/v1/attendance/absentees/` | GET | `StudentAbsenteesView` | Yes | `attendance.view_absentees` | Admin, Principal, Faculty scoped | Queryset scoped |
+| `/api/v1/attendance/leaves/` | GET | `LeaveApplicationListView` | Yes | `attendance.view` | Scoped per role | Queryset scoped |
+| `/api/v1/attendance/leaves/` | POST | `LeaveApplicationListView` | Yes | Student self / Staff | Self student identity | Tampering check |
+| `/api/v1/attendance/{id}/` | GET | `AttendanceDetailView` | Yes | `attendance.view` | Scoped per role | `IsOwnerOrScopedAccess` |
+| `/api/v1/attendance/{id}/` | PATCH | `AttendanceDetailView` | Yes | `attendance.mark` | Scoped per role | `IsOwnerOrScopedAccess` |
+| `/api/v1/marks/` | GET | `MarkListView` | Yes | `marks.view` | Scoped per role | Queryset scoped |
+| `/api/v1/marks/bulk/` | POST | `BulkMarkCreateView` | Yes | `marks.enter` | Faculty assigned section | Assignment check (cross-section 403) |
+| `/api/v1/marks/exam-types/` | GET | `ExamTypeListView` | Yes | `marks.view` | All authenticated | None |
+| `/api/v1/marks/exam-types/` | POST | `ExamTypeListView` | Yes | `marks.override` | Admin only | Role matrix |
+| `/api/v1/marks/report-card/{student_id}/` | GET | `ReportCardView` | Yes | `reports.view` | Scoped per role | `can_access_object` verification |
+| `/api/v1/marks/{id}/` | GET | `MarkDetailView` | Yes | `marks.view` | Scoped per role | `IsOwnerOrScopedAccess` |
+| `/api/v1/marks/{id}/` | PATCH | `MarkDetailView` | Yes | `marks.enter` | Scoped per role | `IsOwnerOrScopedAccess` |
+| `/api/v1/allocation/` | GET | `AllocationListView` | Yes | `allocation.view` | Admin, Principal, Faculty | Scaffolding view |
+| `/api/v1/audit/` | GET | `AuditLogListView` | Yes | `audit.view` | Admin, Principal only | Scaffolding view |
+| `/api/v1/calendar/events/` | GET | `CalendarEventListView` | Yes | `calendar.view` | All authenticated | Scaffolding view |
+| `/api/v1/timetable/` | GET | `TimetableListView` | Yes | `timetable.view` | All authenticated | Scaffolding view |
+| `/api/v1/reports/` | GET | `ReportListView` | Yes | `reports.view` | All authenticated | Scaffolding view |
+| `/api/v1/notifications/` | GET | `NotificationListView` | Yes | `users.view` | All authenticated | Scaffolding view |
+
+

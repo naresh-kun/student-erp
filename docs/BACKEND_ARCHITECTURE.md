@@ -64,9 +64,15 @@ backend/
 1. **Authentication**: Handled via `rest_framework_simplejwt`. 
    - Access tokens have short lifespans (15 minutes).
    - Refresh tokens (7 days) are rotated upon use and blacklisted on logout.
-2. **Authorization**:
-   - Enforced via custom DRF permission classes subclassing `rest_framework.permissions.BasePermission`.
-   - Granular checks evaluate both `request.user.role` and `has_object_permission()` to prevent horizontal privilege escalation.
+   - Authoritative login endpoint at `POST /api/v1/auth/login/` returning dual-compatibility envelope with safe user identity.
+   - Current user profile context at `GET /api/v1/auth/me/` protected by `IsAuthenticated` and active account state.
+2. **Authorization & RBAC Architecture**:
+   - Canonical permission identifiers (`<domain>.<action>`) in `common.constants`.
+   - Explicit 5-role matrix (`ROLE_PERMISSIONS_MATRIX`) in `common.authorization` with zero role inheritance.
+   - Dynamic view and action dispatch via `HasRequiredPermission` and `view.permission_map`.
+   - Database-level queryset scoping via `AuthorizationService.filter_queryset_for_user()` filtering list endpoints before DRF pagination and serialization.
+   - Object-level ownership and assignment checks via `IsOwnerOrScopedAccess` and `check_object_permissions()` preventing horizontal privilege escalation across students, parents, and faculty assignments.
+   - Mutation guardrails on POST/PATCH endpoints enforcing domain permissions, academic assignment checks, and administrative field protections.
 
 ---
 

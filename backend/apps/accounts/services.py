@@ -165,7 +165,7 @@ class AccountService(BaseService):
 
     def get_parents_queryset(self, search: Optional[str] = None) -> QuerySet[Parent]:
         """Returns optimized queryset of parents with user records selected."""
-        qs = Parent.objects.select_related('user').prefetch_related('children').all()
+        qs = Parent.objects.select_related('user').prefetch_related('children').order_by('created_at', 'id')
         if search:
             search = search.strip()
             qs = qs.filter(
@@ -183,7 +183,7 @@ class AccountService(BaseService):
         search: Optional[str] = None,
     ) -> QuerySet[Faculty]:
         """Returns optimized queryset of faculty members with user records selected."""
-        qs = Faculty.objects.select_related('user').all()
+        qs = Faculty.objects.select_related('user').order_by('created_at', 'id')
         if department:
             qs = qs.filter(department__iexact=department.strip())
         if is_active is not None:

@@ -1,10 +1,10 @@
 # Phase 4 Execution Status: Authentication + RBAC
 
 > **Phase**: Phase 4 (Authentication + Role-Based Access Control)  
-> **Current Task**: **Task 4.3 Completed (RBAC Architecture & Permission Model)**  
-> **Next Task**: **Task 4.4 (RBAC Broad Endpoint Enforcement)**  
-> **Status**: **IN PROGRESS (Tasks 4.1, 4.2 & 4.3 DONE; 228/228 backend pytest tests passing; 158/158 frontend tests passing; clean build)**  
-> **Date**: 2026-10-05  
+> **Current Task**: **Task 4.4 Completed (RBAC Broad Endpoint Enforcement)**  
+> **Next Task**: **Task 4.5 (Student & Parent Authentication)**  
+> **Status**: **IN PROGRESS (Tasks 4.1, 4.2, 4.3 & 4.4 DONE; 261/261 backend pytest tests passing; 158/158 frontend tests passing; clean build)**  
+> **Date**: 2026-10-06  
 
 ---
 
@@ -21,7 +21,7 @@ Establish the authoritative backend authentication and authorization engine for 
 | **Task 4.1** | **Authentication Foundation** | SimpleJWT configuration, environment variables, AuthService boundary, auth serializers, `/api/v1/auth/` URL namespace, password security, test suite | **COMPLETED** |
 | **Task 4.2** | **Custom User & Login** | Custom login endpoint, token claims, safe profile payload, envelope normalization, live smoke tests | **COMPLETED** |
 | **Task 4.3** | **RBAC Architecture & Permission Model** | Canonical permission identifiers, 5-role explicit matrix, scope model, AuthorizationService, DRF permission classes, queryset scoping | **COMPLETED** |
-| **Task 4.4** | **RBAC Broad Endpoint Enforcement** | Application of permission classes and queryset scoping across all ERP endpoints, views, and services | **PENDING** |
+| **Task 4.4** | **RBAC Broad Endpoint Enforcement** | Application of permission classes and queryset scoping across all ERP endpoints, views, and services | **COMPLETED** |
 | **Task 4.5** | **Student & Parent Authentication** | Alphanumeric Student ID login, parent authentication via linked child's Student ID | **PENDING** |
 | **Task 4.6** | **Security Hardening & Rate Limiting** | DRF throttling, brute-force mitigation, audit logging on auth failures | **PENDING** |
 | **Task 4.7** | **Final Phase 4 Verification & Sign-Off** | Comprehensive auth/RBAC verification, security audit, regression check, Phase 4 sign-off | **PENDING** |
@@ -167,11 +167,82 @@ Establish the authoritative backend authentication and authorization engine for 
 
 ---
 
-## 6. Phase 4 Invariants & Architectural Boundaries
+## 6. Completed Work (Task 4.4: RBAC Broad Endpoint Enforcement)
+
+- [x] **Comprehensive API Surface Audit**:
+  - Identified and inventoried all 33 endpoints across 15 router namespaces (`/api/health/`, `/api/v1/auth/`, `/api/v1/students/`, `/api/v1/parents/`, `/api/v1/faculty/`, `/api/v1/classes/`, `/api/v1/subjects/`, `/api/v1/academics/`, `/api/v1/attendance/`, `/api/v1/marks/`, `/api/v1/timetable/`, `/api/v1/calendar/`, `/api/v1/allocation/`, `/api/v1/reports/`, `/api/v1/notifications/`, `/api/v1/audit/`).
+  - Zero invented or phantom endpoints created.
+- [x] **Public vs. Protected Boundaries**:
+  - Explicitly documented and maintained intentional public endpoints:
+    - `/api/health/`: Unauthenticated health check.
+    - `POST /api/v1/auth/login/`: Unauthenticated credential verification.
+    - `POST /api/v1/auth/refresh/`: Unauthenticated refresh token rotation.
+  - All other 30 endpoints strictly require active authenticated users.
+- [x] **DRF Permission Architecture & Method Mapping**:
+  - Applied `HasRequiredPermission` with `permission_map` (HTTP method dispatch) or `require_permission(...)` across all views:
+    - `StudentListView`: GET (`students.view`), POST (`students.create`).
+    - `StudentDetailView`: GET (`students.view`), PATCH (`students.update`), backed by `IsOwnerOrScopedAccess`.
+    - `ParentListView`: GET (`students.view`) with scoped querysets.
+    - `ParentDetailView`, `ParentChildrenView`: GET (`students.view`) backed by `IsOwnerOrScopedAccess`.
+    - `FacultyListView`: GET (`users.view`), POST (`users.create`).
+    - `FacultyDetailView`: GET (`users.view`), PATCH (`users.update`), backed by `IsOwnerOrScopedAccess`. Self-edit restricted from modifying administrative fields (`employee_code`, `is_active`, `department`, `designation`, `joining_date`, `user_id`).
+    - `ClassListView`, `SubjectListView`: GET (`academics.view`), POST (`academics.manage`).
+    - `ClassDetailView`, `ClassSectionsView`, `SubjectDetailView`, `AcademicYearListView`: GET (`academics.view`).
+    - `AttendanceOverviewView`: GET (`attendance.view`).
+    - `BulkAttendanceCreateView`: POST (`attendance.mark`). Faculty limited strictly to assigned sections; Student/Parent denied.
+    - `StudentAbsenteesView`: GET (`attendance.view_absentees`). Admin, Principal, Faculty (scoped). Student/Parent denied.
+    - `LeaveApplicationListView`: GET (`attendance.view`). POST: Students permitted for self-only; Faculty/Admin permitted. Role tampering blocked.
+    - `AttendanceDetailView`: GET (`attendance.view`), PATCH (`attendance.mark`), backed by `IsOwnerOrScopedAccess`.
+    - `MarkListView`: GET (`marks.view`).
+    - `BulkMarkCreateView`: POST (`marks.enter`). Faculty limited to assigned section; Student/Parent denied.
+    - `ExamTypeListView`: GET (`marks.view`), POST (`marks.override`).
+    - `ReportCardView`: GET (`reports.view`). Object-level access verification via `AuthorizationService.can_access_object`.
+    - `MarkDetailView`: GET (`marks.view`), PATCH (`marks.enter`), backed by `IsOwnerOrScopedAccess`.
+    - `AllocationListView`: GET (`allocation.view`). Admin, Principal, Faculty. Student/Parent denied.
+    - `AuditLogListView`: GET (`audit.view`). Admin, Principal. Faculty, Student, Parent denied.
+    - `CalendarEventListView`, `TimetableListView`, `NotificationListView`, `ReportListView`: Protected by domain view permissions.
+- [x] **Queryset-Level Scoping Integration**:
+  - Connected `AuthorizationService.filter_queryset_for_user(qs, request.user, domain)` prior to pagination/serialization across:
+    - `StudentListView` (`domain='students'`)
+    - `ParentListView` & `ParentChildrenView` (`domain='students'`)
+    - `FacultyListView` (`domain='users'`)
+    - `AttendanceOverviewView`, `StudentAbsenteesView`, `LeaveApplicationListView` (`domain='attendance'`)
+    - `MarkListView` (`domain='marks'`)
+- [x] **Object-Level Authorization & Direct ID Manipulation Prevention**:
+  - Implemented object-level security hooks (`check_object_permissions`) and `can_access_object` verification.
+  - Verified prevention of cross-student profile inspection, cross-parent detail access, cross-parent children access, cross-faculty bio editing, cross-student report card inspection, and cross-section attendance/marks mutation.
+- [x] **Mutation & Role Tampering Protection**:
+  - POST, PATCH, PUT mutations enforce strict domain permissions and payload validation.
+  - Client request payloads containing elevated roles (e.g. `{"role": "Admin"}`) or mismatched IDs are rejected without modifying database roles or elevating privileges.
+- [x] **Deterministic Pagination & Clean Database Hygiene**:
+  - Added deterministic `.order_by('created_at', 'id')` to `Parent` and `Faculty` querysets in `apps/accounts/services.py` eliminating DRF `UnorderedObjectListWarning`.
+  - Used timezone-aware datetimes in seed data eliminating `RuntimeWarning`.
+- [x] **Automated Testing Suite (`backend/tests/test_endpoint_rbac_task44.py`)**:
+  - 33 comprehensive automated tests covering:
+    - Public vs authenticated endpoints (health check, `/auth/me/`).
+    - All 5 canonical roles: Admin, Principal, Faculty, Student, Parent.
+    - List queryset scoping across students, parents, faculty, attendance, absentees, marks.
+    - Object-level direct ID manipulation prevention (UUID and Student ID lookups).
+    - Faculty assignment boundaries (assigned class attendance/marks allowed; unassigned denied).
+    - Administrative field protection during faculty self-edit.
+    - Student leave application identity enforcement.
+    - Scaffolding endpoint RBAC (allocation, audit, calendar, notifications, reports, timetable).
+    - Role tampering via payload denial and inactive user rejection.
+  - **Backend test suite expanded from 228 to 261 passing tests (100%, 0 warnings, 0 failures)**.
+- [x] **Full Regression Verification**:
+  - `python manage.py check`: 0 issues.
+  - `python manage.py makemigrations --check`: 0 changes (zero pending migrations).
+  - `pytest`: 261/261 passing in 222.64s.
+  - `npm test -- --run`: 158/158 Vitest tests passing in 25.55s.
+  - `npm run build`: Clean production build in 15.92s.
+
+---
+
+## 7. Phase 4 Invariants & Architectural Boundaries
 
 1. **Django + DRF + SimpleJWT Sole Authority**: No competing authentication framework (Firebase, Supabase, Auth0, FastAPI) is permitted.
 2. **Stateless JWT Architecture**: Access tokens are stateless, short-lived (15 minutes), signed with HMAC-SHA256.
-3. **No Premature Broad Endpoint Enforcement in Task 4.3**: Task 4.3 establishes the reusable architecture; endpoint-by-endpoint enforcement is reserved for Task 4.4.
-4. **No Premature Student/Parent Special Auth in Task 4.3**: Alphanumeric Student ID login and Parent linked-student auth are reserved for Task 4.5.
+3. **Endpoint Enforcement Complete in Task 4.4**: All API endpoints enforce authentication, RBAC permissions, queryset scoping, and object-level checks.
+4. **No Premature Student/Parent Special Auth in Task 4.4**: Alphanumeric Student ID login and Parent linked-student auth are reserved for Task 4.5.
 5. **Frontend Decoupling**: React frontend remains completely mock-driven (`VITE_USE_MOCK_DATA=true`) until Phase 5.
 

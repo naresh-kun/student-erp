@@ -1,8 +1,8 @@
 # Project Status & Milestone Ledger
 
 > **Current Phase**: **Phase 4 IN PROGRESS (Authentication + RBAC)**  
-> **Authoritative State**: Phase 3 COMPLETE & SIGNED OFF; Phase 4 Tasks 4.1, 4.2 & 4.3 COMPLETE (Authentication Foundation, Custom User & Login Workflow, SimpleJWT Configuration, AuthService Domain Boundary, Token Refresh, Safe Profile Context, 5-Role RBAC Architecture, Canonical Permissions & Scopes, AuthorizationService, DRF Permission Classes, Queryset Scoping; 228/228 backend tests passing; 158/158 frontend tests passing; clean build)  
-> **Last Updated**: 2026-10-05
+> **Authoritative State**: Phase 3 COMPLETE & SIGNED OFF; Phase 4 Tasks 4.1, 4.2, 4.3 & 4.4 COMPLETE (Authentication Foundation, Custom User & Login Workflow, SimpleJWT Configuration, AuthService Domain Boundary, Token Refresh, Safe Profile Context, 5-Role RBAC Architecture, Canonical Permissions & Scopes, AuthorizationService, DRF Permission Classes, Queryset Scoping, Endpoint-Level RBAC Enforcement across all 33 REST endpoints; 261/261 backend tests passing; 158/158 frontend tests passing; clean build)  
+> **Last Updated**: 2026-10-06
 
 ---
 
@@ -74,11 +74,13 @@ To ensure strict engineering honesty, features and modules are classified into e
 | **Modular App Domain Boundaries** | `IMPLEMENTED` | 11 app modules under `backend/apps/` configured with `models.py`, `services.py`, `serializers.py`, `views.py`, `urls.py` |
 | **Domain Services & Base Architecture** | `IMPLEMENTED` | `BaseService` foundation, 11 dedicated service classes, CBSE 8-tier grading, 4-status attendance formula, Student ID format helpers |
 | **Health Check Endpoint (`/api/health/`)** | `IMPLEMENTED` | Unauthenticated liveness probe with honest, non-crashing database connectivity status (`status: ok`) |
-| **Backend Test Infrastructure** | `IMPLEMENTED` | `backend/pytest.ini` and 201 unit/model/API tests passing (201/201 passing, 100% test pass rate across all 14 modules) |
+| **Backend Test Infrastructure** | `IMPLEMENTED` | `backend/pytest.ini` and 261 unit/model/API/RBAC tests passing (261/261 passing, 100% test pass rate across all 16 test modules) |
 | **Backend Container Blueprint** | `IMPLEMENTED` | `backend/Dockerfile` created conforming to `infra/docker-compose.yml` |
-| **REST API Endpoints (`/api/v1/`)** | `IMPLEMENTED` | Initial REST API foundation implemented across `auth`, `students`, `parents`, `faculty`, `classes`, `subjects`, `attendance`, and `marks` with standard envelopes, pagination, and error formatting |
+| **REST API Endpoints (`/api/v1/`)** | `IMPLEMENTED` | REST API foundation across 15 app namespaces and 33 endpoints with standardized envelopes, pagination, error formatting, and authoritative RBAC |
 | **Authentication Foundation (Task 4.1)** | `IMPLEMENTED` | Stateless SimpleJWT setup (15m access / 7d refresh), AuthService boundary, password validators & PBKDF2 hashing, safe profile serializers, 27 dedicated tests |
-| **Custom User & Login Workflow (Task 4.2)** | `IMPLEMENTED` | Authoritative login workflow (`POST /api/v1/auth/login/`), `ERPTokenObtainPairSerializer`, dual-envelope responses, token refresh (`/api/v1/auth/refresh/`), current-user identity (`/api/v1/auth/me/`), 20 dedicated tests (201/201 passing) |
+| **Custom User & Login Workflow (Task 4.2)** | `IMPLEMENTED` | Authoritative login workflow (`POST /api/v1/auth/login/`), `ERPTokenObtainPairSerializer`, dual-envelope responses, token refresh (`/api/v1/auth/refresh/`), current-user identity (`/api/v1/auth/me/`), 20 dedicated tests |
+| **RBAC Architecture & Permission Model (Task 4.3)** | `IMPLEMENTED` | Canonical permissions, 5-role explicit matrix, reusable scope engine, AuthorizationService, DRF permission classes, queryset scoping, 27 dedicated tests |
+| **Endpoint-Level RBAC Enforcement (Task 4.4)** | `IMPLEMENTED` | Broad endpoint RBAC enforcement across all 33 endpoints/views/methods: 401/403 HTTP semantics, queryset scoping, object checks, mutation protection, role tampering prevention, 33 dedicated tests (261/261 passing) |
 | **Realtime WebSockets (Channels)** | `PLANNED` | Documented in `docs/BACKEND_ARCHITECTURE.md`; scheduled for Phase 6 |
 | **Database Migrations & Models** | `IMPLEMENTED` | 13 concrete 3NF PostgreSQL models (`Role`, `User`, `Faculty`, `Parent`, `Student`, `AcademicYear`, `SchoolClass`, `Section`, `Subject`, `Enrollment`, `Attendance`, `LeaveApplication`, `ExamType`, `Mark`), hardened migrations, and live PostgreSQL seeded dataset |
 

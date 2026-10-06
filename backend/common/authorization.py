@@ -376,10 +376,35 @@ class AuthorizationService(BaseService):
         if not role:
             return False
 
+        action_map = {
+            'retrieve': 'view',
+            'list': 'view',
+            'get': 'view',
+            'create': 'create',
+            'post': 'create',
+            'update': 'update',
+            'put': 'update',
+            'patch': 'update',
+            'partial_update': 'update',
+            'destroy': 'delete',
+            'delete': 'delete',
+        }
+        normalized_action = action_map.get(str(action).lower(), str(action).lower())
+
         # Determine object domain and required permission
         domain = cls._get_object_domain(obj)
-        perm = f"{domain}.{action}"
-        if not cls.has_permission(user, perm):
+
+        if domain == 'attendance' and normalized_action == 'update':
+            has_perm = cls.has_permission(user, PERM_ATTENDANCE_MARK) or cls.has_permission(user, PERM_ATTENDANCE_OVERRIDE)
+        elif domain == 'marks' and normalized_action == 'update':
+            has_perm = cls.has_permission(user, PERM_MARKS_ENTER) or cls.has_permission(user, PERM_MARKS_OVERRIDE)
+        elif domain == 'academics' and normalized_action in ('create', 'update', 'delete'):
+            has_perm = cls.has_permission(user, PERM_ACADEMICS_MANAGE)
+        else:
+            perm = f"{domain}.{normalized_action}"
+            has_perm = cls.has_permission(user, perm)
+
+        if not has_perm:
             return False
 
         # Admin holds global CRUD authority
@@ -392,15 +417,15 @@ class AuthorizationService(BaseService):
 
         # Faculty: assignment-aware access
         if role == ROLE_FACULTY:
-            return cls._can_faculty_access_object(user, obj, action)
+            return cls._can_faculty_access_object(user, obj, normalized_action)
 
         # Student: self-only access
         if role == ROLE_STUDENT:
-            return cls._can_student_access_object(user, obj, action)
+            return cls._can_student_access_object(user, obj, normalized_action)
 
         # Parent: linked-child access
         if role == ROLE_PARENT:
-            return cls._can_parent_access_object(user, obj, action)
+            return cls._can_parent_access_object(user, obj, normalized_action)
 
         return False
 
@@ -429,7 +454,7 @@ class AuthorizationService(BaseService):
         if 'parent' in model_name:
             return 'students'
         if 'faculty' in model_name:
-            return 'academics'
+            return 'users'
         return 'general'
 
     @classmethod
@@ -445,9 +470,25 @@ class AuthorizationService(BaseService):
         if obj_class == 'User':
             return obj.id == user.id or action == 'view'
 
-        # Student entity: faculty can access if student enrolled in assigned section
+        # Faculty profile: view active directory or self; update self only
+        if obj_class == 'Faculty':
+            if action == 'view':
+                return getattr(obj, 'is_active', True) or getattr(obj, 'user_id', None) == user.id
+            if action == 'update':
+                return getattr(obj, 'user_id', None) == user.id
+            return False
+
+        # Parent profile: view if any child is enrolled in section where faculty is Class Teacher
+        if obj_class == 'Parent':
+            if action == 'view':
+                if hasattr(obj, 'children'):
+                    return obj.children.filter(enrollments__section__class_teacher=faculty).exists()
+                return False
+            return False
+
+        # Student entity: faculty can access if student enrolled in assigned section (view only)
         if obj_class == 'Student':
-            if hasattr(obj, 'enrollments'):
+            if action == 'view' and hasattr(obj, 'enrollments'):
                 return obj.enrollments.filter(section__class_teacher=faculty).exists()
             return False
 
@@ -498,12 +539,28 @@ class AuthorizationService(BaseService):
         if obj_class == 'User':
             return obj.id == user.id
 
-        # Student entity: self only
+        # Faculty profile: view active directory only
+        if obj_class == 'Faculty':
+            if action == 'view':
+                return getattr(obj, 'is_active', True)
+            return False
+
+        # Parent profile: view own parent only
+        if obj_class == 'Parent':
+            if action == 'view':
+                return getattr(student, 'parent_id', None) == obj.id
+            return False
+
+        # Student entity: self only for view. Mutations are Admin-only per RBAC matrix.
         if obj_class == 'Student':
-            return obj.id == student.id or getattr(obj, 'user_id', None) == user.id
+            if action == 'view':
+                return obj.id == student.id or getattr(obj, 'user_id', None) == user.id
+            return False
 
         # Attendance entity: self only
         if obj_class == 'Attendance':
+            if action != 'view':
+                return False
             enrollment = getattr(obj, 'enrollment', None)
             if enrollment:
                 return getattr(enrollment, 'student_id', None) == student.id
@@ -515,6 +572,8 @@ class AuthorizationService(BaseService):
 
         # Mark entity: self only
         if obj_class == 'Mark':
+            if action != 'view':
+                return False
             enrollment = getattr(obj, 'enrollment', None)
             if enrollment:
                 return getattr(enrollment, 'student_id', None) == student.id
@@ -541,12 +600,26 @@ class AuthorizationService(BaseService):
         if obj_class == 'User':
             return obj.id == user.id
 
-        # Student entity: linked child only
+        # Faculty profile: view active directory only
+        if obj_class == 'Faculty':
+            if action == 'view':
+                return getattr(obj, 'is_active', True)
+            return False
+
+        # Parent profile: self only
+        if obj_class == 'Parent':
+            return obj.id == parent.id or getattr(obj, 'user_id', None) == user.id
+
+        # Student entity: linked child only for view. Mutations are Admin-only per RBAC matrix.
         if obj_class == 'Student':
-            return getattr(obj, 'parent_id', None) == parent.id
+            if action == 'view':
+                return getattr(obj, 'parent_id', None) == parent.id
+            return False
 
         # Attendance entity: child's attendance only
         if obj_class == 'Attendance':
+            if action != 'view':
+                return False
             enrollment = getattr(obj, 'enrollment', None)
             if enrollment:
                 student = getattr(enrollment, 'student', None)
@@ -560,6 +633,8 @@ class AuthorizationService(BaseService):
 
         # Mark entity: child's mark only
         if obj_class == 'Mark':
+            if action != 'view':
+                return False
             enrollment = getattr(obj, 'enrollment', None)
             if enrollment:
                 student = getattr(enrollment, 'student', None)

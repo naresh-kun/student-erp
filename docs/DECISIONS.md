@@ -283,6 +283,33 @@
   - Zero schema migrations needed (relies on existing `Role` and `User` foreign keys).
   - Foundation ready for broad endpoint enforcement in Task 4.4 without structural rework.
 
+---
+
+## ADR 013: Endpoint-Level RBAC Enforcement, Queryset Scoping, and Mutation Security
+
+- **Status**: ACCEPTED / AUTHORITATIVE
+- **Phase**: Phase 4 (Authentication + RBAC) — Task 4.4
+- **Context**:
+  - Task 4.3 established the foundational authorization service, permission matrix, and DRF permission classes. However, REST API endpoints were previously guarded only by basic `IsAuthenticated` or open access.
+  - Endpoint security requires full enforcement across all 33 endpoints and methods:
+    1. Public endpoints (`/api/health/`, `/api/v1/auth/login/`, `/api/v1/auth/refresh/`) must remain accessible without tokens.
+    2. All other endpoints must strictly return 401 for unauthenticated/inactive requests and 403 for authenticated requests lacking permission or object ownership.
+    3. Querysets must be filtered via `AuthorizationService.filter_queryset_for_user()` before DRF pagination and serialization to prevent horizontal data leakage.
+    4. Object detail endpoints must verify object ownership via `IsOwnerOrScopedAccess` preventing URL/ID manipulation.
+    5. Mutation endpoints (POST, PATCH) must require domain mutation permissions and reject payload role tampering.
+- **Decision**:
+  1. **Uniform Permission Mapping**: Standardize views using `permission_classes = [HasRequiredPermission, IsOwnerOrScopedAccess]` with `permission_map = {'GET': ..., 'POST': ..., 'PATCH': ...}` or `require_permission(...)`.
+  2. **Queryset Scoping Before Serialization**: Integrate `filter_queryset_for_user()` across all list and directory endpoints (`StudentListView`, `ParentListView`, `FacultyListView`, `AttendanceOverviewView`, `StudentAbsenteesView`, `LeaveApplicationListView`, `MarkListView`).
+  3. **Object Ownership Enforcement**: Call `self.check_object_permissions(request, obj)` on all detail retrieve and update actions (`StudentDetailView`, `ParentDetailView`, `ParentChildrenView`, `FacultyDetailView`, `AttendanceDetailView`, `MarkDetailView`, `ReportCardView`).
+  4. **Field-Level Mutation Guardrails**: Disallow `Faculty` from mutating administrative fields (`employee_code`, `is_active`, `department`, `designation`, `joining_date`, `user_id`) during self-profile PATCH. Disallow students from applying for leave under other student IDs.
+  5. **Academic Assignment Mutation Boundaries**: Bulk attendance (`BulkAttendanceCreateView`) and bulk marks entry (`BulkMarkCreateView`) restrict Faculty strictly to sections where they are assigned Class Teacher or evaluator, raising `PermissionDenied` (403) on cross-section attempts.
+  6. **Deterministic Pagination**: Guarantee deterministic sorting with `.order_by('created_at', 'id')` on model querysets before DRF pagination.
+- **Consequences**:
+  - Consistent and robust defense-in-depth across the entire backend REST API surface.
+  - Zero data leakage across students, parents, faculty sections, or administrative domains.
+  - All 261 backend tests passing (100% pass rate) with 0 warnings.
+  - Full backward compatibility with existing services, serializers, and frontend mock architecture.
+
 
 
 
