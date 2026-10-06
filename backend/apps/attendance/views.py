@@ -108,7 +108,7 @@ class BulkAttendanceCreateView(APIView):
                         enrollment = Enrollment.objects.select_related('section').filter(
                             student__student_id=sid
                         ).first()
-                if not enrollment or enrollment.section.class_teacher_id != faculty.id:
+                if not enrollment or not AuthorizationService.can_faculty_manage_section_attendance(faculty, enrollment.section):
                     raise PermissionDenied("Faculty can only record attendance for their assigned section.")
 
         service = AttendanceService()

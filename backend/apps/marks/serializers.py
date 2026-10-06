@@ -123,6 +123,13 @@ class BulkMarkCreateSerializer(serializers.Serializer):
     """Bulk marks recording payload serializer."""
     records = MarkBulkItemSerializer(many=True)
 
+    def to_internal_value(self, data):
+        if isinstance(data, dict):
+            data = dict(data)
+            if 'records' not in data and 'marks' in data:
+                data['records'] = data['marks']
+        return super().to_internal_value(data)
+
     def validate(self, attrs):
         if not attrs.get('records'):
             raise serializers.ValidationError({'records': 'At least one mark record must be provided.'})

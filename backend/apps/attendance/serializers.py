@@ -73,6 +73,7 @@ class AttendanceBulkItemSerializer(serializers.Serializer):
     status = serializers.CharField()
     session_period = serializers.IntegerField(required=False, allow_null=True, default=None)
     remarks = serializers.CharField(required=False, allow_blank=True, default='')
+    date = serializers.DateField(required=False)
     approved_by_faculty_id = serializers.UUIDField(required=False, allow_null=True, default=None)
 
     def validate_status(self, value: str) -> str:
@@ -95,6 +96,15 @@ class BulkAttendanceCreateSerializer(serializers.Serializer):
     session_period = serializers.IntegerField(required=False, allow_null=True, default=None)
     section_id = serializers.UUIDField(required=False, allow_null=True)
     records = AttendanceBulkItemSerializer(many=True)
+
+    def to_internal_value(self, data):
+        if isinstance(data, dict):
+            data = dict(data)
+            if 'date' not in data and 'records' in data and data['records']:
+                first_rec = data['records'][0]
+                if isinstance(first_rec, dict) and 'date' in first_rec:
+                    data['date'] = first_rec['date']
+        return super().to_internal_value(data)
 
     def validate(self, attrs):
         if not attrs.get('records'):

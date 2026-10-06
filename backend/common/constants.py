@@ -222,3 +222,13 @@ PERM_REPORTS_APPROVE = 'reports.approve'
 # Audit Logs
 PERM_AUDIT_VIEW = 'audit.view'
 
+# Homework Management (MOD_001)
+PERM_HOMEWORK_VIEW = 'homework.view'
+PERM_HOMEWORK_CREATE = 'homework.create'
+PERM_HOMEWORK_UPDATE = 'homework.update'
+PERM_HOMEWORK_DELETE = 'homework.delete'
+
+# Teaching Assignment (MOD_001)
+PERM_TEACHING_ASSIGNMENT_VIEW = 'academics.view_teaching_assignment'
+PERM_TEACHING_ASSIGNMENT_MANAGE = 'academics.manage_teaching_assignment'
+

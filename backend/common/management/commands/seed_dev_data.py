@@ -14,9 +14,10 @@ from django.utils import timezone
 
 from apps.accounts.models import Role, Faculty, Parent
 from apps.students.models import Student
-from apps.academics.models import AcademicYear, SchoolClass, Section, Subject, Enrollment
+from apps.academics.models import AcademicYear, SchoolClass, Section, Subject, Enrollment, TeachingAssignment
 from apps.attendance.models import Attendance, LeaveApplication
 from apps.marks.models import ExamType, Mark
+from apps.homework.models import Homework
 from common.constants import (
     ALL_ROLES,
     ROLE_ADMIN,
@@ -106,6 +107,32 @@ class Command(BaseCommand):
             }
         )
 
+        # Second Faculty Member (Priya Krishnan) — Demonstrates Faculty with NO Class Teacher assignment
+        faculty_priya_user, _ = User.objects.get_or_create(
+            username='faculty_priya',
+            defaults={
+                'email': 'priya.k@school.edu.in',
+                'first_name': 'Priya',
+                'last_name': 'Krishnan',
+                'role': roles[ROLE_FACULTY],
+            }
+        )
+        faculty_priya_user.set_password('demo123')
+        faculty_priya_user.save()
+
+        faculty_priya_profile, _ = Faculty.objects.get_or_create(
+            user=faculty_priya_user,
+            defaults={
+                'employee_code': 'FAC2026002',
+                'department': 'Mathematics',
+                'designation': 'PGT Mathematics',
+                'joining_date': date(2020, 6, 1),
+                'qualification': 'M.Sc., B.Ed. Mathematics',
+                'office_room': 'Staff Room 1',
+            }
+        )
+
+
         # Parent User (S. Ramanathan)
         parent_user, _ = User.objects.get_or_create(
             username='parent_ramanathan',
@@ -187,6 +214,16 @@ class Command(BaseCommand):
             }
         )
 
+        section_b1, _ = Section.objects.get_or_create(
+            school_class=school_class,
+            name='B1',
+            defaults={
+                'room': 'Room 303',
+                'capacity': 35,
+                'class_teacher': None,  # Realistic scenario: Vacancy where section currently has no Class Teacher
+            }
+        )
+
         subjects_data = [
             ('Computer Science', 'CS101', 'Computer Science', 5),
             ('Mathematics', 'MATH101', 'Mathematics', 5),
@@ -204,6 +241,43 @@ class Command(BaseCommand):
                 }
             )
             created_subjects[sub_code] = sub
+
+        # Teaching Assignments (Authoritative Teaching Scope)
+        # Suresh: Class Teacher of A2, teaches CS101 in A2 and B1
+        TeachingAssignment.objects.get_or_create(
+            faculty=faculty_profile,
+            academic_year=academic_year,
+            school_class=school_class,
+            section=section,
+            subject=created_subjects['CS101'],
+            defaults={'is_active': True}
+        )
+        TeachingAssignment.objects.get_or_create(
+            faculty=faculty_profile,
+            academic_year=academic_year,
+            school_class=school_class,
+            section=section_b1,
+            subject=created_subjects['CS101'],
+            defaults={'is_active': True}
+        )
+
+        # Priya: NO Class Teacher assignment, teaches MATH101 in A2 and B1
+        TeachingAssignment.objects.get_or_create(
+            faculty=faculty_priya_profile,
+            academic_year=academic_year,
+            school_class=school_class,
+            section=section,
+            subject=created_subjects['MATH101'],
+            defaults={'is_active': True}
+        )
+        TeachingAssignment.objects.get_or_create(
+            faculty=faculty_priya_profile,
+            academic_year=academic_year,
+            school_class=school_class,
+            section=section_b1,
+            subject=created_subjects['MATH101'],
+            defaults={'is_active': True}
+        )
 
         enrollment, _ = Enrollment.objects.get_or_create(
             student=student_profile,
@@ -279,5 +353,54 @@ class Command(BaseCommand):
                     'remarks': 'Evaluated by HOD.',
                 }
             )
+
+        # 6. Homework Data (MOD_001)
+        # Suresh assigns CS homework to Section A2 (Published)
+        Homework.objects.get_or_create(
+            faculty=faculty_profile,
+            academic_year=academic_year,
+            school_class=school_class,
+            section=section,
+            subject=created_subjects['CS101'],
+            title='Binary Search Trees Implementation',
+            defaults={
+                'description': 'Implement insertion, search, and in-order traversal in Python with unit tests.',
+                'assigned_date': date.today() - timedelta(days=2),
+                'due_date': date.today() + timedelta(days=3),
+                'status': 'PUBLISHED',
+            }
+        )
+
+        # Priya assigns Math homework to Section A2 (Published)
+        Homework.objects.get_or_create(
+            faculty=faculty_priya_profile,
+            academic_year=academic_year,
+            school_class=school_class,
+            section=section,
+            subject=created_subjects['MATH101'],
+            title='Derivatives & Chain Rule Problem Set',
+            defaults={
+                'description': 'Complete exercises 4.1 to 4.5 from NCERT Mathematics textbook.',
+                'assigned_date': date.today() - timedelta(days=1),
+                'due_date': date.today() + timedelta(days=4),
+                'status': 'PUBLISHED',
+            }
+        )
+
+        # Suresh has a draft homework (Draft - not visible to students/parents)
+        Homework.objects.get_or_create(
+            faculty=faculty_profile,
+            academic_year=academic_year,
+            school_class=school_class,
+            section=section,
+            subject=created_subjects['CS101'],
+            title='Draft: Semester End Project Guidelines',
+            defaults={
+                'description': 'Work-in-progress specifications for web development mini project.',
+                'assigned_date': date.today(),
+                'due_date': date.today() + timedelta(days=14),
+                'status': 'DRAFT',
+            }
+        )
 
         self.stdout.write(self.style.SUCCESS("Successfully seeded Student ERP development dataset!"))

@@ -172,6 +172,14 @@ class Section(BaseModel):
             "rather than deleting the section itself."
         ),
     )
+    academic_year = models.ForeignKey(
+        'AcademicYear',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='sections',
+        help_text="Direct link to academic year for cardinality constraints and efficient scoping.",
+    )
 
     class Meta:
         db_table = 'sections'
@@ -179,9 +187,42 @@ class Section(BaseModel):
         ordering = ['school_class', 'name']
         verbose_name = 'Section'
         verbose_name_plural = 'Sections'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['academic_year', 'class_teacher'],
+                condition=models.Q(class_teacher__isnull=False, academic_year__isnull=False),
+                name='unique_faculty_class_teacher_per_academic_year',
+            ),
+        ]
 
     def __str__(self) -> str:
         return f"{self.school_class.name} / Section {self.name}"
+
+    def clean(self) -> None:
+        super().clean()
+        if self.school_class and self.academic_year and self.school_class.academic_year_id != self.academic_year_id:
+            raise ValidationError({
+                'academic_year': 'Section academic year must match its school class academic year.'
+            })
+        if self.class_teacher:
+            ay = self.academic_year or (self.school_class.academic_year if self.school_class else None)
+            if ay:
+                existing = Section.objects.filter(
+                    school_class__academic_year=ay,
+                    class_teacher=self.class_teacher
+                ).exclude(pk=self.pk).first()
+                if existing:
+                    raise ValidationError({
+                        'class_teacher': (
+                            f"Faculty member {self.class_teacher} is already assigned as Class Teacher "
+                            f"for {existing} in Academic Year {ay.name}."
+                        )
+                    })
+
+    def save(self, *args, **kwargs):
+        if not self.academic_year_id and self.school_class_id:
+            self.academic_year_id = self.school_class.academic_year_id
+        super().save(*args, **kwargs)
 
 
 # ============================================================================
@@ -316,3 +357,91 @@ class Enrollment(BaseModel):
             f"{self.student.student_id} → {self.section} "
             f"({self.academic_year.name}) [{self.status}]"
         )
+
+
+# ============================================================================
+# TeachingAssignment (Authoritative Subject Faculty Teaching Assignment)
+# ============================================================================
+class TeachingAssignment(BaseModel):
+    """
+    Authoritative Subject Faculty teaching assignment.
+    Represents an authorized teaching responsibility for a Faculty member
+    teaching a specific Subject to a Section within an AcademicYear.
+
+    Enforces that:
+      - Faculty can teach multiple sections and multiple subjects.
+      - Class Teacher assignment does NOT equal all-subject authority.
+      - Authority to enter marks, mark subject attendance, or assign homework
+        is derived from this model.
+    """
+    faculty = models.ForeignKey(
+        'accounts.Faculty',
+        on_delete=models.CASCADE,
+        related_name='teaching_assignments',
+        help_text="The faculty member authorized to teach this assignment.",
+    )
+    academic_year = models.ForeignKey(
+        'AcademicYear',
+        on_delete=models.PROTECT,
+        related_name='teaching_assignments',
+        help_text="Academic year for which this teaching assignment is active.",
+    )
+    school_class = models.ForeignKey(
+        'SchoolClass',
+        on_delete=models.CASCADE,
+        related_name='teaching_assignments',
+        help_text="Class of the assigned section.",
+    )
+    section = models.ForeignKey(
+        'Section',
+        on_delete=models.CASCADE,
+        related_name='teaching_assignments',
+        help_text="Section where the subject is taught.",
+    )
+    subject = models.ForeignKey(
+        'Subject',
+        on_delete=models.PROTECT,
+        related_name='teaching_assignments',
+        help_text="Subject being taught.",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Active status of this teaching assignment.",
+    )
+
+    class Meta:
+        db_table = 'teaching_assignments'
+        ordering = ['academic_year', 'school_class', 'section', 'subject']
+        verbose_name = 'Teaching Assignment'
+        verbose_name_plural = 'Teaching Assignments'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['faculty', 'section', 'subject', 'academic_year'],
+                name='unique_faculty_section_subject_per_year',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['faculty', 'is_active'], name='idx_teach_fac_active'),
+            models.Index(fields=['section', 'subject'], name='idx_teach_sec_sub'),
+        ]
+
+    def __str__(self) -> str:
+        return (
+            f"{self.faculty.employee_code} → {self.section} / {self.subject.code} "
+            f"({self.academic_year.name})"
+        )
+
+    def clean(self) -> None:
+        super().clean()
+        if self.section and self.school_class and self.section.school_class_id != self.school_class_id:
+            raise ValidationError({'section': 'Section does not belong to class.'})
+        if self.school_class and self.academic_year and self.school_class.academic_year_id != self.academic_year_id:
+            raise ValidationError({'academic_year': 'Section does not belong to academic year.'})
+
+    def save(self, *args, **kwargs):
+        if not self.school_class_id and self.section_id:
+            self.school_class_id = self.section.school_class_id
+        if not self.academic_year_id and self.school_class_id:
+            self.academic_year_id = self.school_class.academic_year_id
+        super().save(*args, **kwargs)
+

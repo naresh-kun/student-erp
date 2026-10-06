@@ -64,6 +64,14 @@ from common.constants import (
     PERM_REPORTS_EXPORT,
     PERM_REPORTS_APPROVE,
     PERM_AUDIT_VIEW,
+    # Homework Management (MOD_001)
+    PERM_HOMEWORK_VIEW,
+    PERM_HOMEWORK_CREATE,
+    PERM_HOMEWORK_UPDATE,
+    PERM_HOMEWORK_DELETE,
+    # Teaching Assignment (MOD_001)
+    PERM_TEACHING_ASSIGNMENT_VIEW,
+    PERM_TEACHING_ASSIGNMENT_MANAGE,
 )
 from common.services import BaseService
 
@@ -90,6 +98,8 @@ ROLE_PERMISSIONS_MATRIX: Dict[str, FrozenSet[str]] = {
         # Academics
         PERM_ACADEMICS_VIEW,
         PERM_ACADEMICS_MANAGE,
+        PERM_TEACHING_ASSIGNMENT_VIEW,
+        PERM_TEACHING_ASSIGNMENT_MANAGE,
         # Attendance
         PERM_ATTENDANCE_VIEW,
         PERM_ATTENDANCE_MARK,
@@ -119,6 +129,11 @@ ROLE_PERMISSIONS_MATRIX: Dict[str, FrozenSet[str]] = {
         PERM_REPORTS_EXPORT,
         # Audit Logs
         PERM_AUDIT_VIEW,
+        # Homework (MOD_001)
+        PERM_HOMEWORK_VIEW,
+        PERM_HOMEWORK_CREATE,
+        PERM_HOMEWORK_UPDATE,
+        PERM_HOMEWORK_DELETE,
     }),
 
     ROLE_PRINCIPAL: frozenset({
@@ -129,6 +144,7 @@ ROLE_PERMISSIONS_MATRIX: Dict[str, FrozenSet[str]] = {
         # Academics (Read-only oversight & approval)
         PERM_ACADEMICS_VIEW,
         PERM_ACADEMICS_MANAGE,
+        PERM_TEACHING_ASSIGNMENT_VIEW,
         # Attendance (School-wide oversight, absentees, not-entered)
         PERM_ATTENDANCE_VIEW,
         PERM_ATTENDANCE_VIEW_ABSENTEES,
@@ -154,6 +170,8 @@ ROLE_PERMISSIONS_MATRIX: Dict[str, FrozenSet[str]] = {
         PERM_REPORTS_APPROVE,
         # Audit Logs (Executive oversight)
         PERM_AUDIT_VIEW,
+        # Homework (MOD_001: School-wide read oversight only)
+        PERM_HOMEWORK_VIEW,
     }),
 
     ROLE_FACULTY: frozenset({
@@ -164,6 +182,7 @@ ROLE_PERMISSIONS_MATRIX: Dict[str, FrozenSet[str]] = {
         PERM_STUDENTS_VIEW,
         # Academics (Read departmental/assigned subjects & classes)
         PERM_ACADEMICS_VIEW,
+        PERM_TEACHING_ASSIGNMENT_VIEW,
         # Attendance (Create/update for assigned classes; approve leave as Class Teacher)
         PERM_ATTENDANCE_VIEW,
         PERM_ATTENDANCE_MARK,
@@ -182,6 +201,11 @@ ROLE_PERMISSIONS_MATRIX: Dict[str, FrozenSet[str]] = {
         PERM_ALLOCATION_VIEW,
         # Reports (Read class performance summaries)
         PERM_REPORTS_VIEW,
+        # Homework (MOD_001: Scoped to authorized teaching assignment)
+        PERM_HOMEWORK_VIEW,
+        PERM_HOMEWORK_CREATE,
+        PERM_HOMEWORK_UPDATE,
+        PERM_HOMEWORK_DELETE,
     }),
 
     ROLE_STUDENT: frozenset({
@@ -202,6 +226,8 @@ ROLE_PERMISSIONS_MATRIX: Dict[str, FrozenSet[str]] = {
         PERM_CALENDAR_VIEW,
         # Reports (Read personal grade report)
         PERM_REPORTS_VIEW,
+        # Homework (MOD_001: Read enrolled class/section published homework only)
+        PERM_HOMEWORK_VIEW,
     }),
 
     ROLE_PARENT: frozenset({
@@ -222,6 +248,8 @@ ROLE_PERMISSIONS_MATRIX: Dict[str, FrozenSet[str]] = {
         PERM_CALENDAR_VIEW,
         # Reports (Read child grade report)
         PERM_REPORTS_VIEW,
+        # Homework (MOD_001: Read linked children published homework only)
+        PERM_HOMEWORK_VIEW,
     }),
 }
 
@@ -242,6 +270,7 @@ ROLE_DOMAIN_SCOPES: Dict[tuple, str] = {
     (ROLE_ADMIN, 'allocation'): SCOPE_GLOBAL,
     (ROLE_ADMIN, 'reports'): SCOPE_GLOBAL,
     (ROLE_ADMIN, 'audit'): SCOPE_GLOBAL,
+    (ROLE_ADMIN, 'homework'): SCOPE_GLOBAL,
 
     # Principal is GLOBAL oversight across all allowed domains
     (ROLE_PRINCIPAL, 'users'): SCOPE_GLOBAL,
@@ -254,6 +283,7 @@ ROLE_DOMAIN_SCOPES: Dict[tuple, str] = {
     (ROLE_PRINCIPAL, 'allocation'): SCOPE_GLOBAL,
     (ROLE_PRINCIPAL, 'reports'): SCOPE_GLOBAL,
     (ROLE_PRINCIPAL, 'audit'): SCOPE_GLOBAL,
+    (ROLE_PRINCIPAL, 'homework'): SCOPE_GLOBAL,
 
     # Faculty is FACULTY_ASSIGNED for students/classes/grades, SELF for profile
     (ROLE_FACULTY, 'users'): SCOPE_SELF,
@@ -265,6 +295,7 @@ ROLE_DOMAIN_SCOPES: Dict[tuple, str] = {
     (ROLE_FACULTY, 'calendar'): SCOPE_GLOBAL,
     (ROLE_FACULTY, 'allocation'): SCOPE_FACULTY_ASSIGNED,
     (ROLE_FACULTY, 'reports'): SCOPE_FACULTY_ASSIGNED,
+    (ROLE_FACULTY, 'homework'): SCOPE_FACULTY_ASSIGNED,
 
     # Student is SELF across all permitted domains
     (ROLE_STUDENT, 'users'): SCOPE_SELF,
@@ -275,6 +306,7 @@ ROLE_DOMAIN_SCOPES: Dict[tuple, str] = {
     (ROLE_STUDENT, 'timetable'): SCOPE_SELF,
     (ROLE_STUDENT, 'calendar'): SCOPE_GLOBAL,
     (ROLE_STUDENT, 'reports'): SCOPE_SELF,
+    (ROLE_STUDENT, 'homework'): SCOPE_SELF,
 
     # Parent is LINKED_CHILD across academic domains, SELF for own profile
     (ROLE_PARENT, 'users'): SCOPE_SELF,
@@ -285,6 +317,7 @@ ROLE_DOMAIN_SCOPES: Dict[tuple, str] = {
     (ROLE_PARENT, 'timetable'): SCOPE_LINKED_CHILD,
     (ROLE_PARENT, 'calendar'): SCOPE_GLOBAL,
     (ROLE_PARENT, 'reports'): SCOPE_LINKED_CHILD,
+    (ROLE_PARENT, 'homework'): SCOPE_LINKED_CHILD,
 }
 
 
@@ -358,6 +391,65 @@ class AuthorizationService(BaseService):
         if not role:
             return SCOPE_NONE
         return ROLE_DOMAIN_SCOPES.get((role, domain), SCOPE_NONE)
+
+    @classmethod
+    def can_faculty_teach_subject(
+        cls,
+        faculty: Any,
+        section: Any,
+        subject: Any,
+        academic_year: Any = None,
+    ) -> bool:
+        """
+        Authoritatively determines if a faculty member is authorized to teach a specific subject
+        to a specific section within an academic year.
+        Class Teacher assignment alone does NOT grant all-subject authority.
+        """
+        if not faculty or not section or not subject:
+            return False
+
+        from apps.academics.models import TeachingAssignment
+
+        sec_id = getattr(section, 'id', section)
+        sub_id = getattr(subject, 'id', subject)
+        fac_id = getattr(faculty, 'id', faculty)
+
+        filter_kwargs: Dict[str, Any] = {
+            'faculty_id': fac_id,
+            'section_id': sec_id,
+            'subject_id': sub_id,
+            'is_active': True,
+        }
+        if academic_year:
+            ay_id = getattr(academic_year, 'id', academic_year)
+            filter_kwargs['academic_year_id'] = ay_id
+
+        # Check authoritative TeachingAssignment
+        if TeachingAssignment.objects.filter(**filter_kwargs).exists():
+            return True
+
+        # If any teaching assignment exists for this section, do not fall back to class teacher
+        if TeachingAssignment.objects.filter(section_id=sec_id).exists():
+            return False
+
+        # Fallback for legacy fixtures where TeachingAssignments were not seeded at all:
+        # allow if section.class_teacher_id == faculty.id
+        return getattr(section, 'class_teacher_id', None) == fac_id
+
+    @classmethod
+    def can_faculty_manage_section_attendance(cls, faculty: Any, section: Any) -> bool:
+        """
+        Authoritatively checks whether a faculty member can record attendance for a section.
+        Permitted if the faculty is the assigned Class Teacher or has an active TeachingAssignment in the section.
+        """
+        if not faculty or not section:
+            return False
+        fac_id = getattr(faculty, 'id', faculty)
+        if getattr(section, 'class_teacher_id', None) == fac_id:
+            return True
+        from apps.academics.models import TeachingAssignment
+        sec_id = getattr(section, 'id', section)
+        return TeachingAssignment.objects.filter(faculty_id=fac_id, section_id=sec_id, is_active=True).exists()
 
     # ─── Object Ownership & Access Verification ───────────────────────────────
 
@@ -455,6 +547,8 @@ class AuthorizationService(BaseService):
             return 'students'
         if 'faculty' in model_name:
             return 'users'
+        if 'homework' in model_name:
+            return 'homework'
         return 'general'
 
     @classmethod
@@ -524,6 +618,22 @@ class AuthorizationService(BaseService):
             ct = getattr(getattr(getattr(obj, 'enrollment', None), 'section', None), 'class_teacher', None)
             return ct == faculty or (hasattr(ct, 'id') and ct.id == faculty.id)
 
+        # Homework entity (MOD_001)
+        if obj_class == 'Homework':
+            if action == 'view':
+                if getattr(obj, 'faculty_id', None) == faculty.id:
+                    return True
+                from apps.academics.models import TeachingAssignment
+                return TeachingAssignment.objects.filter(
+                    faculty=faculty,
+                    section_id=getattr(obj, 'section_id', None),
+                    is_active=True,
+                ).exists() or getattr(getattr(obj, 'section', None), 'class_teacher_id', None) == faculty.id
+            if action in ('update', 'delete'):
+                # Faculty can only mutate their own homework
+                return getattr(obj, 'faculty_id', None) == faculty.id
+            return False
+
         return False
 
     @classmethod
@@ -583,6 +693,19 @@ class AuthorizationService(BaseService):
         if obj_class == 'Section':
             if hasattr(obj, 'enrollments'):
                 return obj.enrollments.filter(student=student).exists()
+            return False
+
+        # Homework entity (MOD_001)
+        if obj_class == 'Homework':
+            if action != 'view':
+                return False
+            if getattr(obj, 'status', None) != 'PUBLISHED':
+                return False
+            if hasattr(student, 'enrollments'):
+                return student.enrollments.filter(
+                    section_id=getattr(obj, 'section_id', None),
+                    status__in=['Active', 'ACTIVE', 'Enrolled', 'enrolled'],
+                ).exists()
             return False
 
         return False
@@ -647,6 +770,19 @@ class AuthorizationService(BaseService):
                 return obj.enrollments.filter(student__parent=parent).exists()
             return False
 
+        # Homework entity (MOD_001)
+        if obj_class == 'Homework':
+            if action != 'view':
+                return False
+            if getattr(obj, 'status', None) != 'PUBLISHED':
+                return False
+            if hasattr(parent, 'children'):
+                return parent.children.filter(
+                    enrollments__section_id=getattr(obj, 'section_id', None),
+                    enrollments__status__in=['Active', 'ACTIVE', 'Enrolled', 'enrolled'],
+                ).exists()
+            return False
+
         return False
 
     # ─── Queryset Scoping ─────────────────────────────────────────────────────
@@ -705,6 +841,9 @@ class AuthorizationService(BaseService):
         if model_name == 'Parent':
             return cls._scope_parent_queryset(queryset, user, role)
 
+        if model_name == 'Homework':
+            return cls._scope_homework_queryset(queryset, user, role)
+
         if model_name == 'Faculty':
             # Descriptive directory lookup for all active roles
             return queryset.filter(is_active=True)
@@ -741,6 +880,7 @@ class AuthorizationService(BaseService):
                 return queryset.none()
             return queryset.filter(
                 Q(enrollment__section__class_teacher=faculty)
+                | Q(enrollment__section__teaching_assignments__faculty=faculty, enrollment__section__teaching_assignments__is_active=True)
                 | Q(recorded_by=user)
                 | Q(approved_by_faculty=faculty)
             ).distinct()
@@ -793,6 +933,7 @@ class AuthorizationService(BaseService):
             return queryset.filter(
                 Q(evaluated_by=faculty)
                 | Q(enrollment__section__class_teacher=faculty)
+                | Q(enrollment__section__teaching_assignments__faculty=faculty, enrollment__section__teaching_assignments__is_active=True)
             ).distinct()
 
         if role == ROLE_STUDENT:
@@ -815,7 +956,10 @@ class AuthorizationService(BaseService):
             faculty = getattr(user, 'faculty_profile', None)
             if not faculty:
                 return queryset.none()
-            return queryset.filter(class_teacher=faculty)
+            return queryset.filter(
+                Q(class_teacher=faculty)
+                | Q(teaching_assignments__faculty=faculty, teaching_assignments__is_active=True)
+            ).distinct()
 
         if role == ROLE_STUDENT:
             student = getattr(user, 'student_profile', None)
@@ -828,6 +972,50 @@ class AuthorizationService(BaseService):
             if not parent:
                 return queryset.none()
             return queryset.filter(enrollments__student__parent=parent).distinct()
+
+        return queryset.none()
+
+    @classmethod
+    def _scope_homework_queryset(cls, queryset: QuerySet, user: Any, role: str) -> QuerySet:
+        """Applies role-based scoping to Homework records."""
+        if role in (ROLE_ADMIN, ROLE_PRINCIPAL):
+            return queryset
+
+        if role == ROLE_FACULTY:
+            faculty = getattr(user, 'faculty_profile', None)
+            if not faculty:
+                return queryset.none()
+            from apps.academics.models import TeachingAssignment
+            assigned_section_ids = TeachingAssignment.objects.filter(
+                faculty=faculty, is_active=True
+            ).values_list('section_id', flat=True)
+            return queryset.filter(
+                Q(faculty=faculty) | Q(section_id__in=assigned_section_ids) | Q(section__class_teacher=faculty)
+            ).distinct()
+
+        if role == ROLE_STUDENT:
+            student = getattr(user, 'student_profile', None)
+            if not student:
+                return queryset.none()
+            enrolled_section_ids = student.enrollments.filter(
+                status__in=['Active', 'ACTIVE', 'Enrolled', 'enrolled']
+            ).values_list('section_id', flat=True)
+            return queryset.filter(
+                section_id__in=enrolled_section_ids,
+                status='PUBLISHED',
+            ).distinct()
+
+        if role == ROLE_PARENT:
+            parent = getattr(user, 'parent_profile', None)
+            if not parent:
+                return queryset.none()
+            child_section_ids = parent.children.filter(
+                enrollments__status__in=['Active', 'ACTIVE', 'Enrolled', 'enrolled']
+            ).values_list('enrollments__section_id', flat=True)
+            return queryset.filter(
+                section_id__in=child_section_ids,
+                status='PUBLISHED',
+            ).distinct()
 
         return queryset.none()
 

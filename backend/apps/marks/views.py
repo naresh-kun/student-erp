@@ -100,8 +100,8 @@ class BulkMarkCreateView(APIView):
                         enrollment = Enrollment.objects.select_related('section').filter(
                             student__student_id=sid
                         ).first()
-                if not enrollment or enrollment.section.class_teacher_id != faculty.id:
-                    raise PermissionDenied("Faculty can only enter marks for their assigned section.")
+                if not enrollment or not AuthorizationService.can_faculty_teach_subject(faculty, enrollment.section, item.get('subject_id')):
+                    raise PermissionDenied("Faculty can only enter marks for their assigned section and subject.")
 
         service = MarksService()
         saved = service.record_bulk_marks(
