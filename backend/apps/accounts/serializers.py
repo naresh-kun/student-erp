@@ -6,14 +6,16 @@ Serializer-layer contract for authentication, users, roles, faculty, and parents
 from typing import Optional
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework.exceptions import AuthenticationFailed
 from apps.accounts.models import Role, User, Parent, Faculty
+from apps.accounts.services import AuthService
 
 
 class ERPTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
-    Authoritative login serializer for Student ERP (Task 4.2).
-    Authenticates custom User, injects role & username claims,
-    and returns access, refresh, token_type, and safe user identity.
+    Authoritative login serializer for Student ERP (Task 4.2 / Task 4.5).
+    Authenticates custom User, Student ID, or Parent-linked Student ID,
+    injects role & username claims, and returns access, refresh, token_type, and safe user identity.
     Adheres strictly to docs/API_CONTRACT.md Section 3.1 and standardized envelope.
     """
     @classmethod
@@ -24,7 +26,22 @@ class ERPTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
     def validate(self, attrs):
-        data = super().validate(attrs)
+        identifier = attrs.get(self.username_field, '')
+        password = attrs.get('password', '')
+
+        auth_service = AuthService()
+        user = auth_service.authenticate_by_identifier(identifier, password)
+
+        if user is None or not user.is_active:
+            raise AuthenticationFailed(
+                self.error_messages['no_active_account'],
+                'no_active_account',
+            )
+
+        self.user = user
+
+        refresh = self.get_token(self.user)
+        access = str(refresh.access_token)
 
         user_info = {
             'id': str(self.user.id),
@@ -35,16 +52,18 @@ class ERPTokenObtainPairSerializer(TokenObtainPairSerializer):
             'role': self.user.role.name if self.user.role else 'Unknown',
         }
 
-        data['token_type'] = 'Bearer'
-        data['user'] = user_info
-
-        # Dual-compatibility envelope
-        data['success'] = True
-        data['data'] = {
-            'access': data['access'],
-            'refresh': data['refresh'],
+        data = {
+            'refresh': str(refresh),
+            'access': access,
             'token_type': 'Bearer',
             'user': user_info,
+            'success': True,
+            'data': {
+                'access': access,
+                'refresh': str(refresh),
+                'token_type': 'Bearer',
+                'user': user_info,
+            },
         }
         return data
 

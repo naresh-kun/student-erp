@@ -310,6 +310,41 @@
   - All 261 backend tests passing (100% pass rate) with 0 warnings.
   - Full backward compatibility with existing services, serializers, and frontend mock architecture.
 
+---
+
+## ADR 014: Student and Parent Special Authentication via Unified Login Endpoint
+
+- **Status**: ACCEPTED / AUTHORITATIVE
+- **Phase**: Phase 4 (Authentication + RBAC) — Task 4.5
+- **Context**:
+  - In educational institutions, students and parents commonly log in using permanent business identifiers (Student ID, format `^STU\d{4}\d{5}$`) rather than internal system usernames.
+  - The API contract requires a unified, backward-compatible login endpoint (`POST /api/v1/auth/login/`) accepting standard credentials `{ "username": "<identifier>", "password": "<password>" }`.
+  - The credential resolution pipeline must support:
+    1. Student Login via permanent Student ID with whitespace stripping and case-insensitive lookup, requiring active user account and non-withdrawn student status.
+    2. Parent Login via linked child's Student ID + Parent's password. Multi-child parents must be able to authenticate with any linked child's Student ID.
+    3. Direct Username Fallback preserving existing credentials for Admin, Principal, Faculty, and direct username logins.
+  - Strict security guardrails:
+    - Server-derived role and identity (strictly from database `user.role.name` and `user.id`). Client payload tampering (`role`, `user_id`, `student_id`) is ignored.
+    - Uniform HTTP 401 error envelope (`NO_ACTIVE_ACCOUNT`) on all failures, preventing account existence, parent linkage, or activation state leakage.
+    - Dummy password hashing computation for non-existent IDs to mitigate timing attack enumeration.
+    - Zero database migrations (relies entirely on existing `Student`, `Parent`, and `User` relations).
+- **Decision**:
+  1. **Encapsulation in `AuthService.authenticate_by_identifier`**: Implement business credential resolution in `AuthService` (`apps/accounts/services.py`), keeping `ERPTokenObtainPairSerializer.validate` thin and decoupled.
+  2. **Deterministic Resolution Order**:
+     - Check regex `STUDENT_ID_REGEX.match(identifier.upper())`.
+     - Step 1: Query `Student.objects.select_related(...).filter(student_id__iexact=identifier)`.
+     - Step 2: Attempt Student authentication: verify `student.user.check_password(password)`. If valid, require `student.user.is_active` and `student.status != 'Withdrawn'`. Return `student.user`.
+     - Step 3: If Student auth does not succeed, attempt Parent authentication: verify `student.parent.user.check_password(password)`. If valid, require `parent.user.is_active`. Return `parent.user`.
+     - Step 4: Fallback to standard `self.authenticate_user(username=identifier, password=password)` for Admin, Principal, Faculty, and legacy usernames.
+  3. **Timing Leakage Mitigation**: Where Student lookup fails or student has no linked parent before password check, run dummy `User().set_password(password)` to equalize hash computation timing.
+  4. **Strict Activity Enforcement**: Reject inactive users (`is_active=False`), inactive/withdrawn students (`status='Withdrawn'`), and inactive parents before token issuance.
+- **Consequences**:
+  - Full support for Student and Parent login via Student ID without frontend changes.
+  - Backward compatibility with existing user credentials and token lifecycle.
+  - Zero database schema migrations.
+  - Comprehensive automated test coverage (26 tests in `test_student_parent_auth_task45.py`).
+
+
 
 
 

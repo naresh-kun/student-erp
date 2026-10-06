@@ -2,6 +2,31 @@
 
 All notable changes to the Student ERP project will be documented in this file.
 
+## [Phase 4: Task 4.5 — Student & Parent Special Authentication] - 2026-10-06
+
+### Summary
+Implemented special authentication for Students and Parents via permanent Student ID business identifiers (`^STU\d{4}\d{5}$`) on top of the established Django/DRF/SimpleJWT backend architecture. Preserved the unified `POST /api/v1/auth/login/` endpoint accepting `{ "username": "<identifier>", "password": "<password>" }` with complete backward compatibility. Encapsulated credential resolution in `AuthService.authenticate_by_identifier()` in `backend/apps/accounts/services.py`, keeping `ERPTokenObtainPairSerializer.validate()` thin. Implemented deterministic resolution order: (1) Student Authentication via case-insensitive Student ID lookup, requiring `student.user.is_active == True` and `student.status != 'Withdrawn'`, issuing JWT with `role = 'Student'`; (2) Parent Authentication via linked child (`student.parent -> parent.user`), supporting multi-child parents with any linked child's Student ID, requiring `parent.user.is_active == True`, issuing JWT with `role = 'Parent'`; (3) Standard Login Fallback for Admin, Principal, Faculty, and legacy direct usernames. Implemented security controls: role and identity claims derived strictly server-side from `user.role.name` and `user.id` (client payload tampering ignored), uniform generic HTTP 401 response envelope (`NO_ACTIVE_ACCOUNT`) on all failures, and dummy password hashing computation on non-existent identifiers to prevent timing-based user enumeration. Created comprehensive test suite in `backend/tests/test_student_parent_auth_task45.py` with 26 automated tests. Zero database migrations, zero frontend modifications.
+
+### Added / Modified
+- **Authentication Service (`backend/apps/accounts/services.py`)**:
+  - Implemented `AuthService.authenticate_by_identifier(identifier, password)` with normalization (whitespace stripping, case-insensitive regex check), multi-tier credential resolution (Student -> Parent -> Standard Fallback), and timing-safe dummy password hashing.
+  - Updated `AuthService.login_with_credentials()` to delegate to `authenticate_by_identifier()`.
+- **Login Serializer (`backend/apps/accounts/serializers.py`)**:
+  - Refactored `ERPTokenObtainPairSerializer.validate()` to delegate credential resolution cleanly to `AuthService.authenticate_by_identifier()`.
+  - Maintained server-derived JWT claims (`role`, `username`) and standardized dual-compatibility response envelope.
+- **API Contract Documentation (`docs/API_CONTRACT.md`)**:
+  - Documented Student ID and Parent linked child authentication behavior, normalization rules, and security controls under `POST /api/v1/auth/login/`.
+- **Architectural Decision Record (`docs/DECISIONS.md`)**:
+  - Added ADR 014: Student and Parent Special Authentication via Unified Login Endpoint.
+- **Task 4.5 Automated Pytest Suite (`backend/tests/test_student_parent_auth_task45.py`)**:
+  - 26 comprehensive automated tests covering:
+    - Student login: valid Student ID, lowercase normalization, whitespace normalization, wrong password, nonexistent ID, malformed ID, withdrawn student, inactive user.
+    - Parent login: valid child Student ID, multiple linked children, wrong parent password, another parent's child ID, orphan student, inactive parent.
+    - Security: role tampering rejection, user_id tampering rejection, cross-student authentication denial, cross-parent authentication denial, generic 401 envelope uniformity, zero existence leakage.
+    - Regression: Admin login, Principal login, Faculty login, direct username login, token refresh endpoint, current user profile (`/api/v1/auth/me/`).
+
+---
+
 ## [Phase 4: Task 4.4 — Endpoint-Level RBAC Enforcement] - 2026-10-06
 
 ### Summary

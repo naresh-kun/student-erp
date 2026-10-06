@@ -61,8 +61,16 @@
 ### 3.2 Authentication & Profile (`/api/v1/auth/`)
 - `POST /api/v1/auth/login/` `[IMPLEMENTED]`
   - Authentication: Unauthenticated (Public)
-  - Request: `{ "username": "...", "password": "..." }`
-  - Response: `{ "access": "<jwt>", "refresh": "<jwt>", "user": { "id": "...", "role": "..." } }`
+  - Request: `{ "username": "<identifier>", "password": "<password>" }`
+  - Identifier Resolution Order (Task 4.5):
+    - **Student Authentication**: If `<identifier>` matches `^STU\d{4}\d{5}$` (case-insensitive, trimmed whitespace), resolves `Student` -> `student.user`. Verifies student password, `student.user.is_active == True`, and `student.status != 'Withdrawn'`. On success, issues JWT with `role = 'Student'`.
+    - **Parent Authentication**: If `<identifier>` matches Student ID and student authentication does not succeed, resolves `student.parent` -> `parent.user`. Verifies parent password and `parent.user.is_active == True`. Supports multi-child parents (any linked child's Student ID authenticates the parent). On success, issues JWT with `role = 'Parent'`.
+    - **Standard Fallback**: Preserves direct username authentication for Admin, Principal, Faculty, and direct username credentials.
+  - Security Controls:
+    - Server-derived identity and role claims strictly from database (`user.role.name`, `user.id`); client payload tampering (`role`, `user_id`, `student_id`) is ignored.
+    - All authentication failures return generic HTTP 401 Unauthorized (`NO_ACTIVE_ACCOUNT`) with zero account existence or linkage leakage.
+    - Dummy password hashing mitigates enumeration timing differences on non-existent identifiers.
+  - Response: `{ "access": "<jwt>", "refresh": "<jwt>", "token_type": "Bearer", "user": { "id": "...", "username": "...", "email": "...", "first_name": "...", "last_name": "...", "role": "..." }, "success": true, "data": { ... } }`
 - `POST /api/v1/auth/refresh/` `[IMPLEMENTED]`
   - Authentication: Unauthenticated (Public)
   - Request: `{ "refresh": "<jwt>" }`

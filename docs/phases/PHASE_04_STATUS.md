@@ -1,9 +1,9 @@
 # Phase 4 Execution Status: Authentication + RBAC
 
 > **Phase**: Phase 4 (Authentication + Role-Based Access Control)  
-> **Current Task**: **Task 4.4 Completed (RBAC Broad Endpoint Enforcement)**  
-> **Next Task**: **Task 4.5 (Student & Parent Authentication)**  
-> **Status**: **IN PROGRESS (Tasks 4.1, 4.2, 4.3 & 4.4 DONE; 261/261 backend pytest tests passing; 158/158 frontend tests passing; clean build)**  
+> **Current Task**: **Task 4.5 Completed (Student & Parent Authentication)**  
+> **Next Task**: **Task 4.6 (Security Hardening & Rate Limiting)**  
+> **Status**: **IN PROGRESS (Tasks 4.1, 4.2, 4.3, 4.4 & 4.5 DONE; 287/287 backend pytest tests passing; 158/158 frontend tests passing; clean build)**  
 > **Date**: 2026-10-06  
 
 ---
@@ -22,7 +22,7 @@ Establish the authoritative backend authentication and authorization engine for 
 | **Task 4.2** | **Custom User & Login** | Custom login endpoint, token claims, safe profile payload, envelope normalization, live smoke tests | **COMPLETED** |
 | **Task 4.3** | **RBAC Architecture & Permission Model** | Canonical permission identifiers, 5-role explicit matrix, scope model, AuthorizationService, DRF permission classes, queryset scoping | **COMPLETED** |
 | **Task 4.4** | **RBAC Broad Endpoint Enforcement** | Application of permission classes and queryset scoping across all ERP endpoints, views, and services | **COMPLETED** |
-| **Task 4.5** | **Student & Parent Authentication** | Alphanumeric Student ID login, parent authentication via linked child's Student ID | **PENDING** |
+| **Task 4.5** | **Student & Parent Authentication** | Alphanumeric Student ID login, parent authentication via linked child's Student ID | **COMPLETED** |
 | **Task 4.6** | **Security Hardening & Rate Limiting** | DRF throttling, brute-force mitigation, audit logging on auth failures | **PENDING** |
 | **Task 4.7** | **Final Phase 4 Verification & Sign-Off** | Comprehensive auth/RBAC verification, security audit, regression check, Phase 4 sign-off | **PENDING** |
 
@@ -238,11 +238,55 @@ Establish the authoritative backend authentication and authorization engine for 
 
 ---
 
-## 7. Phase 4 Invariants & Architectural Boundaries
+## 7. Completed Work (Task 4.5: Student & Parent Authentication)
+
+- [x] **Unified Login Endpoint Preserved (`POST /api/v1/auth/login/`)**:
+  - Maintained single unified endpoint accepting standard payload `{ "username": "<identifier>", "password": "<password>" }`.
+  - Seamlessly handles Student ID, Parent authenticating via linked child's Student ID, and standard administrative usernames.
+- [x] **Student Authentication Workflow**:
+  - Identifier matching regex `^STU\d{4}\d{5}$` (case-insensitive, whitespace trimmed) resolves Student record.
+  - Linked `student.user` credential verified with standard Django PBKDF2 hasher.
+  - Strict account activity enforced: `student.user.is_active == True` and `student.status != Student.Status.WITHDRAWN`.
+  - On success, issues standard JWT with `role = "Student"` derived strictly from the database.
+- [x] **Parent Authentication via Linked Child Workflow**:
+  - Deterministic evaluation order: If Student password verification does not match, checks `student.parent.user`.
+  - Verifies parent password and `parent.user.is_active == True`.
+  - Enables parents with multiple children to authenticate using any linked child's Student ID.
+  - Rejects cross-parent attempts: A parent cannot log in with an unrelated child's Student ID.
+  - Rejects orphan students (no parent relationship).
+  - On success, issues standard JWT with `role = "Parent"` derived strictly from the database.
+- [x] **Administrative & Standard Username Fallback**:
+  - Identifiers that do not match the Student ID regex or fail Student/Parent resolution fall back directly to standard `authenticate(username=identifier, password=password)`.
+  - Fully preserves login for Admin, Principal, Faculty, and any legacy direct usernames.
+- [x] **Security & Anti-Enumeration Hardening**:
+  - Timing attack mitigation: Executes in-memory PBKDF2 dummy password hash calculation (`User().set_password(password)`) when Student ID is not found or when child has no linked parent.
+  - Generic HTTP 401 response (`NO_ACTIVE_ACCOUNT`) on all authentication failures with zero distinction between nonexistent IDs, bad passwords, or inactive status.
+  - Server-side identity derivation: Client-supplied payload fields (`role`, `user_id`, `student_id`) are completely ignored.
+- [x] **Architectural Layering**:
+  - Implemented `AuthService.authenticate_by_identifier(identifier, password)` in `backend/apps/accounts/services.py`.
+  - Kept `ERPTokenObtainPairSerializer.validate()` thin by delegating credential resolution to `AuthService`.
+- [x] **Automated Testing Suite (`backend/tests/test_student_parent_auth_task45.py`)**:
+  - 26 comprehensive automated tests covering:
+    - Student login (valid, lowercase, whitespace, wrong password, nonexistent ID, malformed ID, withdrawn student, inactive user).
+    - Parent login (valid child ID, multiple linked children, wrong parent password, another parent's child ID, orphan child, inactive parent).
+    - Security controls (role tampering, user_id tampering, cross-student auth, cross-parent auth, generic 401 envelope, zero existence leakage).
+    - Regressions (Admin, Principal, Faculty, direct username, token refresh, `/api/v1/auth/me/`).
+  - **Backend test suite expanded from 261 to 287 passing tests (100%, 0 warnings, 0 failures)**.
+- [x] **Full Regression & Quality Gate**:
+  - `python manage.py check`: 0 issues.
+  - `python manage.py makemigrations --check`: 0 changes (zero pending migrations).
+  - `pytest`: 287/287 passing.
+  - `npm test -- --run`: 158/158 Vitest tests passing.
+  - `npm run build`: Clean production build.
+
+---
+
+## 8. Phase 4 Invariants & Architectural Boundaries
 
 1. **Django + DRF + SimpleJWT Sole Authority**: No competing authentication framework (Firebase, Supabase, Auth0, FastAPI) is permitted.
 2. **Stateless JWT Architecture**: Access tokens are stateless, short-lived (15 minutes), signed with HMAC-SHA256.
 3. **Endpoint Enforcement Complete in Task 4.4**: All API endpoints enforce authentication, RBAC permissions, queryset scoping, and object-level checks.
-4. **No Premature Student/Parent Special Auth in Task 4.4**: Alphanumeric Student ID login and Parent linked-student auth are reserved for Task 4.5.
+4. **Student/Parent Special Auth Complete in Task 4.5**: Alphanumeric Student ID login and Parent linked-student auth are authoritative.
 5. **Frontend Decoupling**: React frontend remains completely mock-driven (`VITE_USE_MOCK_DATA=true`) until Phase 5.
+
 
