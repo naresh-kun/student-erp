@@ -9,3 +9,4 @@ export * from './ParentAttendancePage';
 export * from './ParentMarksPage';
 export * from './ParentTimetablePage';
 export * from './ParentCalendarPage';
+export * from './ParentHomeworkPage';

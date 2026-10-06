@@ -10,3 +10,4 @@ export * from './StudentAttendancePage';
 export * from './StudentMarksPage';
 export * from './StudentTimetablePage';
 export * from './StudentCalendarPage';
+export * from './StudentHomeworkPage';

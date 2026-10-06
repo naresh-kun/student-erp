@@ -342,7 +342,75 @@
   - Full support for Student and Parent login via Student ID without frontend changes.
   - Backward compatibility with existing user credentials and token lifecycle.
   - Zero database schema migrations.
-  - Comprehensive automated test coverage (26 tests in `test_student_parent_auth_task45.py`).
+---
+
+## ADR 015: Faculty and Class Teacher Assignment Architecture + Homework Domain Integration (MOD_001)
+
+- **Status**: ACCEPTED / AUTHORITATIVE
+- **Scope**: Approved Project Modification MOD_001 (Faculty/Class Teacher Assignment Architecture + Homework Management)
+- **Context**:
+  - The school domain requires formal distinction between Class Teacher assignment and Subject Faculty assignment.
+  - Core Domain Invariants:
+    1. Being a Faculty member does NOT automatically make the person a Class Teacher.
+    2. Cardinality: For a given Academic Year, one Faculty member may be assigned as Class Teacher for **at most one class/section**. (Faculty → 0 or 1 Class Teacher assignment / Academic Year).
+    3. Class Teacher assignment does NOT automatically grant authority over every subject taught in that class. Academic operations (entering marks, assigning homework) require an active Subject Faculty assignment (`TeachingAssignment`).
+  - Minimum Homework Domain:
+    - Dedicated model `Homework` and service `HomeworkService` under `apps/homework/`.
+    - Server-side teaching scope verification for creation and updates.
+    - Scoped list endpoints hiding drafts from students and parents.
+    - Object-level authorization preventing cross-faculty and cross-section access tampering.
+- **Decision**:
+  1. **Class Teacher Cardinality Invariant**:
+     - Added `Section.academic_year` foreign key and database-level `UniqueConstraint(fields=['academic_year', 'class_teacher'], condition=Q(class_teacher__isnull=False, academic_year__isnull=False), name='unique_faculty_class_teacher_per_academic_year')`.
+     - Model `clean()` validates uniqueness and raises friendly `ValidationError`.
+  2. **Authoritative Subject Faculty (`TeachingAssignment`)**:
+     - Concrete model `TeachingAssignment` in `apps/academics/models.py` linking `faculty`, `academic_year`, `school_class`, `section`, `subject`, and `is_active`.
+     - Unique constraint `(faculty, section, subject, academic_year)`.
+  3. **Reconciliation across Academic Domains**:
+     - Marks: `BulkMarkCreateView` verifies `AuthorizationService.can_faculty_teach_subject()`. Class Teacher alone without teaching assignment cannot enter marks for unassigned subjects (403).
+     - Attendance: `BulkAttendanceCreateView` verifies `AuthorizationService.can_faculty_manage_section_attendance()`, allowing Class Teachers or teaching faculty for that section.
+  4. **Homework Domain (`apps/homework`)**:
+     - Complete REST API: `GET /api/v1/homework/`, `POST /api/v1/homework/`, `GET /api/v1/homework/<id>/`, `PATCH /api/v1/homework/<id>/`, `DELETE /api/v1/homework/<id>/` (204 No Content).
+     - RBAC permissions: `homework.view`, `homework.create`, `homework.update`, `homework.delete`, `teaching_assignment.view`.
+     - Queryset scoping: Admin/Principal (global), Faculty (teaching assignments / authored), Student (enrolled section, published only), Parent (linked children, published only).
+- **Consequences**:
+  - Authoritative domain boundary for school homework and teaching assignments.
+  - Strict preservation of Phase 4 RBAC architecture and security model.
+  - 30/30 MOD_001 tests passing. Full backward compatibility preserved for legacy fixtures.
+
+---
+
+## ADR 016: Frontend Real Authentication & Session Integration (Task 4.6)
+
+- **Status**: ACCEPTED / AUTHORITATIVE
+- **Scope**: Phase 4 Task 4.6 (Faculty / Admin / Principal Access + Real Frontend Authentication Integration)
+- **Context**:
+  - In Phase 2, the frontend utilized `MockAuthService` with synthetic accounts stored in `localStorage['student_erp_active_user']`.
+  - In Phase 4 Tasks 4.1–4.5, Django REST Framework and SimpleJWT endpoints (`POST /api/v1/auth/login/`, `POST /api/v1/auth/refresh/`, `GET /api/v1/auth/me/`) were implemented and tested.
+  - In MOD_001, protected API client `HomeworkService` was introduced expecting `localStorage['access_token']`.
+  - When the browser accessed `/faculty/homework`, 401 errors occurred because `AuthContext` dispatched login to `MockAuthService` rather than the Django backend, failing to acquire real JWT tokens.
+- **Decision**:
+  1. **Direct Backend Authentication Dispatch in `AuthContext.tsx`**:
+     - Replace mock credential verification with direct `fetch('/api/v1/auth/login/')`.
+     - Store server-issued `access_token` and `refresh_token` in `localStorage`.
+     - Format and hydrate the `User` object directly from server payload (`rawUser.role as UserRole`).
+  2. **Session Restoration Lifecycle**:
+     - On app mount, check `localStorage['access_token']`.
+     - If token exists, validate against `GET /api/v1/auth/me/` with `Authorization: Bearer <access_token>`.
+     - If access token has expired (401), attempt seamless refresh via `POST /api/v1/auth/refresh/` using stored `refresh_token`, update `access_token`, and retry `/api/v1/auth/me/`.
+     - If unauthenticated or refresh fails, clear all auth tokens and reset user session.
+  3. **HomeworkService Direct Token Consumption**:
+     - Remove auto-login fallback workaround from `getAuthHeaders()`.
+     - Attach `Authorization: Bearer <access_token>` from canonical storage.
+  4. **Seeded Credential Alignment**:
+     - Align login page helpers and `SYNTHETIC_DEMO_ACCOUNTS` with real PostgreSQL seeded accounts (`admin_demo`, `principal_demo`, `faculty_suresh`, `faculty_priya`, `STU202600001`).
+- **Consequences**:
+  - Unified real authentication flow across all 5 roles.
+  - Browser requests carry valid JWT Bearer tokens to protected backend services.
+  - Zero mock auth dependency for live application sessions.
+  - Zero database schema migrations required.
+  - 14 Vitest tests added; 181/181 passing. Clean production build verified.
+
 
 
 

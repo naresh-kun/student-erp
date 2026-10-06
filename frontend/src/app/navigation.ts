@@ -54,6 +54,12 @@ export const ROLE_NAVIGATION: Record<UserRole, NavItem[]> = {
       description: 'Exam marks, percentage & report cards',
     },
     {
+      title: 'Homework',
+      href: '/student/homework',
+      icon: BookOpen,
+      description: 'Class assignments & submission deadlines',
+    },
+    {
       title: 'Timetable',
       href: '/student/timetable',
       icon: Clock,
@@ -93,6 +99,12 @@ export const ROLE_NAVIGATION: Record<UserRole, NavItem[]> = {
       description: 'Term report cards & academic evaluations',
     },
     {
+      title: 'Homework',
+      href: '/parent/homework',
+      icon: BookOpen,
+      description: 'Coursework tasks & due dates',
+    },
+    {
       title: 'Timetable',
       href: '/parent/timetable',
       icon: Clock,
@@ -130,6 +142,12 @@ export const ROLE_NAVIGATION: Record<UserRole, NavItem[]> = {
       href: '/faculty/marks',
       icon: Award,
       description: 'Evaluation entry & mark submissions',
+    },
+    {
+      title: 'Homework',
+      href: '/faculty/homework',
+      icon: BookOpen,
+      description: 'Assign & manage class coursework',
     },
     {
       title: 'Teaching Timetable',

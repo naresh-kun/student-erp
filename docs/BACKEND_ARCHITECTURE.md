@@ -29,6 +29,7 @@ backend/
 │   ├── allocation/               # Student section allocation algorithms
 │   ├── reports/                  # Aggregation queries, transcript generation
 │   ├── notifications/            # Push alerts, WebSocket message dispatchers
+│   ├── homework/                 # Homework domain, scope verification, communication
 │   └── audit/                    # Immutable change telemetry and security logs
 ├── common/                       # Cross-cutting concerns & shared base classes
 │   ├── models.py                 # TimeStampedModel, UUIDModel base classes
@@ -97,3 +98,21 @@ Every mutating event (CREATE, UPDATE, DELETE) and significant security event (fa
   - `ip_address` & `user_agent`
   - `timestamp`
 - Audit tables are append-only. No application role (including Admin) has permission to delete or alter historical audit rows.
+
+---
+
+## 7. Teaching Scope, Assignment Invariants & Homework Domain (MOD_001)
+
+1. **Faculty / Class Teacher Invariants**:
+   - Faculty membership does **not** make someone a Class Teacher.
+   - Cardinality: A Faculty member may be assigned as Class Teacher for **at most 1 section per Academic Year**.
+   - Class Teacher assignment does **not** grant all-subject authority over that class.
+2. **Authoritative Teaching Assignment (`TeachingAssignment`)**:
+   - Model: `apps.academics.models.TeachingAssignment` enforces unique `(faculty, section, subject, academic_year)`.
+   - Both Homework creation and Marks entry strictly derive faculty permissions from this authoritative relationship.
+3. **Homework Domain Service (`HomeworkService`)**:
+   - Resides in `apps/homework/services.py`.
+   - Enforces teaching assignment verification prior to persistence.
+   - Creator identity is derived server-side from `request.user.faculty_profile`, rejecting payload spoofing.
+   - Scopes list queries before DRF pagination (drafts hidden from students and parents).
+   - Enforces object-level mutation permissions (authors and admin only).

@@ -8,3 +8,4 @@ export * from './FacultyClassesPage';
 export * from './FacultyAttendancePage';
 export * from './FacultyMarksPage';
 export * from './FacultyTimetablePage';
+export * from './FacultyHomeworkPage';

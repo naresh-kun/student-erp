@@ -118,11 +118,24 @@ erDiagram
 - **`sections`**:
   - `id`: UUID (PK)
   - `class_id`: FK -> `classes.id` (CASCADE)
+  - `academic_year_id`: FK -> `academic_years.id` (CASCADE, NULLABLE)
   - `name`: VARCHAR(32) NOT NULL (e.g., `'Section A'`)
   - `room`: VARCHAR(64)
   - `capacity`: INTEGER NOT NULL DEFAULT 35
   - `class_teacher_id`: FK -> `faculty.id` (SET NULL, NULLABLE)
   - Unique constraint on `(class_id, name)`
+  - Partial Unique constraint on `(academic_year_id, class_teacher_id)` WHERE `class_teacher_id IS NOT NULL AND academic_year_id IS NOT NULL` (Cardinality: At most 1 Class Teacher assignment per Faculty per Academic Year).
+- **`teaching_assignments`**: `[ADDED — MOD_001]`
+  - `id`: UUID (PK)
+  - `faculty_id`: FK -> `faculty.id` (CASCADE)
+  - `academic_year_id`: FK -> `academic_years.id` (PROTECT)
+  - `school_class_id`: FK -> `classes.id` (CASCADE)
+  - `section_id`: FK -> `sections.id` (CASCADE)
+  - `subject_id`: FK -> `subjects.id` (PROTECT)
+  - `is_active`: BOOLEAN DEFAULT TRUE
+  - Unique constraint on `(faculty_id, section_id, subject_id, academic_year_id)`
+  - Index on `(faculty_id, is_active)`
+  - Index on `(section_id, subject_id)`
 - **`subjects`**:
   - `id`: UUID (PK)
   - `name`: VARCHAR(150) NOT NULL
@@ -179,6 +192,20 @@ erDiagram
   - `evaluated_by`: FK -> `faculty.id` (SET NULL)
   - `evaluated_at`: TIMESTAMPTZ DEFAULT NOW()
   - Check constraint: `marks_obtained <= max_marks AND marks_obtained >= 0`
+- **`homework`**: `[ADDED — MOD_001]`
+  - `id`: UUID (PK)
+  - `title`: VARCHAR(200) NOT NULL
+  - `description`: TEXT DEFAULT `''`
+  - `faculty_id`: FK -> `faculty.id` (PROTECT) -- Authoring teacher
+  - `academic_year_id`: FK -> `academic_years.id` (PROTECT)
+  - `school_class_id`: FK -> `classes.id` (CASCADE)
+  - `section_id`: FK -> `sections.id` (CASCADE)
+  - `subject_id`: FK -> `subjects.id` (PROTECT)
+  - `assigned_date`: DATE DEFAULT CURRENT_DATE
+  - `due_date`: DATE (NULLABLE)
+  - `status`: VARCHAR(16) NOT NULL CHECK (`status IN ('DRAFT', 'PUBLISHED', 'CLOSED')`) DEFAULT `'PUBLISHED'`
+  - Check constraint: `due_date IS NULL OR due_date >= assigned_date`
+  - Indexes on `(status)`, `(section_id, status)`, `(faculty_id, status)`, `(due_date)`
 
 ### 3.5 Governance, Communication & System Events
 - **`calendar_events`**:

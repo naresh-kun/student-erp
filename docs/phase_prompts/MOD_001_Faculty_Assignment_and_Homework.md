@@ -1,10 +1,10 @@
-# Student ERP — Phase 5 Task 5.1
-# Homework Management + Faculty/Class-Teacher Assignment Rules
+# Student ERP — Approved Project Modification MOD_001
+# Homework Management + Faculty/Class-Teacher Assignment Architecture
 
-**Status:** APPROVED SPECIFICATION — AUDIT REQUIRED BEFORE IMPLEMENTATION  
+**Status:** APPROVED PROJECT MODIFICATION (COMPLETED)  
 **Date:** 2026-10-06  
-**Phase:** Phase 5 — Core ERP API Integration  
-**Task:** 5.1 — Homework Management + Faculty/Class-Teacher Assignment Rules
+**Scope:** MOD_001 — Faculty/Class Teacher Assignment Architecture + Homework Management  
+**Governance:** Independent Approved Modification (NOT Phase 5)
 
 ---
 

@@ -1,7 +1,7 @@
 # Project Status & Milestone Ledger
 
-> **Current Phase**: **Phase 4 IN PROGRESS (Authentication + RBAC)**  
-> **Authoritative State**: Phase 3 COMPLETE & SIGNED OFF; Phase 4 Tasks 4.1, 4.2, 4.3, 4.4 & 4.5 COMPLETE (Authentication Foundation, Custom User & Login Workflow, SimpleJWT Configuration, AuthService Domain Boundary, Token Refresh, Safe Profile Context, 5-Role RBAC Architecture, Canonical Permissions & Scopes, AuthorizationService, DRF Permission Classes, Queryset Scoping, Endpoint-Level RBAC Enforcement across all 33 REST endpoints, Student/Parent Special Authentication with Alphanumeric Student ID login, parent linked-child resolution, dummy hash timing mitigation; 287/287 backend tests passing; 158/158 frontend tests passing; clean build)  
+> **Current Phase**: **Phase 4 Task 4.6 COMPLETED | MOD_001 COMPLETED | Phase 5 NOT STARTED**  
+> **Authoritative State**: Phase 1 COMPLETE, Phase 2 COMPLETE, Phase 3 COMPLETE, Phase 4 COMPLETE & SIGNED OFF (Task 4.6 Real Frontend Auth Integration verified); MOD_001 COMPLETED (Faculty/Class Teacher Assignment Architecture + Homework Management; 30/30 MOD_001 tests passing; 319 total backend tests passing; 181/181 frontend tests passing; clean production build); Phase 5 NOT STARTED  
 > **Last Updated**: 2026-10-06
 
 ---
@@ -56,7 +56,7 @@ To ensure strict engineering honesty, features and modules are classified into e
 | **Attendance Calculation & 4-Status UI** | `IMPLEMENTED` | Canonical 4-status model (`PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`), pure calculation utility (`src/utils/attendance.ts`), formula adherence, distinct visual styling across all 5 roles, verified by 15 Vitest tests (Master Plan Amendment 2) |
 | **Application Router & 34 Routes (+ 404)** | `IMPLEMENTED` | Fixed contract of 34 application routes + catch-all 404 route fully wired with React Router in `src/app/router.tsx` |
 | **Role-Aware Layouts & Navigation** | `IMPLEMENTED` | `DashboardLayout`, `AuthLayout`, `<RoleRoute>`, dynamic sidebar with enterprise navy school design (`bg-blue-900`) and header showing school identity & academic year |
-| **Institutional Mock Authentication** | `MOCKED` | **TEMPORARY PHASE 2 DEMO CREDENTIALS** deployed: `Student01` / `Parent01` / `Faculty01` / `Admin` / `Principal` — all `demo123`. Credential-based login (User ID + Password), role derived from matched record, client `localStorage` session. Real JWT/OAuth authentication `PLANNED` for Phase 4. Student-Parent domain relationship preserved independently via `ParentService`. |
+| **Institutional Authentication & Session Integration** | `IMPLEMENTED` | Real Django REST & SimpleJWT integration in `AuthContext.tsx` (`access_token`, `refresh_token`), session restoration via `/api/v1/auth/me/`, auto refresh on 401, seeded accounts (`admin_demo`, `principal_demo`, `faculty_suresh`, `faculty_priya`, `STU202600001`); 181 Vitest tests passing. |
 | **Shared UI Component Primitives** | `IMPLEMENTED` | `Card`, `Button`, `Badge`, `PageContainer`, `SectionHeader`, `States` |
 | **Student Domain Feature Module (`features/students`)** | `IMPLEMENTED` | Complete student domain module: permanent/immutable Student ID profile, 4-status attendance summary, Zod validation schemas, PENDING leave application workflow (no self-approval), marks/percentage/8-tier grade register, timetable schedule, upcoming events, 25 Vitest tests |
 | **Parent Domain Feature Module (`features/parents`)** | `IMPLEMENTED` | Complete parent domain module: Student ID authentication login, linked child scoped access, multi-child support, 4-status attendance cards & formula adherence, subject attendance with 85% clearance benchmark, absence audit log, absence notice workflow (PENDING status), report cards with marks / 100, 8-tier grades, Recharts visualizations, 19 Vitest tests |
@@ -81,9 +81,10 @@ To ensure strict engineering honesty, features and modules are classified into e
 | **Custom User & Login Workflow (Task 4.2)** | `IMPLEMENTED` | Authoritative login workflow (`POST /api/v1/auth/login/`), `ERPTokenObtainPairSerializer`, dual-envelope responses, token refresh (`/api/v1/auth/refresh/`), current-user identity (`/api/v1/auth/me/`), 20 dedicated tests |
 | **RBAC Architecture & Permission Model (Task 4.3)** | `IMPLEMENTED` | Canonical permissions, 5-role explicit matrix, reusable scope engine, AuthorizationService, DRF permission classes, queryset scoping, 27 dedicated tests |
 | **Endpoint-Level RBAC Enforcement (Task 4.4)** | `IMPLEMENTED` | Broad endpoint RBAC enforcement across all 33 endpoints/views/methods: 401/403 HTTP semantics, queryset scoping, object checks, mutation protection, role tampering prevention, 33 dedicated tests |
-| **Student & Parent Special Authentication (Task 4.5)** | `IMPLEMENTED` | Alphanumeric Student ID login, parent linked-child resolution, dummy PBKDF2 timing mitigation, standard fallback, 26 dedicated tests (287/287 passing) |
+| **Faculty Assignment & Homework Domain (MOD_001)** | `IMPLEMENTED` | Approved Project Modification: Class Teacher cardinality (max 1 per year), Subject Faculty TeachingAssignment model, marks and attendance reconciliation, complete Homework REST API under `/api/v1/homework/` (GET, POST, GET/:id, PATCH, DELETE 204), server-side teaching scope verification, 32 dedicated tests (32/32 passing; 319 total backend tests passing; 167 frontend tests passing) |
+| **Phase 5 (Core ERP API Integration & Advanced Workflows)** | `NOT STARTED` | Scope defined in roadmap; pending official Phase 5 kickoff |
 | **Realtime WebSockets (Channels)** | `PLANNED` | Documented in `docs/BACKEND_ARCHITECTURE.md`; scheduled for Phase 6 |
-| **Database Migrations & Models** | `IMPLEMENTED` | 13 concrete 3NF PostgreSQL models (`Role`, `User`, `Faculty`, `Parent`, `Student`, `AcademicYear`, `SchoolClass`, `Section`, `Subject`, `Enrollment`, `Attendance`, `LeaveApplication`, `ExamType`, `Mark`), hardened migrations, and live PostgreSQL seeded dataset |
+| **Database Migrations & Models** | `IMPLEMENTED` | 14 concrete 3NF PostgreSQL models (`Role`, `User`, `Faculty`, `Parent`, `Student`, `AcademicYear`, `SchoolClass`, `Section`, `Subject`, `Enrollment`, `TeachingAssignment`, `Attendance`, `LeaveApplication`, `ExamType`, `Mark`, `Homework`), hardened migrations, and live PostgreSQL seeded dataset |
 
 
 ### 2.5 Infrastructure & Database

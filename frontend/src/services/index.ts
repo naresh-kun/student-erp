@@ -12,3 +12,4 @@
 export * from './authService';
 export * from './mockService';
 export * from './allocationService';
+export * from './homeworkService';

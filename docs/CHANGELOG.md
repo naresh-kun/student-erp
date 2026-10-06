@@ -2,6 +2,69 @@
 
 All notable changes to the Student ERP project will be documented in this file.
 
+## [Phase 4: Task 4.6 — Faculty / Admin / Principal Access + Real Frontend Authentication Integration] - 2026-10-06
+
+### Summary
+Implemented real frontend authentication and session management in the React application connecting to the Django REST Framework + SimpleJWT backend (`POST /api/v1/auth/login/`, `GET /api/v1/auth/me/`, `POST /api/v1/auth/refresh/`). Resolved the observed 401 Unauthorized errors on `/api/v1/homework/` caused by the frontend relying on `MockAuthService` and missing real JWT access tokens. Updated `HomeworkService` to consume canonical `localStorage['access_token']` without embedded login workarounds. Updated `LoginPage` and developer credential helpers to use real seeded PostgreSQL accounts (`admin_demo`, `principal_demo`, `faculty_suresh`, `faculty_priya`, `STU202600001`). Created 14 automated integration tests in Vitest. Verified end-to-end flow with browser subagent across Admin, Principal, and Faculty dashboards and the Homework management view with real PostgreSQL data.
+
+### Added / Modified
+- **Frontend Authentication Context (`frontend/src/features/auth/AuthContext.tsx`)**:
+  - Replaced mock login dispatch with direct HTTP call to `/api/v1/auth/login/`.
+  - Persisted server-issued `access_token` and `refresh_token` in `localStorage`.
+  - Derived user profile and role strictly from server response (`rawUser.role`).
+  - Added session restoration on startup via `GET /api/v1/auth/me/` with `Authorization: Bearer <access_token>`.
+  - Added token refresh recovery on 401 via `POST /api/v1/auth/refresh/`.
+  - Added clean logout clearing tokens and active user session.
+- **Homework API Service (`frontend/src/services/homeworkService.ts`)**:
+  - Removed embedded auto-login fallback from `getAuthHeaders()`.
+  - Reads stored access token directly and attaches `Authorization: Bearer <token>`.
+  - Removed `MockAuthService` dependency.
+- **Login Experience & Demo Credentials (`LoginPage.tsx`, `authService.ts`)**:
+  - Removed outdated Phase 2 mock demonstration messaging.
+  - Updated input placeholders and descriptions with real seeded database usernames (`admin_demo`, `faculty_suresh`, `STU202600001`).
+  - Updated `SYNTHETIC_DEMO_ACCOUNTS` in `authService.ts` to reference authoritative seeded accounts and passwords (`demo123`).
+- **Automated Vitest Test Suite (`frontend/tests/auth_integration.test.ts`)**:
+  - 14 comprehensive automated tests covering Admin/Principal/Faculty login, JWT persistence, user hydration, logout cleanup, session restoration, token refresh, invalid credential rejection, role tampering resistance, Bearer token attachment, and Student/Parent auth regression.
+  - Frontend test suite expanded to 181 passing tests (181/181, 100%).
+- **Documentation**: Updated `Phase_4_Task_4.6.md`, `PHASE_04_STATUS.md`, `PROJECT_STATUS.md`, `CHANGELOG.md`, and added ADR 016 in `DECISIONS.md`.
+
+---
+
+## [Approved Project Modification: MOD_001 — Faculty/Class-Teacher Assignment Architecture & Homework Management] - 2026-10-06
+
+### Summary
+Implemented school-wide faculty assignment invariants and the complete Homework domain per MOD_001 specification:
+1. **Faculty vs. Class Teacher Invariants**: Formalized domain rule that a Faculty member is not automatically a Class Teacher. Enforced database-level cardinality invariant: one Faculty member may be assigned as Class Teacher for at most one class/section per Academic Year via `Section.academic_year` and PostgreSQL `UniqueConstraint` (`unique_faculty_class_teacher_per_academic_year`).
+2. **Authoritative Subject Faculty Model (`TeachingAssignment`)**: Introduced `TeachingAssignment` model in `apps.academics.models.py` linking faculty, section, subject, and academic year with unique constraint `unique_faculty_section_subject_per_year`. Formalized rule that Class Teacher assignment alone does NOT grant all-subject authority.
+3. **Academic Domain Reconciliation**: Reconciled marks entry (`BulkMarkCreateView`) and attendance recording (`BulkAttendanceCreateView`) with `AuthorizationService.can_faculty_teach_subject()` and `can_faculty_manage_section_attendance()`. Class Teacher alone without a teaching assignment cannot enter marks for unassigned subjects (403 Forbidden).
+4. **Homework Domain (`backend/apps/homework`)**: Implemented complete Homework domain module: concrete model `Homework` (title, description, faculty, academic_year, school_class, section, subject, assigned_date, due_date, status: DRAFT/PUBLISHED/CLOSED), dedicated domain service `HomeworkService`, serializers (`HomeworkListSerializer`, `HomeworkDetailSerializer`, `HomeworkWriteSerializer`), and REST API views (`HomeworkListView`, `HomeworkDetailView` supporting GET, POST, GET/:id, PATCH, DELETE 204).
+5. **Authorization & RBAC Scoping**: Extended RBAC matrix with `homework.view`, `homework.create`, `homework.update`, `homework.delete`, `teaching_assignment.view`. List endpoints scoped server-side (drafts strictly hidden from Students and Parents). Object-level permission checks reject cross-faculty and cross-section access attempts.
+6. **Automated Testing**: Created comprehensive pytest suite in `backend/tests/test_homework_and_assignment_mod001.py` with 30 tests (30/30 passing, 100% pass rate). Verified non-regression across all existing backend and frontend suites.
+
+### Added / Modified
+- **Academics Domain (`backend/apps/academics/models.py`)**:
+  - Added `Section.academic_year` foreign key and `unique_faculty_class_teacher_per_academic_year` constraint.
+  - Added `TeachingAssignment` model with uniqueness constraints and foreign key relationships.
+- **Authorization Engine (`backend/common/authorization.py` & `backend/common/constants.py`)**:
+  - Added homework permissions (`PERM_HOMEWORK_VIEW`, `PERM_HOMEWORK_CREATE`, `PERM_HOMEWORK_UPDATE`, `PERM_HOMEWORK_DELETE`, `PERM_TEACHING_ASSIGNMENT_VIEW`).
+  - Added `can_faculty_teach_subject()` and `can_faculty_manage_section_attendance()`.
+  - Added homework scoping logic for Faculty, Student, and Parent in `filter_queryset_for_user()`.
+  - Added object-level checks for Homework across all roles in `can_access_object()`.
+- **Homework App (`backend/apps/homework/`)**:
+  - `models.py`: Concrete `Homework` entity with status choices and lifecycle dates.
+  - `serializers.py`: List, Detail, and Write serializers with flexible payload mapping and faculty object representation.
+  - `services.py`: `HomeworkService` with teaching scope verification, lifecycle transitions, and query filtering.
+  - `views.py`: `HomeworkListView` and `HomeworkDetailView` with DRF permission dispatch.
+  - `urls.py`: Routing for `/api/v1/homework/`.
+- **Marks & Attendance Reconciliation (`backend/apps/marks/` & `backend/apps/attendance/`)**:
+  - `BulkMarkCreateView`: Validates authoritative teaching assignment for evaluated subject.
+  - `BulkMarkCreateSerializer`: Supported `marks` payload alias.
+  - `BulkAttendanceCreateSerializer`: Extracted date from records if omitted from root payload.
+- **Documentation**: Updated `API_CONTRACT.md`, `DATABASE_SCHEMA.md`, `RBAC_PERMISSIONS.md`, `ARCHITECTURE.md`, `BACKEND_ARCHITECTURE.md`, `PROJECT_STATUS.md`, and `DECISIONS.md` (ADR 015).
+- **Automated Tests (`backend/tests/test_homework_and_assignment_mod001.py`)**: 30 dedicated tests covering cardinality, domain rules, reconciliation, homework CRUD, student/parent scoping, and tampering prevention.
+
+---
+
 ## [Phase 4: Task 4.5 — Student & Parent Special Authentication] - 2026-10-06
 
 ### Summary

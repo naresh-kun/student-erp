@@ -131,6 +131,19 @@ sequenceDiagram
 
 ---
 
+### 2.5 Academic Teaching Scope & Homework Domain (MOD_001)
+- **Class Teacher vs. Subject Faculty Invariant**:
+  - A faculty member is never automatically a Class Teacher.
+  - Cardinality: A faculty member can be Class Teacher for **at most 1 class/section per academic year** (enforced by DB unique constraint `unique_faculty_class_teacher_per_academic_year`).
+  - Class Teacher status alone does **not** grant authority over subjects.
+- **Authoritative Subject Faculty (`TeachingAssignment`)**:
+  - Academic operations (assigning homework, recording evaluation marks) require an active `TeachingAssignment` linking faculty, section, subject, and academic year.
+- **Homework Domain**:
+  - Independent domain service and REST API under `/api/v1/homework/`.
+  - Authoritative scoping: Faculty (own teaching scope), Student (enrolled section, published only), Parent (linked children, published only), Admin (global management), Principal (school-wide read oversight).
+
+---
+
 ## 4. Authentication & Security Architecture
 
 1. **Authentication Mechanism**: Stateless JSON Web Tokens (JWT) using `djangorestframework-simplejwt` or secure HTTP-only session cookies.
@@ -139,6 +152,9 @@ sequenceDiagram
    - Role entitlement verification (`IsAdmin`, `IsFaculty`, `IsStudent`, etc.).
    - Object-level ownership check (e.g., student A cannot inspect marks for student B).
 3. **Audit Logging**: Every mutation and sensitive read is captured asynchronously in the `audit` domain app with timestamp, user ID, IP address, changed fields, and previous/new values.
+4. **Teaching Scope Authorization (MOD_001)**:
+   - Mark and homework creation/updates strictly verify server-side `TeachingAssignment` records.
+   - Submitted `faculty_id` or `faculty` payload parameters are ignored; creator identity is strictly bound to `request.user.faculty_profile`.
 
 ---
 

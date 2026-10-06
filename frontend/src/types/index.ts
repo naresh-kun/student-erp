@@ -254,3 +254,66 @@ export interface GlobalSearchResultItem {
   subjects?: string[];
   allocationRecord?: StudentAllocationItem | ClassTeacherAllocationItem;
 }
+
+// ============================================================================
+// Homework Management (MOD_001)
+// ============================================================================
+export type HomeworkStatus = 'DRAFT' | 'PUBLISHED' | 'CLOSED';
+
+export interface HomeworkFacultyInfo {
+  id: string;
+  employee_code: string;
+  name: string;
+  email: string;
+}
+
+export interface HomeworkItem {
+  id: string;
+  title: string;
+  description?: string;
+  status: HomeworkStatus;
+  assigned_date: string;
+  due_date: string | null;
+  academic_year_id?: string;
+  academic_year_name?: string;
+  school_class_id: string;
+  class_name: string;
+  section_id: string;
+  section_name: string;
+  subject_id: string;
+  subject_name: string;
+  subject_code: string;
+  faculty_id: string;
+  faculty_name: string;
+  faculty?: HomeworkFacultyInfo;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HomeworkCreatePayload {
+  title: string;
+  description?: string;
+  section_id: string;
+  subject_id: string;
+  assigned_date?: string;
+  due_date?: string | null;
+  status?: HomeworkStatus;
+}
+
+export interface HomeworkUpdatePayload {
+  title?: string;
+  description?: string;
+  due_date?: string | null;
+  status?: HomeworkStatus;
+}
+
+export interface HomeworkFilters {
+  section_id?: string;
+  class_id?: string;
+  subject_id?: string;
+  status?: string;
+  due_date_from?: string;
+  due_date_to?: string;
+  search?: string;
+  page?: number;
+}

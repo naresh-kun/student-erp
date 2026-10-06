@@ -1,16 +1,16 @@
 # Phase 4 Execution Status: Authentication + RBAC
 
 > **Phase**: Phase 4 (Authentication + Role-Based Access Control)  
-> **Current Task**: **Task 4.5 Completed (Student & Parent Authentication)**  
-> **Next Task**: **Task 4.6 (Security Hardening & Rate Limiting)**  
-> **Status**: **IN PROGRESS (Tasks 4.1, 4.2, 4.3, 4.4 & 4.5 DONE; 287/287 backend pytest tests passing; 158/158 frontend tests passing; clean build)**  
+> **Current Task**: **Task 4.6 Completed (Faculty / Admin / Principal Access + Real Frontend Authentication Integration)**  
+> **Next Task**: **Task 4.7 (Final Phase 4 Verification & Sign-Off)**  
+> **Status**: **IN PROGRESS (Tasks 4.1 through 4.6 DONE; 319/319 backend pytest tests passing; 181/181 frontend tests passing; clean production build)**  
 > **Date**: 2026-10-06  
 
 ---
 
 ## 1. Phase Objective
 
-Establish the authoritative backend authentication and authorization engine for Student ERP using Django, Django REST Framework, and `djangorestframework-simplejwt`. Implement secure credential verification, JWT token lifecycle management, object-level RBAC permission matrices across all 5 system roles (Admin, Principal, Faculty, Student, Parent), and student/parent authentication boundaries, without premature frontend integration.
+Establish the authoritative backend authentication and authorization engine for Student ERP using Django, Django REST Framework, and `djangorestframework-simplejwt`. Implement secure credential verification, JWT token lifecycle management, object-level RBAC permission matrices across all 5 system roles (Admin, Principal, Faculty, Student, Parent), and student/parent authentication boundaries, followed by real frontend authentication integration.
 
 ---
 
@@ -23,7 +23,7 @@ Establish the authoritative backend authentication and authorization engine for 
 | **Task 4.3** | **RBAC Architecture & Permission Model** | Canonical permission identifiers, 5-role explicit matrix, scope model, AuthorizationService, DRF permission classes, queryset scoping | **COMPLETED** |
 | **Task 4.4** | **RBAC Broad Endpoint Enforcement** | Application of permission classes and queryset scoping across all ERP endpoints, views, and services | **COMPLETED** |
 | **Task 4.5** | **Student & Parent Authentication** | Alphanumeric Student ID login, parent authentication via linked child's Student ID | **COMPLETED** |
-| **Task 4.6** | **Security Hardening & Rate Limiting** | DRF throttling, brute-force mitigation, audit logging on auth failures | **PENDING** |
+| **Task 4.6** | **Faculty / Admin / Principal Real Frontend Auth** | Real Django login integration in AuthContext, JWT persistence, session restoration, homework service token attachment | **COMPLETED** |
 | **Task 4.7** | **Final Phase 4 Verification & Sign-Off** | Comprehensive auth/RBAC verification, security audit, regression check, Phase 4 sign-off | **PENDING** |
 
 ---
@@ -281,12 +281,66 @@ Establish the authoritative backend authentication and authorization engine for 
 
 ---
 
-## 8. Phase 4 Invariants & Architectural Boundaries
+## 8. Completed Work (Task 4.6: Faculty / Admin / Principal Real Frontend Auth Integration)
+
+- [x] **Audit-Only Investigation & Root Cause Identification**:
+  - Confirmed backend health: Django `POST /api/v1/auth/login/` and `GET /api/v1/homework/` functional with real JWT tokens.
+  - Identified client-side root cause: `AuthContext.tsx` was dispatching `loginWithCredentials()` to `MockAuthService.loginWithCredentials()`, storing a mock user in `localStorage` without acquiring or storing real JWT tokens (`access_token`, `refresh_token`).
+  - Identified cascading issue: `HomeworkService` expected `localStorage['access_token']`, and when absent attempted an auto-login workaround with mock username `Faculty01`, which failed with 401 against PostgreSQL because the database contains real username `faculty_suresh`.
+- [x] **Real Authentication Integration in `AuthContext.tsx`**:
+  - Replaced mock login dispatch with direct `POST /api/v1/auth/login/` sending `{ "username": identifier.trim(), "password": password.trim() }`.
+  - Persisted server-issued `access_token` and `refresh_token` in `localStorage`.
+  - Derived user identity and role strictly from server response (`rawUser.role as UserRole`), eliminating client-side role overrides.
+  - Implemented session restoration on app startup via `GET /api/v1/auth/me/` with `Authorization: Bearer <access_token>`.
+  - Implemented automatic token refresh recovery via `POST /api/v1/auth/refresh/` on access token expiration (401).
+  - Implemented clean logout clearing `access_token`, `refresh_token`, and active user state from `localStorage`.
+- [x] **HomeworkService Cleanup (`frontend/src/services/homeworkService.ts`)**:
+  - Removed embedded auto-login workaround from `getAuthHeaders()`.
+  - Service strictly reads `localStorage['access_token']` and attaches `Authorization: Bearer <token>`.
+  - Cleaned up imports, removing `MockAuthService` dependency.
+- [x] **LoginPage & Demo Accounts Alignment (`LoginPage.tsx`, `authService.ts`)**:
+  - Removed Phase 2 demonstration notices ("Simulated credential authentication").
+  - Updated helper placeholders and descriptions with real seeded accounts (`admin_demo`, `principal_demo`, `faculty_suresh`, `faculty_priya`, `STU202600001`).
+  - Updated `SYNTHETIC_DEMO_ACCOUNTS` in `authService.ts` to reference authoritative seeded accounts and passwords (`demo123`).
+- [x] **Automated Testing Suite (`frontend/tests/auth_integration.test.ts`)**:
+  - 14 comprehensive Vitest tests covering:
+    - Real Admin login request to `/api/v1/auth/login/`.
+    - Real Principal login request.
+    - Real Faculty login request.
+    - JWT token persistence in `localStorage`.
+    - Authenticated user hydration.
+    - Logout token and session cleanup.
+    - Session restoration via `GET /api/v1/auth/me/`.
+    - Token refresh recovery on 401.
+    - Generic error handling on invalid credentials.
+    - Client-side role tampering rejection.
+    - Bearer token attachment on protected requests.
+    - `HomeworkService` non-embedded login verification.
+    - `HomeworkService` stored access token usage.
+    - Student and Parent login regression at frontend auth boundary.
+  - **Frontend test suite expanded from 167 to 181 passing tests (100%, 0 failures)**.
+- [x] **Live Browser Verification via Subagent**:
+  - Admin login (`admin_demo` / `demo123`): Redirected to `/admin/dashboard`, rendered `System Administrator ADMIN SA`.
+  - Principal login (`principal_demo` / `demo123`): Redirected to `/principal/dashboard`, rendered `Dr. K. Radhakrishnan PRINCIPAL DR`.
+  - Faculty login (`faculty_suresh` / `demo123`): Redirected to `/faculty/dashboard`, rendered `R. Suresh FACULTY RS`.
+  - Faculty Homework navigation (`/faculty/homework`): Loaded all 3 seeded PostgreSQL homework items with zero 401 errors.
+  - Django terminal confirmed HTTP 200 on all login and homework requests.
+- [x] **Full Regression & Quality Gate**:
+  - `python manage.py check`: 0 issues.
+  - `python manage.py makemigrations --check`: 0 changes (zero pending migrations).
+  - `pytest`: 319/319 passing (including 30 MOD_001 tests).
+  - `npm test -- --run`: 181/181 Vitest tests passing.
+  - `npm run build`: Clean production build (zero TypeScript errors).
+
+---
+
+## 9. Phase 4 Invariants & Architectural Boundaries
 
 1. **Django + DRF + SimpleJWT Sole Authority**: No competing authentication framework (Firebase, Supabase, Auth0, FastAPI) is permitted.
 2. **Stateless JWT Architecture**: Access tokens are stateless, short-lived (15 minutes), signed with HMAC-SHA256.
 3. **Endpoint Enforcement Complete in Task 4.4**: All API endpoints enforce authentication, RBAC permissions, queryset scoping, and object-level checks.
 4. **Student/Parent Special Auth Complete in Task 4.5**: Alphanumeric Student ID login and Parent linked-student auth are authoritative.
-5. **Frontend Decoupling**: React frontend remains completely mock-driven (`VITE_USE_MOCK_DATA=true`) until Phase 5.
+5. **Real Frontend Authentication in Task 4.6**: Frontend session layer uses real Django authentication and JWT tokens; Phase 5 remains NOT STARTED.
+
 
 

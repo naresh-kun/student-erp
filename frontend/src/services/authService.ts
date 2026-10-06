@@ -186,16 +186,51 @@ export interface SyntheticDemoAccount {
 }
 
 /**
- * TEMPORARY PHASE 2 DEMO CREDENTIALS
- * For presentation / demonstration purposes only.
- * These will be replaced by real authentication in Phase 4.
+ * SEED DEVELOPMENT CREDENTIALS (Task 4.6)
+ * Real seeded credentials backed by PostgreSQL database and Django REST authentication.
  */
 export const SYNTHETIC_DEMO_ACCOUNTS: SyntheticDemoAccount[] = [
   {
+    role: 'Admin',
+    identifier: 'admin_demo',
+    email: 'admin@school.edu.in',
+    username: 'admin_demo',
+    password: 'demo123',
+    name: 'System Administrator',
+    description: 'School Administrative Officer & Office Superintendent',
+  },
+  {
+    role: 'Principal',
+    identifier: 'principal_demo',
+    email: 'principal@school.edu.in',
+    username: 'principal_demo',
+    password: 'demo123',
+    name: 'Dr. K. Radhakrishnan',
+    description: 'Principal & Head of Institution (Executive Leadership)',
+  },
+  {
+    role: 'Faculty',
+    identifier: 'faculty_suresh',
+    email: 'suresh.r@school.edu.in',
+    username: 'faculty_suresh',
+    password: 'demo123',
+    name: 'R. Suresh',
+    description: 'PGT Computer Science, Class Teacher XI-A2',
+  },
+  {
+    role: 'Faculty',
+    identifier: 'faculty_priya',
+    email: 'priya.k@school.edu.in',
+    username: 'faculty_priya',
+    password: 'demo123',
+    name: 'Priya Krishnan',
+    description: 'PGT Mathematics, Teaching Faculty (Subject Teacher)',
+  },
+  {
     role: 'Student',
-    identifier: 'Student01',
-    email: 'arun.kumar@schoolerp.edu.in',
-    username: 'Student01',
+    identifier: 'STU202600001',
+    email: 'arun.kumar@student.school.edu.in',
+    username: 'student_arun',
     password: 'demo123',
     name: 'Arun Kumar',
     description: 'Enrolled Class 11 Student (Stream: Computer Science A, Sec: A2)',
@@ -203,37 +238,10 @@ export const SYNTHETIC_DEMO_ACCOUNTS: SyntheticDemoAccount[] = [
   {
     role: 'Parent',
     identifier: 'STU202600001',
-    email: 'ramanathan@gmail.com',
-    username: 'STU202600001',
+    email: 'ramanathan.s@gmail.com',
+    username: 'parent_ramanathan',
     password: 'demo123',
     name: 'S. Ramanathan',
-    description: 'Father / Guardian of Arun Kumar (Child Student ID: STU202600001, Alias: Parent01)',
-  },
-  {
-    role: 'Faculty',
-    identifier: 'Faculty01',
-    email: 'suresh.r@schoolerp.edu.in',
-    username: 'Faculty01',
-    password: 'demo123',
-    name: 'R. Suresh',
-    description: 'Senior PGT & Department Head (Mathematics), Class Teacher XI-A2',
-  },
-  {
-    role: 'Admin',
-    identifier: 'Admin',
-    email: 'admin@schoolerp.edu.in',
-    username: 'Admin',
-    password: 'demo123',
-    name: 'K. Narayanan',
-    description: 'School Administrative Officer & Office Superintendent',
-  },
-  {
-    role: 'Principal',
-    identifier: 'Principal',
-    email: 'principal@schoolerp.edu.in',
-    username: 'Principal',
-    password: 'demo123',
-    name: 'Dr. K. Radhakrishnan',
-    description: 'Principal & Head of Institution (Executive Leadership)',
+    description: 'Parent of Arun Kumar (Child Student ID: STU202600001)',
   },
 ];

@@ -57,12 +57,17 @@ In the Student ERP architecture, there is a strict separation between navigation
 | **Institutional Calendar** | Read (Targeted Events) | Read (Targeted Events) | Read, Create (Dept Drafts) | Full CRUD | Full CRUD & Approval |
 | **Allocation Engine** | No Access | No Access | Read (Draft Output) | Execute & Configure | Final Approval & Lock |
 | **Reports & Analytics** | Read (Personal Card) | Read (Child Card) | Read (Class Performance) | Full Generation & Export | School-wide Analytics & Sign-off |
+| **Homework Management (MOD_001)** | Read (Enrolled, Published Only) | Read (Linked Children, Published Only) | Full CRUD (Own Teaching Scope & Author) | Full CRUD & System Oversight | Read (School-wide Oversight, No Mutation) |
 | **Audit Logs** | No Access | No Access | No Access | Read / Filter | Read / Executive Oversight |
 
 *Legend*:
 - **Read (Self / Child)**: Scoped access strictly verified via foreign key ownership (`user_id == request.user.id`).
 - **Create / Update**: Operational ability to record data in assigned scopes.
 - **Attendance Leave Approval**: Per Master Plan Amendment 2, Faculty alone holds authority to mark/approve student `LEAVE` for their assigned classes/sections (`approved_by_faculty_id`). Parents and Students can view status or submit absence advisories, but cannot mark or approve `LEAVE`. Admin retains system-wide audit and override privileges.
+- **Faculty Class Teacher vs. Subject Faculty Assignment (MOD_001)**:
+  - Faculty member is **not** automatically a Class Teacher.
+  - Cardinality invariant: One Faculty member may be assigned as Class Teacher for **at most one class/section per Academic Year**.
+  - Class Teacher status does **not** automatically grant authority over every subject taught in that class. Subject Faculty assignments (`TeachingAssignment`) authoritatively govern permissions to assign homework and enter evaluation marks.
 - **Oversight**: Read-only institution-wide visibility across all departments and performance metrics.
 - **Approval**: Final authority to lock terms, sign off grade reports, and finalize master class allocations.
 

@@ -170,7 +170,7 @@
 - `POST /api/v1/attendance/bulk/` `[IMPLEMENTED]`
   - Authentication: Required
   - Required Permission: `attendance.mark`
-  - Permitted Roles: Admin/Principal (Global), Faculty (Assigned section only; cross-section rejected with 403)
+  - Permitted Roles: Admin/Principal (Global), Faculty (Assigned Class Teacher or active TeachingAssignment faculty for that section; cross-section rejected with 403)
   - Allowed Statuses: `PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE` (`LATE` and `EXCUSED` strictly rejected)
 - `GET /api/v1/attendance/absentees/` `[IMPLEMENTED]`
   - Authentication: Required
@@ -197,7 +197,7 @@
 - `POST /api/v1/marks/bulk/` `[IMPLEMENTED]`
   - Authentication: Required
   - Required Permission: `marks.enter`
-  - Permitted Roles: Admin/Principal (Global), Faculty (Assigned section only; cross-section rejected with 403)
+  - Permitted Roles: Admin/Principal (Global), Faculty (Authorized Subject Faculty with active `TeachingAssignment` for that section and subject; Class Teacher alone does NOT grant all-subject marks authority; unassigned subject rejected with 403)
 - `GET /api/v1/marks/exam-types/` `[IMPLEMENTED]`
   - Authentication: Required
   - Required Permission: `marks.view` (All authenticated roles)
@@ -215,7 +215,35 @@
   - Authentication: Required
   - Required Permission: `marks.enter` + Object Check (`IsOwnerOrScopedAccess`)
 
-### 3.11 Scaffolding Endpoints
+### 3.11 Homework (`/api/v1/homework/`) `[IMPLEMENTED — MOD_001]`
+- `GET /api/v1/homework/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `homework.view`
+  - Permitted Roles: Admin/Principal (Global), Faculty (Assigned teaching scope), Student (Enrolled section, `PUBLISHED` only), Parent (Linked children sections, `PUBLISHED` only)
+  - Scoping: Scoped server-side before serialization. DRAFT items strictly invisible to Students/Parents.
+  - Query Parameters: `section_id`, `class_id`, `subject_id`, `status`, `due_date_from`, `due_date_to`, `search`
+- `POST /api/v1/homework/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `homework.create`
+  - Permitted Roles: Admin (Global), Faculty (Authorized Subject Faculty teaching the section and subject; server-side verified via `TeachingAssignment`; unassigned subject/section rejected with 403; forged `faculty` in payload ignored). Students and Parents strictly denied (403).
+- `GET /api/v1/homework/scope/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `homework.create`
+  - Permitted Roles: Faculty (returns active `TeachingAssignment` tuples for dropdown population: assignment_id, class_id, class_name, section_id, section_name, subject_id, subject_name, subject_code, academic_year_id, academic_year_name). Admin returns all active assignments. Other roles denied (403).
+- `GET /api/v1/homework/{id}/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `homework.view` + Object Check (`can_access_object`)
+  - Permitted Roles: Admin, Principal (School-wide view), Faculty (Assigned scope/author), Student (Enrolled section, published only), Parent (Linked child section, published only). Cross-section ID manipulation rejected (403/404).
+- `PATCH /api/v1/homework/{id}/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `homework.update` + Object Check (`can_access_object`)
+  - Permitted Roles: Admin (Global), Faculty (Author only; cross-faculty mutation rejected with 403/404). Students, Parents, and Principals denied (403).
+- `DELETE /api/v1/homework/{id}/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `homework.delete` + Object Check (`can_access_object`)
+  - Permitted Roles: Admin (Global), Faculty (Author only; cross-faculty deletion rejected with 403/404). Returns `204 No Content`. Students, Parents, and Principals denied (403).
+
+### 3.12 Scaffolding Endpoints
 - `GET /api/v1/allocation/` `[IMPLEMENTED]`
   - Required Permission: `allocation.view` (Admin, Principal, Faculty)
 - `GET /api/v1/audit/` `[IMPLEMENTED]`

@@ -21,6 +21,7 @@ import {
   StudentMarksPage,
   StudentTimetablePage,
   StudentCalendarPage,
+  StudentHomeworkPage,
 } from '@/pages/student';
 
 // Parent Pages
@@ -31,6 +32,7 @@ import {
   ParentMarksPage,
   ParentTimetablePage,
   ParentCalendarPage,
+  ParentHomeworkPage,
 } from '@/pages/parent';
 
 // Faculty Pages
@@ -40,6 +42,7 @@ import {
   FacultyAttendancePage,
   FacultyMarksPage,
   FacultyTimetablePage,
+  FacultyHomeworkPage,
 } from '@/pages/faculty';
 
 // Admin Pages
@@ -116,6 +119,7 @@ export const router = createBrowserRouter([
           { path: '/student/marks', element: <StudentMarksPage /> },
           { path: '/student/timetable', element: <StudentTimetablePage /> },
           { path: '/student/calendar', element: <StudentCalendarPage /> },
+          { path: '/student/homework', element: <StudentHomeworkPage /> },
         ],
       },
     ],
@@ -134,6 +138,7 @@ export const router = createBrowserRouter([
           { path: '/parent/marks', element: <ParentMarksPage /> },
           { path: '/parent/timetable', element: <ParentTimetablePage /> },
           { path: '/parent/calendar', element: <ParentCalendarPage /> },
+          { path: '/parent/homework', element: <ParentHomeworkPage /> },
         ],
       },
     ],
@@ -151,6 +156,7 @@ export const router = createBrowserRouter([
           { path: '/faculty/attendance', element: <FacultyAttendancePage /> },
           { path: '/faculty/marks', element: <FacultyMarksPage /> },
           { path: '/faculty/timetable', element: <FacultyTimetablePage /> },
+          { path: '/faculty/homework', element: <FacultyHomeworkPage /> },
         ],
       },
     ],

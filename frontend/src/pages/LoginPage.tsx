@@ -108,7 +108,7 @@ export const LoginPage: React.FC = () => {
             Sign In
           </CardTitle>
           <CardDescription className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-            Enter your User ID (e.g. <span className="font-mono">Student01</span>, <span className="font-mono">STU202600001</span> for Parent) and password to access your dashboard.
+            Enter your User ID (e.g. <span className="font-mono">admin_demo</span>, <span className="font-mono">faculty_suresh</span>, or <span className="font-mono">STU202600001</span>) and password to access your dashboard.
           </CardDescription>
         </CardHeader>
 
@@ -132,7 +132,7 @@ export const LoginPage: React.FC = () => {
                 className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between"
               >
                 <span>User ID / School Email</span>
-                <span className="text-[11px] text-slate-400 font-normal">e.g. Student01, STU202600001 (Parent), Faculty01</span>
+                <span className="text-[11px] text-slate-400 font-normal">e.g. admin_demo, faculty_suresh, STU202600001</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -142,7 +142,7 @@ export const LoginPage: React.FC = () => {
                   id="identifier"
                   type="text"
                   autoComplete="username"
-                  placeholder="e.g. Student01, STU202600001, Faculty01, Admin, Principal"
+                  placeholder="e.g. admin_demo, principal_demo, faculty_suresh, STU202600001"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   disabled={loading}
@@ -207,7 +207,7 @@ export const LoginPage: React.FC = () => {
           {/* Institutional Compliance Notice */}
           <div className="pt-2 text-center">
             <p className="text-[11px] text-slate-400 dark:text-slate-500">
-              School ERP Phase 2 Demonstration Environment • Simulated credential authentication.
+              School ERP Institutional Portal • Real Django REST &amp; SimpleJWT Authentication.
             </p>
           </div>
         </CardContent>
@@ -220,7 +220,7 @@ export const LoginPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-200">
               <KeyRound className="w-3.5 h-3.5 text-amber-600" />
-              <span>TEMPORARY PHASE 2 DEMO CREDENTIALS</span>
+              <span>SEED DEVELOPMENT CREDENTIALS (Task 4.6)</span>
             </div>
             <button
               onClick={() => setIsDevMode(false)}
@@ -237,7 +237,7 @@ export const LoginPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {SYNTHETIC_DEMO_ACCOUNTS.map((acc) => (
               <button
-                key={acc.role}
+                key={`${acc.role}-${acc.identifier}`}
                 type="button"
                 onClick={() => fillDevAccount(acc.identifier, acc.password)}
                 className="p-2.5 rounded-lg border border-amber-200 dark:border-amber-800/80 bg-white/80 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-900 text-left transition-all cursor-pointer flex items-center justify-between group text-xs"
