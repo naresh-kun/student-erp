@@ -583,18 +583,29 @@ class AuthorizationService(BaseService):
         # Student entity: faculty can access if student enrolled in assigned section (view only)
         if obj_class == 'Student':
             if action == 'view' and hasattr(obj, 'enrollments'):
-                return obj.enrollments.filter(section__class_teacher=faculty).exists()
+                return obj.enrollments.filter(
+                    Q(section__class_teacher=faculty)
+                    | Q(section__teaching_assignments__faculty=faculty, section__teaching_assignments__is_active=True)
+                ).exists()
             return False
 
-        # Section entity: must be designated Class Teacher
+        # Section entity: must be designated Class Teacher or have active teaching assignment
         if obj_class == 'Section':
             ct = getattr(obj, 'class_teacher', None)
-            return ct == faculty or (hasattr(ct, 'id') and ct.id == faculty.id)
+            if ct == faculty or (hasattr(ct, 'id') and ct.id == faculty.id):
+                return True
+            if hasattr(obj, 'teaching_assignments'):
+                return obj.teaching_assignments.filter(faculty=faculty, is_active=True).exists()
+            return False
 
         # Attendance entity
         if obj_class == 'Attendance':
-            # Class teacher of section, or recorder, or approver
-            ct = getattr(getattr(getattr(obj, 'enrollment', None), 'section', None), 'class_teacher', None)
+            # Class teacher of section, or teaching assignment in section, or recorder, or approver
+            enrollment = getattr(obj, 'enrollment', None)
+            section = getattr(enrollment, 'section', None) if enrollment else None
+            if section and cls.can_faculty_manage_section_attendance(faculty, section):
+                return True
+            ct = getattr(section, 'class_teacher', None) if section else None
             if ct == faculty or (hasattr(ct, 'id') and ct.id == faculty.id):
                 return True
             if getattr(obj, 'recorded_by_id', None) == user.id:
@@ -606,8 +617,17 @@ class AuthorizationService(BaseService):
         # LeaveApplication entity
         if obj_class == 'LeaveApplication':
             student = getattr(obj, 'student', None)
+            if action in ('update', 'patch', 'approve'):
+                # Only designated Class Teacher can approve/reject leave
+                if student and hasattr(student, 'enrollments'):
+                    return student.enrollments.filter(section__class_teacher=faculty).exists()
+                return False
+            # View access: Class Teacher or subject teacher for student's section or reviewer
             if student and hasattr(student, 'enrollments'):
-                if student.enrollments.filter(section__class_teacher=faculty).exists():
+                if student.enrollments.filter(
+                    Q(section__class_teacher=faculty)
+                    | Q(section__teaching_assignments__faculty=faculty, section__teaching_assignments__is_active=True)
+                ).exists():
                     return True
             return getattr(obj, 'reviewed_by_id', None) == faculty.id
 
@@ -856,7 +876,10 @@ class AuthorizationService(BaseService):
             faculty = getattr(user, 'faculty_profile', None)
             if not faculty:
                 return queryset.none()
-            return queryset.filter(enrollments__section__class_teacher=faculty).distinct()
+            return queryset.filter(
+                Q(enrollments__section__class_teacher=faculty)
+                | Q(enrollments__section__teaching_assignments__faculty=faculty, enrollments__section__teaching_assignments__is_active=True)
+            ).distinct()
 
         if role == ROLE_STUDENT:
             student = getattr(user, 'student_profile', None)
@@ -1025,7 +1048,10 @@ class AuthorizationService(BaseService):
             faculty = getattr(user, 'faculty_profile', None)
             if not faculty:
                 return queryset.none()
-            return queryset.filter(section__class_teacher=faculty)
+            return queryset.filter(
+                Q(section__class_teacher=faculty)
+                | Q(section__teaching_assignments__faculty=faculty, section__teaching_assignments__is_active=True)
+            ).distinct()
 
         if role == ROLE_STUDENT:
             student = getattr(user, 'student_profile', None)
@@ -1059,6 +1085,9 @@ class AuthorizationService(BaseService):
             faculty = getattr(user, 'faculty_profile', None)
             if not faculty:
                 return queryset.none()
-            return queryset.filter(children__enrollments__section__class_teacher=faculty).distinct()
+            return queryset.filter(
+                Q(children__enrollments__section__class_teacher=faculty)
+                | Q(children__enrollments__section__teaching_assignments__faculty=faculty, children__enrollments__section__teaching_assignments__is_active=True)
+            ).distinct()
 
         return queryset.none()

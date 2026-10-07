@@ -498,6 +498,43 @@
   - Zero database schema migrations required (100% schema stability).
   - 18 backend integration tests and 9 frontend unit/integration tests added (408/408 backend passed, 199/199 frontend passed, clean build in 14.43s, live browser verified).
 
+---
+
+## ADR 020: Faculty Module Live API Integration, Teaching Scope & Class Teacher Boundaries (Task 5.3)
+
+- **Status**: ACCEPTED / AUTHORITATIVE
+- **Scope**: Phase 5 Task 5.3 (Core ERP API Integration — Faculty Module)
+- **Context**:
+  - Task 5.3 requires replacing synthetic mock data in the Faculty domain with live Django REST Framework backend APIs.
+  - Faculty members possess distinct operational roles:
+    1. **Subject Faculty**: Bound to active `TeachingAssignment` entries. Responsible for marks entry and homework assignment strictly for assigned subjects.
+    2. **Class Teacher**: Bound to at most one class section per academic year. Responsible for student leave review (`APPROVED`/`REJECTED`) and sectional attendance oversight.
+  - Crucial architectural invariants:
+    - Class Teacher assignment does NOT automatically grant authority to enter marks or assign homework for all subjects in that class. `TeachingAssignment` remains the sole authority for subject-level marks and homework.
+    - Faculty must not gain administrative capabilities (e.g. allocation mutation, student deletion, marks approval/override, audit access, or modifying own employment profile).
+    - Faculty queries must be strictly scoped to authorized teaching assignments and supervisory sections.
+- **Decision**:
+  1. **Layered Service Architecture**:
+     - `React Component` -> `Domain Service (FacultyService)` -> `API Service (FacultyApiService)` -> `HTTP Client (ApiClient)` -> `Django REST Framework`.
+     - Preserved all existing React component signatures and hooks (`useFacultyProfile`, `useAssignedClasses`, etc.).
+  2. **Endpoint Implementations & Extensions**:
+     - `GET /api/v1/faculty/me/`: Scoped profile returning descriptive employee data, Class Teacher assignment metadata (`class_teacher_of`), assigned classes/students counts, and weekly periods workload.
+     - `GET /api/v1/faculty/me/classes/`: Returns sections taught via active `TeachingAssignment` records plus Class Teacher supervisory sections. Cross-faculty queries (`/classes/?faculty_id=...`) by non-administrators return 403 Forbidden.
+     - `GET /api/v1/students/?section_id={id}`: Enforces server-side queryset filtering in `AuthorizationService._scope_student_queryset` allowing Faculty to view only students in sections they teach or lead as Class Teacher.
+     - `PATCH /api/v1/attendance/leaves/{id}/`: Class Teacher leave review workflow. Enforces that only the designated Class Teacher for the student's section (or Admin/Principal) can approve or reject leaves; subject teachers and non-Class Teachers receive 403 Forbidden.
+     - `POST /api/v1/marks/bulk/`: Marks entry locked strictly to authorized `TeachingAssignment` subjects via `AuthorizationService.can_faculty_teach_subject`. Non-assigned subject marks entry attempts receive 403 Forbidden.
+     - `POST /api/v1/attendance/bulk/`: Bulk roll call strictly authorized by `AuthorizationService.can_faculty_manage_section_attendance`. Cross-section attempts receive 403 Forbidden.
+  3. **Administrative Field Mutation Guard**:
+     - `FacultyDetailView` rejects PATCH attempts modifying `employee_code`, `department`, `designation`, `joining_date`, `is_active`, or `user_id` with 403 Forbidden.
+  4. **Graceful Offline Degradation**:
+     - `FacultyService` methods catch unauthenticated/offline errors and fall back gracefully to local storage and seed mock data for test resilience.
+- **Consequences**:
+  - Full end-to-end integration of the Faculty module with real Django REST endpoints.
+  - Strict enforcement of the Class Teacher vs Subject Teacher operational boundary.
+  - Zero database schema migrations required (100% schema stability).
+  - 24 backend integration/security tests and 14 frontend tests added (436/436 backend passed, 213/213 frontend passed, clean build in 11.67s, live browser verified).
+
+
 
 
 

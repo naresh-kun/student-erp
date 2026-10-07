@@ -3,7 +3,7 @@
 > **Phase**: Phase 5 (Core ERP API Integration & Advanced Workflows)  
 > **Status**: **IN PROGRESS**  
 > **Prerequisites**: Phase 1 (COMPLETE), Phase 2 (COMPLETE), Phase 3 (COMPLETE), Phase 4 (COMPLETE), MOD_001 (COMPLETED Approved Project Modification)  
-> **Active Task**: Task 5.2 (COMPLETE) | Next Task: Task 5.3 (PENDING)  
+> **Active Task**: Task 5.3 (COMPLETE) | Next Task: Task 5.4 (NOT STARTED)  
 > **Last Updated**: 2026-10-07  
 
 ---
@@ -22,7 +22,8 @@ Per authoritative project governance:
   - **Phase 5**: **IN PROGRESS** (Core ERP API Integration & Advanced Workflows)
 - Task 5.1 (Student Module Live API Integration) is **COMPLETE**.
 - Task 5.2 (Parent Module Live API Integration) is **COMPLETE**.
-- Remaining Phase 5 tasks remain pending kickoff.
+- Task 5.3 (Faculty Module Live API Integration) is **COMPLETE**.
+- Remaining Phase 5 tasks (Task 5.4, Task 5.5) remain pending kickoff.
 
 ---
 
@@ -32,7 +33,7 @@ Per authoritative project governance:
 | :--- | :--- | :--- | :--- | :--- |
 | **Task 5.1** | **Core ERP API Integration — Student Module** | Migrate Student profile, attendance, leaves, marks/report card to live DRF APIs; establish `ApiClient` with 401 refresh; maintain domain abstraction | **COMPLETE** | 390 backend tests passing (+13 new); 190 frontend tests passing (+9 new); clean build (8.78s); E2E browser verification completed (`task51_student_flow_1791321497316.webp`) |
 | **Task 5.2** | **Parent Live API Integration** | Wire Parent portal views, linked ward attendance, report cards, notices, and homework to live `/api/v1/` endpoints | **COMPLETE** | 412 backend tests passing (+22 new); 199 frontend tests passing (+9 new); clean build (14.43s); actual browser verification completed (login -> dashboard -> child selector -> attendance -> marks -> homework -> child switching -> logout) |
-| **Task 5.3** | **Faculty Live API Integration** | Wire Faculty views, marks entry, and attendance roll call to live `/api/v1/` endpoints | **NOT STARTED** | Scheduled |
+| **Task 5.3** | **Faculty Live API Integration** | Wire Faculty views, profile, assigned classes/sections, student roster, marks entry, roll call, Class Teacher leave review, and homework to live `/api/v1/` endpoints | **COMPLETE** | 436 backend tests passing (+24 new); 213 frontend tests passing (+14 new); clean build (11.67s); live browser verification completed (login -> dashboard -> classes -> students roster -> attendance roll call -> marks entry -> homework -> logout; recording `faculty_browser_test_1791366974619.webp`) |
 | **Task 5.4** | **Admin & Principal Live Console Integration** | Wire Admin and Principal management consoles to live `/api/v1/` endpoints | **NOT STARTED** | Scheduled |
 | **Task 5.5** | **Phase 5 Full System Verification & Release Gate** | End-to-end integration tests, regression test suites, performance audit | **NOT STARTED** | Scheduled |
 
@@ -86,4 +87,32 @@ Per authoritative project governance:
 - **Migration Drift**: 0 changes detected.
 - **Production Build**: Clean build in 14.43s with zero TypeScript errors.
 - **Live Browser QA**: Full live browser verification against `http://localhost:5173` and `http://127.0.0.1:8000` (login -> dashboard -> child selector -> attendance -> marks -> homework -> child switching -> logout).
+
+---
+
+## 5. Task 5.3 Execution Summary
+
+### 5.1 Backend Endpoints Integrated
+- `GET /api/v1/faculty/me/` & `GET /api/v1/faculty/{id}/`: Scoped Faculty profile with department, designation, employee code, `class_teacher_of` metadata, weekly periods workload, assigned classes count, and assigned students count.
+- `GET /api/v1/faculty/me/classes/` & `GET /api/v1/faculty/{id}/classes/`: Assigned classes and sections derived from active `TeachingAssignment` entries and designated Class Teacher responsibilities.
+- `GET /api/v1/students/?section_id={id}`: Enrolled student roster within authorized teaching sections, enforcing queryset scoping at the database level.
+- `POST /api/v1/attendance/bulk/`: Bulk roll call recording across the 4 canonical statuses (`PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`), strictly authorized by `can_faculty_manage_section_attendance`. Cross-section marking attempts rejected with `403 Forbidden`.
+- `GET /api/v1/attendance/leaves/`: Scoped leave notices for sections where Faculty is designated Class Teacher.
+- `PATCH /api/v1/attendance/leaves/{id}/`: Class Teacher leave review workflow (`APPROVED`/`REJECTED` with reviewer notes). Non-Class Teachers rejected with `403 Forbidden`.
+- `POST /api/v1/marks/bulk/`: Examination marks entry out of 100 with CBSE 8-tier grading (`A1`–`E`), strictly locked to authorized `TeachingAssignment` subjects via `can_faculty_teach_subject`. Unassigned subject attempts rejected with `403 Forbidden`.
+- `GET /api/v1/homework/` & `POST /api/v1/homework/`: Homework management under authorized teaching assignments via MOD_001.
+
+### 5.2 Frontend Architecture
+- **Faculty API Service (`frontend/src/features/faculty/services/facultyApiService.ts`)**: Direct typed API client reusing shared singleton `ApiClient` for JWT Bearer token attachment, automatic 401 refresh, and error normalization.
+- **Faculty Domain Service (`frontend/src/features/faculty/services/facultyService.ts`)**: Wired `getFacultyProfile`, `getAssignedClasses`, `getAssignedStudents`, `getPendingLeaveNotices`, `reviewLeaveNotice`, `submitAttendanceRollCall`, and `saveMarksEntrySheet` to `FacultyApiService` with resilient fallback.
+- **Faculty Feature Module Export (`frontend/src/features/faculty/index.ts`)**: Exported `FacultyApiService`.
+- **Faculty Hooks & UI**: `useFacultyProfile`, `useAssignedClasses`, `useAssignedStudents`, `useAttendanceRollCall`, `useMarksEntrySheet`, `useClassTeacherLeaveNotices` consuming live endpoints.
+
+### 5.3 Test & Quality Metrics
+- **Backend Tests**: 436/436 pytest passed (24 new dedicated tests in `test_phase5_faculty_integration_task53.py`).
+- **Frontend Tests**: 213/213 Vitest passed (14 new dedicated tests in `faculty_api_integration.test.ts`).
+- **Django System Check**: 0 issues.
+- **Migration Drift**: 0 changes detected.
+- **Production Build**: Clean build in 11.67s with zero TypeScript errors.
+- **Live Browser QA**: Full automated browser verification against `http://localhost:5173` and `http://127.0.0.1:8000` for `faculty_suresh` (login -> dashboard -> classes -> students roster -> attendance roll call -> marks entry -> homework -> logout; recording `faculty_browser_test_1791366974619.webp`).
 

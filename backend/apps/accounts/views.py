@@ -15,6 +15,7 @@ from rest_framework_simplejwt.views import (
 
 from common.constants import (
     ROLE_ADMIN,
+    ROLE_PRINCIPAL,
     ROLE_FACULTY,
     PERM_STUDENTS_VIEW,
     PERM_USERS_VIEW,
@@ -209,14 +210,33 @@ class FacultyDetailView(APIView):
     }
 
     def get(self, request, pk, *args, **kwargs):
-        faculty = get_object_or_404(Faculty.objects.select_related('user'), pk=pk)
-        self.check_object_permissions(request, faculty)
+        if pk == 'me':
+            faculty = getattr(request.user, 'faculty_profile', None)
+            if not faculty:
+                return error_response(
+                    code='NOT_FOUND',
+                    message='Faculty profile not found for authenticated user.',
+                    status_code=status.HTTP_404_NOT_FOUND,
+                )
+        else:
+            faculty = get_object_or_404(Faculty.objects.select_related('user'), pk=pk)
+            self.check_object_permissions(request, faculty)
+
         serializer = FacultySerializer(faculty)
         return success_response(data=serializer.data)
 
     def patch(self, request, pk, *args, **kwargs):
-        faculty = get_object_or_404(Faculty.objects.select_related('user'), pk=pk)
-        self.check_object_permissions(request, faculty)
+        if pk == 'me':
+            faculty = getattr(request.user, 'faculty_profile', None)
+            if not faculty:
+                return error_response(
+                    code='NOT_FOUND',
+                    message='Faculty profile not found for authenticated user.',
+                    status_code=status.HTTP_404_NOT_FOUND,
+                )
+        else:
+            faculty = get_object_or_404(Faculty.objects.select_related('user'), pk=pk)
+            self.check_object_permissions(request, faculty)
 
         # Faculty self-edit cannot modify administrative account fields
         user_role = AuthorizationService.get_user_role(request.user)
@@ -230,3 +250,84 @@ class FacultyDetailView(APIView):
         serializer.is_valid(raise_exception=True)
         faculty = serializer.save()
         return success_response(data=FacultySerializer(faculty).data)
+
+
+class FacultyClassesView(APIView):
+    """
+    GET /api/v1/faculty/me/classes/
+    GET /api/v1/faculty/{id}/classes/
+    Returns active assigned classes, sections, and subjects for the designated faculty member.
+    """
+    permission_classes = [HasRequiredPermission]
+    permission_map = {
+        'GET': PERM_USERS_VIEW,
+    }
+
+    def get(self, request, pk, *args, **kwargs):
+        if pk == 'me':
+            faculty = getattr(request.user, 'faculty_profile', None)
+            if not faculty:
+                return error_response(
+                    code='NOT_FOUND',
+                    message='Faculty profile not found for authenticated user.',
+                    status_code=status.HTTP_404_NOT_FOUND,
+                )
+        else:
+            faculty = get_object_or_404(Faculty.objects.select_related('user'), pk=pk)
+            user_role = AuthorizationService.get_user_role(request.user)
+            if user_role not in (ROLE_ADMIN, ROLE_PRINCIPAL):
+                if getattr(request.user, 'faculty_profile', None) != faculty:
+                    raise PermissionDenied("You do not have permission to view another faculty's assigned classes.")
+
+        from apps.academics.models import TeachingAssignment
+        assignments = TeachingAssignment.objects.filter(
+            faculty=faculty,
+            is_active=True,
+        ).select_related('school_class', 'section', 'subject')
+
+        class_items = []
+        covered_section_ids = set()
+
+        for a in assignments:
+            covered_section_ids.add(a.section_id)
+            is_ct = a.section.class_teacher_id == faculty.id
+            student_count = a.section.enrollments.filter(
+                status__in=['Active', 'ACTIVE', 'Enrolled', 'enrolled']
+            ).count()
+            class_items.append({
+                'id': str(a.id),
+                'class_id': str(a.school_class_id),
+                'section_id': str(a.section_id),
+                'class_name': a.school_class.name,
+                'section_name': a.section.name,
+                'display_name': f"{a.school_class.name} ({a.section.name})",
+                'subject_id': str(a.subject_id),
+                'subject': a.subject.name,
+                'subject_code': a.subject.code,
+                'room': a.section.room,
+                'student_count': student_count,
+                'is_class_teacher': is_ct,
+                'periods_per_week': a.subject.weekly_periods,
+            })
+
+        for ct_sec in faculty.assigned_sections.exclude(id__in=covered_section_ids).select_related('school_class'):
+            student_count = ct_sec.enrollments.filter(
+                status__in=['Active', 'ACTIVE', 'Enrolled', 'enrolled']
+            ).count()
+            class_items.append({
+                'id': str(ct_sec.id),
+                'class_id': str(ct_sec.school_class_id),
+                'section_id': str(ct_sec.id),
+                'class_name': ct_sec.school_class.name,
+                'section_name': ct_sec.name,
+                'display_name': f"{ct_sec.school_class.name} ({ct_sec.name})",
+                'subject_id': '',
+                'subject': 'Class Teacher Supervisory',
+                'subject_code': 'CT-SUP',
+                'room': ct_sec.room,
+                'student_count': student_count,
+                'is_class_teacher': True,
+                'periods_per_week': 0,
+            })
+
+        return success_response(data=class_items)

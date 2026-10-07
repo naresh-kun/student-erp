@@ -5,6 +5,7 @@ Strictly adheres to Master Plan Amendment 2 (4-status model: PRESENT, ABSENT, ON
 """
 
 import uuid
+from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.exceptions import PermissionDenied
 from rest_framework import status
@@ -13,16 +14,18 @@ from django.db.models import Q
 
 from common.constants import (
     ROLE_ADMIN,
+    ROLE_PRINCIPAL,
     ROLE_FACULTY,
     ROLE_STUDENT,
     ROLE_PARENT,
     PERM_ATTENDANCE_VIEW,
     PERM_ATTENDANCE_MARK,
+    PERM_ATTENDANCE_APPROVE_LEAVE,
     PERM_ATTENDANCE_VIEW_ABSENTEES,
 )
 from common.authorization import AuthorizationService
 from common.permissions import HasRequiredPermission, IsOwnerOrScopedAccess, require_permission
-from common.responses import success_response
+from common.responses import success_response, error_response
 from common.pagination import StandardResultsSetPagination
 from apps.attendance.models import Attendance, LeaveApplication
 from apps.attendance.services import AttendanceService
@@ -270,3 +273,70 @@ class LeaveApplicationListView(APIView):
             data=LeaveApplicationSerializer(leave_app).data,
             status_code=status.HTTP_201_CREATED,
         )
+
+
+class LeaveApplicationDetailView(APIView):
+    """
+    GET /api/v1/attendance/leaves/<uuid:pk>/
+    PATCH /api/v1/attendance/leaves/<uuid:pk>/
+    Retrieves or reviews (approve/reject) a student leave application.
+    Enforces Class Teacher scoping: Only the Class Teacher of the student's assigned section
+    or Admin/Principal can approve/reject leave.
+    """
+    permission_classes = [HasRequiredPermission]
+    permission_map = {
+        'GET': PERM_ATTENDANCE_VIEW,
+        'PATCH': PERM_ATTENDANCE_APPROVE_LEAVE,
+    }
+
+    def get(self, request, pk, *args, **kwargs):
+        leave_app = get_object_or_404(
+            LeaveApplication.objects.select_related('student__user', 'reviewed_by__user'),
+            pk=pk,
+        )
+        if not AuthorizationService.can_access_object(request.user, leave_app, action='view'):
+            raise PermissionDenied("You do not have permission to view this leave application.")
+        serializer = LeaveApplicationSerializer(leave_app)
+        return success_response(data=serializer.data)
+
+    def patch(self, request, pk, *args, **kwargs):
+        leave_app = get_object_or_404(
+            LeaveApplication.objects.select_related('student__user', 'reviewed_by__user'),
+            pk=pk,
+        )
+        user_role = AuthorizationService.get_user_role(request.user)
+        faculty = getattr(request.user, 'faculty_profile', None)
+
+        if user_role == ROLE_FACULTY:
+            if not faculty:
+                raise PermissionDenied("Faculty profile not found.")
+            student = leave_app.student
+            is_class_teacher = student.enrollments.filter(
+                section__class_teacher=faculty,
+                status__in=['Active', 'ACTIVE', 'Enrolled', 'enrolled'],
+            ).exists()
+            if not is_class_teacher:
+                raise PermissionDenied("Only the designated Class Teacher can approve or reject leave applications.")
+        elif user_role not in (ROLE_ADMIN, ROLE_PRINCIPAL):
+            raise PermissionDenied("You do not have permission to review leave applications.")
+
+        new_status = request.data.get('status')
+        if new_status and new_status not in ('APPROVED', 'REJECTED', 'PENDING'):
+            return error_response(
+                code='VALIDATION_ERROR',
+                message="Status must be APPROVED, REJECTED, or PENDING.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if new_status:
+            leave_app.status = new_status
+            if user_role == ROLE_FACULTY:
+                leave_app.reviewed_by = faculty
+            leave_app.reviewed_at = timezone.now()
+
+        if 'review_remarks' in request.data:
+            leave_app.review_remarks = request.data['review_remarks']
+
+        leave_app.save()
+        serializer = LeaveApplicationSerializer(leave_app)
+        return success_response(data=serializer.data)

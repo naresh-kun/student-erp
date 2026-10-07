@@ -10,6 +10,7 @@ from apps.attendance.views import (
     AttendanceDetailView,
     StudentAbsenteesView,
     LeaveApplicationListView,
+    LeaveApplicationDetailView,
 )
 
 app_name = 'attendance'
@@ -19,5 +20,6 @@ urlpatterns = [
     path('bulk/', BulkAttendanceCreateView.as_view(), name='bulk_attendance'),
     path('absentees/', StudentAbsenteesView.as_view(), name='student_absentees'),
     path('leaves/', LeaveApplicationListView.as_view(), name='leave_applications'),
+    path('leaves/<uuid:pk>/', LeaveApplicationDetailView.as_view(), name='leave_application_detail'),
     path('<uuid:pk>/', AttendanceDetailView.as_view(), name='attendance_detail'),
 ]

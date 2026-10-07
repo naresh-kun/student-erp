@@ -2,6 +2,32 @@
 
 All notable changes to the Student ERP project will be documented in this file.
 
+## [Phase 5: Task 5.3 — Core ERP API Integration: Faculty Module] - 2026-10-07
+
+### Summary
+Migrated the Faculty module from synthetic mock data to live Django REST Framework backend APIs (`/api/v1/faculty/me/`, `/api/v1/faculty/me/classes/`, `/api/v1/students/?section_id={id}`, `/api/v1/attendance/bulk/`, `/api/v1/attendance/leaves/`, `/api/v1/marks/bulk/`, `/api/v1/homework/`). Enabled Faculty to inspect their verified profile with Class Teacher metadata, view assigned classes and student rosters, take bulk roll call with canonical 4 statuses (`PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`), review student leave applications as Class Teacher (`APPROVED`/`REJECTED`), enter marks out of 100 with CBSE 8-tier letter grades (`A1`–`E`) locked strictly to authorized `TeachingAssignment` subjects, and manage homework under authorized teaching scopes. Created 24 backend integration and security tests in `backend/tests/test_phase5_faculty_integration_task53.py` and 14 frontend integration tests in `frontend/tests/faculty_api_integration.test.ts`. 100% test pass rate achieved (436/436 backend pytest tests, 213/213 frontend Vitest tests, clean build in 11.67s, 0 schema drift). Live browser session verified across login as `faculty_suresh`, dashboard, classes, student roster, attendance roll call, marks entry, homework, and clean logout.
+
+### Added / Modified
+- **Backend (`backend/apps/accounts/`, `backend/apps/attendance/`, `backend/common/authorization.py`)**:
+  - `serializers.py` (`FacultySerializer`): Added computed fields `full_name`, `class_teacher_of` (with `class_id`, `section_id`, `class_name`, `section_name`, `name`, `display_name`, `room`), `assigned_classes_count`, `assigned_students_count`, `weekly_periods`, and `status`.
+  - `urls_faculty.py`: Added explicit routes for `me/`, `me/classes/`, and `<str:pk>/classes/` alongside `<str:pk>/`.
+  - `views.py` (`FacultyDetailView`, `FacultyClassesView`): Added support for `pk='me'` in `FacultyDetailView` and blocked administrative field modifications (`employee_code`, `department`, `designation`, `joining_date`, `is_active`, `user_id`) with 403 Forbidden. Implemented `FacultyClassesView` returning teaching assignments and supervisory Class Teacher sections while blocking cross-faculty queries with 403.
+  - `attendance/views.py` (`LeaveApplicationDetailView`): Added detail view supporting GET and PATCH for leave review (`APPROVED`/`REJECTED` with reviewer notes), strictly enforcing that only the section's designated Class Teacher (or Admin/Principal) can review leaves.
+  - `attendance/urls.py`: Routed `leaves/<uuid:pk>/` before general attendance `<uuid:pk>/`.
+  - `common/authorization.py`: Extended queryset scoping for `Student`, `Enrollment`, `Parent`, and object access checks so that Faculty members can view students and sections they actively teach or supervise as Class Teacher. Maintained strict `can_faculty_teach_subject` check on marks entry.
+  - `tests/test_phase5_faculty_integration_task53.py`: Authored 24 dedicated integration and security tests covering profile inspection, assigned classes/sections, student roster scoping, attendance roll call, leave review boundary, marks entry subject authorization, and homework scoping.
+- **Frontend (`frontend/src/`)**:
+  - `features/faculty/services/facultyApiService.ts`: Created strongly typed API service communicating with DRF faculty, classes, student roster, attendance roll call, leave review, and marks entry endpoints via shared `ApiClient`.
+  - `features/faculty/services/facultyService.ts`: Connected `getFacultyProfile`, `getAssignedClasses`, `getAssignedStudents`, `getPendingLeaveNotices`, `reviewLeaveNotice`, `submitAttendanceRollCall`, and `saveMarksEntrySheet` to `FacultyApiService` with resilient fallback.
+  - `features/faculty/index.ts`: Exported `FacultyApiService`.
+  - `tests/faculty_api_integration.test.ts`: Authored 14 Vitest integration tests validating endpoint communication, payload serialization, error normalization, 401 refresh flows, and fallback logic.
+- **Verification & Governance**:
+  - Full automated browser verification executed for `faculty_suresh` on `http://localhost:5173` (login -> dashboard -> classes -> student roster -> attendance -> marks -> homework -> logout; recording `faculty_browser_test_1791366974619.webp`).
+  - Created `docs/phase_prompts/Phase_5_Task_5.3.md` and `docs/phase_prompts/Phase_5_Task_5.3_Completion_Report.md`.
+  - Updated `docs/phases/PHASE_05_STATUS.md` and `docs/PROJECT_STATUS.md`.
+
+---
+
 ## [Phase 5: Task 5.2 — Core ERP API Integration: Parent Module] - 2026-10-07
 
 ### Summary

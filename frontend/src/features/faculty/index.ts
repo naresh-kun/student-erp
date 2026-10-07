@@ -8,5 +8,6 @@ export * from './schemas/marksSchema';
 export * from './schemas/attendanceSchema';
 export * from './schemas/leaveReviewSchema';
 export * from './services/facultyService';
+export * from './services/facultyApiService';
 export * from './hooks';
 export * from './components';

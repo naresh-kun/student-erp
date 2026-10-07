@@ -241,8 +241,14 @@ class FacultySerializer(serializers.ModelSerializer):
     user_id = serializers.UUIDField(write_only=True, required=False)
     first_name = serializers.CharField(source='user.first_name', read_only=True)
     last_name = serializers.CharField(source='user.last_name', read_only=True)
+    full_name = serializers.SerializerMethodField()
     email = serializers.EmailField(source='user.email', read_only=True)
     phone = serializers.CharField(source='user.phone', read_only=True)
+    class_teacher_of = serializers.SerializerMethodField()
+    assigned_classes_count = serializers.SerializerMethodField()
+    assigned_students_count = serializers.SerializerMethodField()
+    weekly_periods = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Faculty
@@ -252,6 +258,7 @@ class FacultySerializer(serializers.ModelSerializer):
             'user_id',
             'first_name',
             'last_name',
+            'full_name',
             'email',
             'phone',
             'employee_code',
@@ -262,10 +269,71 @@ class FacultySerializer(serializers.ModelSerializer):
             'office_room',
             'joining_date',
             'is_active',
+            'status',
+            'class_teacher_of',
+            'assigned_classes_count',
+            'assigned_students_count',
+            'weekly_periods',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = [
+            'id',
+            'created_at',
+            'updated_at',
+            'full_name',
+            'status',
+            'class_teacher_of',
+            'assigned_classes_count',
+            'assigned_students_count',
+            'weekly_periods',
+        ]
+
+    def get_full_name(self, obj) -> str:
+        return obj.user.get_full_name() if obj.user else ''
+
+    def get_class_teacher_of(self, obj) -> Optional[dict]:
+        section = obj.assigned_sections.select_related('school_class').first()
+        if section:
+            return {
+                'class_id': str(section.school_class_id),
+                'section_id': str(section.id),
+                'class_name': section.school_class.name,
+                'section_name': section.name,
+                'name': section.name,
+                'display_name': f"{section.school_class.name} ({section.name})",
+                'room': section.room,
+            }
+        return None
+
+    def get_assigned_classes_count(self, obj) -> int:
+        from apps.academics.models import TeachingAssignment
+        sec_ids = set(TeachingAssignment.objects.filter(faculty=obj, is_active=True).values_list('section_id', flat=True))
+        ct_sec_ids = set(obj.assigned_sections.values_list('id', flat=True))
+        return len(sec_ids | ct_sec_ids)
+
+    def get_assigned_students_count(self, obj) -> int:
+        from apps.academics.models import TeachingAssignment, Enrollment
+        sec_ids = set(TeachingAssignment.objects.filter(faculty=obj, is_active=True).values_list('section_id', flat=True))
+        ct_sec_ids = set(obj.assigned_sections.values_list('id', flat=True))
+        all_sec_ids = sec_ids | ct_sec_ids
+        if not all_sec_ids:
+            return 0
+        return Enrollment.objects.filter(
+            section_id__in=all_sec_ids,
+            status__in=['Active', 'ACTIVE', 'Enrolled', 'enrolled'],
+        ).count()
+
+    def get_weekly_periods(self, obj) -> int:
+        from apps.academics.models import TeachingAssignment
+        from django.db.models import Sum
+        total = TeachingAssignment.objects.filter(faculty=obj, is_active=True).aggregate(
+            total=Sum('subject__weekly_periods')
+        )['total']
+        return total or 0
+
+    def get_status(self, obj) -> str:
+        return 'Active' if obj.is_active else 'Inactive'
 
 
 class FacultySummarySerializer(serializers.ModelSerializer):
