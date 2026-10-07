@@ -15,6 +15,7 @@ from common.constants import (
     ROLE_ADMIN,
     ROLE_FACULTY,
     ROLE_STUDENT,
+    ROLE_PARENT,
     PERM_ATTENDANCE_VIEW,
     PERM_ATTENDANCE_MARK,
     PERM_ATTENDANCE_VIEW_ABSENTEES,
@@ -237,6 +238,26 @@ class LeaveApplicationListView(APIView):
                 raise PermissionDenied("Students may only submit leave applications for themselves.")
             data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
             data['student'] = str(student.id)
+            data['status'] = 'PENDING'
+            serializer = LeaveApplicationSerializer(data=data)
+        elif user_role == ROLE_PARENT:
+            parent = getattr(request.user, 'parent_profile', None)
+            if not parent:
+                raise PermissionDenied("Parent profile not found.")
+            target_student_id = request.data.get('student') or request.data.get('student_id')
+            if not target_student_id:
+                raise PermissionDenied("Target student must be specified.")
+            from apps.students.models import Student
+            try:
+                target_uuid = uuid.UUID(str(target_student_id))
+                student = Student.objects.filter(Q(id=target_uuid) | Q(student_id__iexact=str(target_student_id)), parent=parent).first()
+            except (ValueError, AttributeError):
+                student = Student.objects.filter(student_id__iexact=str(target_student_id), parent=parent).first()
+            if not student:
+                raise PermissionDenied("Parents may only submit leave applications for their linked children.")
+            data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+            data['student'] = str(student.id)
+            data['status'] = 'PENDING'
             serializer = LeaveApplicationSerializer(data=data)
         elif user_role in (ROLE_ADMIN, ROLE_FACULTY):
             serializer = LeaveApplicationSerializer(data=request.data)

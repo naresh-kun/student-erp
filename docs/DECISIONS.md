@@ -465,6 +465,39 @@
   - Zero database schema migrations required.
   - 13 backend integration tests and 9 frontend unit/integration tests added (390/390 backend passed, 190/190 frontend passed, clean build, live browser verified).
 
+---
+
+## ADR 019: Parent Module Live API Integration, Scoping & Absence Notice Workflow (Task 5.2)
+
+- **Status**: ACCEPTED / AUTHORITATIVE
+- **Scope**: Phase 5 Task 5.2 (Core ERP API Integration — Parent Module)
+- **Context**:
+  - Task 5.2 requires migrating the Parent portal from synthetic mock datasets to live Django REST Framework backend APIs.
+  - Parents require visibility into their verified identity, linked children records, ward attendance telemetry, academic evaluations, report cards, and homework assignments.
+  - Crucially, parents must be strictly constrained to their linked wards (preventing cross-child inspection), must not have direct self-approval authority for absence notices (which must be initialized strictly in `PENDING` state), and must maintain full offline fallback for automated test isolation.
+- **Decision**:
+  1. **Layered Service Architecture**:
+     - `React Component` -> `Domain Service (ParentService)` -> `API Service (ParentApiService)` -> `HTTP Client (ApiClient)` -> `Django REST Framework`.
+     - UI components (`ParentDashboardPage`, `ParentAttendancePage`, `ParentMarksPage`) invoke domain methods on `ParentService` with zero direct coupling to network transports or URL structures.
+  2. **Endpoint Extensions (`/api/v1/parents/me/` & `/api/v1/parents/me/children/`)**:
+     - Added explicit routes in `urls_parents.py` for `me/` and `me/children/`.
+     - `ParentDetailView` and `ParentChildrenView` resolve `pk == 'me'` to `request.user.parent_profile` with object-level permission verification.
+     - `ParentChildrenView` serializes student profiles using `StudentDetailSerializer` with prefetched enrollments, sections, and class teachers.
+     - `StudentDetailSerializer` augmented with `parent_name` method field to maintain 100% field parity with `StudentListSerializer`.
+  3. **Absence Notice Submission Workflow (`POST /api/v1/attendance/leaves/`)**:
+     - Extended `LeaveApplicationListView.post` to accept submissions from authenticated `ROLE_PARENT` users.
+     - Enforces server-side resolution of the child (verifying that the student belongs to `request.user.parent_profile`). Submissions for foreign children are rejected with `403 Forbidden`.
+     - Initial leave status is strictly set to `PENDING` on the server, enforcing the invariant that parents cannot self-approve absences.
+  4. **Object-Level Scoping & Queryset Filtering**:
+     - Ward attendance (`/api/v1/attendance/?student_id={id}`) and marks (`/api/v1/marks/?student_id={id}`) querysets are filtered through `AuthorizationService.filter_queryset_for_user`, returning records for linked wards only and empty/denied results for unlinked children.
+     - Report card endpoint (`/api/v1/marks/report-card/{student_id}/`) validates parent linkage and returns `403 Forbidden` if an unlinked student ID is requested.
+  5. **Graceful Degradation & Test Isolation**:
+     - `ParentService` methods wrap `ParentApiService` calls in `try/catch` blocks, falling back to mock fixtures when running without authentication tokens or in offline test environments.
+- **Consequences**:
+  - Parent portal operates seamlessly against live Django REST Framework endpoints.
+  - Zero database schema migrations required (100% schema stability).
+  - 18 backend integration tests and 9 frontend unit/integration tests added (408/408 backend passed, 199/199 frontend passed, clean build in 14.43s, live browser verified).
+
 
 
 

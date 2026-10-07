@@ -105,13 +105,20 @@ class ParentListView(APIView):
 
 class ParentDetailView(APIView):
     """
-    GET /api/v1/parents/{id}/
+    GET /api/v1/parents/{id}/ or /api/v1/parents/me/
     Returns details for a specific parent profile.
     """
     permission_classes = [require_permission(PERM_STUDENTS_VIEW), IsOwnerOrScopedAccess]
 
     def get(self, request, pk, *args, **kwargs):
-        parent = get_object_or_404(Parent.objects.select_related('user'), pk=pk)
+        if str(pk).lower() == 'me':
+            if hasattr(request.user, 'parent_profile') and request.user.parent_profile:
+                parent = request.user.parent_profile
+            else:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied("Authenticated user does not have an associated parent profile.")
+        else:
+            parent = get_object_or_404(Parent.objects.select_related('user'), pk=pk)
         self.check_object_permissions(request, parent)
         serializer = ParentSerializer(parent)
         return success_response(data=serializer.data)
@@ -119,18 +126,29 @@ class ParentDetailView(APIView):
 
 class ParentChildrenView(APIView):
     """
-    GET /api/v1/parents/{id}/children/
+    GET /api/v1/parents/{id}/children/ or /api/v1/parents/me/children/
     Returns verified student profiles linked to this parent.
     """
     permission_classes = [require_permission(PERM_STUDENTS_VIEW), IsOwnerOrScopedAccess]
 
     def get(self, request, pk, *args, **kwargs):
-        parent = get_object_or_404(Parent, pk=pk)
+        if str(pk).lower() == 'me':
+            if hasattr(request.user, 'parent_profile') and request.user.parent_profile:
+                parent = request.user.parent_profile
+            else:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied("Authenticated user does not have an associated parent profile.")
+        else:
+            parent = get_object_or_404(Parent, pk=pk)
         self.check_object_permissions(request, parent)
-        from apps.students.serializers import StudentListSerializer
-        children = parent.children.select_related('user', 'parent').all()
+        from apps.students.serializers import StudentDetailSerializer
+        children = parent.children.select_related('user', 'parent').prefetch_related(
+            'enrollments__section__school_class',
+            'enrollments__section__class_teacher__user',
+            'enrollments__academic_year'
+        ).all()
         children = AuthorizationService.filter_queryset_for_user(children, request.user, domain='students')
-        serializer = StudentListSerializer(children, many=True)
+        serializer = StudentDetailSerializer(children, many=True)
         return success_response(data=serializer.data)
 
 

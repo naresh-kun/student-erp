@@ -6,5 +6,6 @@
 export * from './types';
 export * from './schemas/absenceNoticeSchema';
 export * from './services/parentService';
+export * from './services/parentApiService';
 export * from './hooks';
 export * from './components';

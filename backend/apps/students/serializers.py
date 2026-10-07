@@ -78,6 +78,7 @@ class StudentDetailSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email', read_only=True)
     phone = serializers.CharField(source='user.phone', read_only=True)
     parent = serializers.SerializerMethodField()
+    parent_name = serializers.SerializerMethodField()
     enrollments = serializers.SerializerMethodField()
     current_class = serializers.SerializerMethodField()
     current_section = serializers.SerializerMethodField()
@@ -106,6 +107,7 @@ class StudentDetailSerializer(serializers.ModelSerializer):
             'address',
             'status',
             'parent',
+            'parent_name',
             'enrollments',
             'current_class',
             'current_section',
@@ -119,6 +121,11 @@ class StudentDetailSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def get_parent_name(self, obj) -> str:
+        if obj.parent and obj.parent.user:
+            return obj.parent.user.get_full_name()
+        return ''
 
     def get_parent(self, obj):
         if not obj.parent:

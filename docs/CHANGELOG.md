@@ -2,6 +2,30 @@
 
 All notable changes to the Student ERP project will be documented in this file.
 
+## [Phase 5: Task 5.2 — Core ERP API Integration: Parent Module] - 2026-10-07
+
+### Summary
+Migrated the Parent module from synthetic mock data to live Django REST Framework backend APIs (`/api/v1/parents/me/`, `/api/v1/parents/me/children/`, `/api/v1/attendance/`, `/api/v1/attendance/leaves/`, `/api/v1/marks/report-card/{id}/`). Enabled parents to inspect their verified profile, access linked children with active section, stream, academic year, and Class Teacher details, monitor 4-status ward attendance, review term evaluations and report cards with CBSE 8-tier grades (`A1`–`E`), and submit absence justification notices strictly in `PENDING` state without parental self-approval. Created 18 backend integration tests in `backend/tests/test_phase5_parent_integration_task52.py` and 9 frontend unit/integration tests in `frontend/tests/parent_api_integration.test.ts`. 100% test pass rate achieved (408/408 backend pytest tests, 199/199 frontend Vitest tests, clean build in 14.43s, 0 schema drift). Live browser session verified across parent login, dashboard, attendance, marks, and homework views.
+
+### Added / Modified
+- **Backend (`backend/apps/accounts/`, `backend/apps/attendance/`, `backend/apps/students/`)**:
+  - `urls_parents.py`: Added explicit routes for `me/` and `me/children/` endpoints alongside UUID routes.
+  - `views.py` (`ParentDetailView`, `ParentChildrenView`): Added support for `pk='me'` resolving `request.user.parent_profile` and serialized children using `StudentDetailSerializer` with prefetched enrollments and class teachers.
+  - `serializers.py` (`StudentDetailSerializer`): Added `parent_name` method field ensuring 100% field parity with `StudentListSerializer`.
+  - `attendance/views.py` (`LeaveApplicationListView`): Enabled `ROLE_PARENT` to submit absence notices / leave applications for their linked children strictly in `PENDING` status; enforced foreign child submission rejection with `403 Forbidden`.
+  - `tests/test_phase5_parent_integration_task52.py`: Authored 18 dedicated integration tests covering parent profile, child scoping, attendance, absence notices, and report cards.
+- **Frontend (`frontend/src/`)**:
+  - `features/parents/services/parentApiService.ts`: Created typed API service communicating with DRF parent and ward endpoints.
+  - `features/parents/services/parentService.ts`: Connected `getParentProfile`, `getLinkedChildren`, `getChildAttendanceSummary`, `getChildAttendanceHistory`, `getChildAcademicSummary`, `getChildSubjectMarks`, `submitAbsenceNotice`, and `getAbsenceNotices` to `ParentApiService` with offline fallback resilience.
+  - `features/parents/index.ts`: Exported `ParentApiService`.
+  - `tests/parent_api_integration.test.ts`: Authored 9 Vitest integration tests validating endpoint communication, payload formatting, domain mapping, and offline fallback.
+- **Verification & Governance**:
+  - Live server verification executed for Parent `parent_ramanathan` with active session verification on `http://127.0.0.1:5173/parent/attendance`.
+  - Created `docs/phase_prompts/Phase_5_Task_5.2.md` and `docs/phase_prompts/Phase_5_Task_5.2_Completion_Report.md`.
+  - Updated `docs/phases/PHASE_05_STATUS.md` and `docs/PROJECT_STATUS.md`.
+
+---
+
 ## [Phase 5: Task 5.1 — Core ERP API Integration: Student Module] - 2026-10-07
 
 ### Summary

@@ -22,6 +22,7 @@ class HomeworkListSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'title',
+            'description',
             'status',
             'assigned_date',
             'due_date',

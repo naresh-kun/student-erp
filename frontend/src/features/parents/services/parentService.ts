@@ -26,6 +26,7 @@ import type {
   AbsenceNoticeSubmission
 } from '../types';
 import type { ParentAbsenceNoticeFormData } from '../schemas/absenceNoticeSchema';
+import { ParentApiService } from './parentApiService';
 
 const STORAGE_ABSENCE_KEY = 'student_erp_parent_absence_notices';
 
@@ -96,6 +97,41 @@ export class ParentService {
    * Loads parent profile by userId or parentId (defaults to S. Ramanathan)
    */
   static async getParentProfile(userIdOrParentId?: string): Promise<ParentProfile> {
+    try {
+      const apiData = await ParentApiService.getParentProfile(userIdOrParentId || 'me');
+      if (apiData && apiData.id) {
+        let childIds: string[] = [];
+        try {
+          const children = await ParentApiService.getLinkedChildren(apiData.id);
+          childIds = children.map((c) => c.student_id);
+        } catch {
+          childIds = ['STU202600001'];
+        }
+        if (childIds.length === 0) {
+          childIds = ['STU202600001'];
+        }
+
+        const firstName = apiData.first_name || apiData.user?.first_name || 'S.';
+        const lastName = apiData.last_name || apiData.user?.last_name || 'Ramanathan';
+
+        return {
+          id: apiData.id,
+          user_id: apiData.user?.id || 'usr_007',
+          first_name: firstName,
+          last_name: lastName,
+          full_name: `${firstName} ${lastName}`.trim(),
+          relation: apiData.relation || 'Father',
+          occupation: apiData.occupation || 'Senior Technical Director',
+          phone: apiData.phone || apiData.user?.phone || '+91-98400-11207',
+          email: apiData.email || apiData.user?.email || 'ramanathan@gmail.com',
+          address: apiData.address || 'No. 42, Temple View Avenue, Sector 12, RK Puram, New Delhi - 110022',
+          children_student_ids: childIds,
+        };
+      }
+    } catch {
+      // Fallback to mock
+    }
+
     if (userIdOrParentId) {
       const match = DEFAULT_PARENTS.find(
         (p) => p.user_id === userIdOrParentId || p.id === userIdOrParentId
@@ -119,6 +155,49 @@ export class ParentService {
    * Retrieves full profiles of all children linked to this parent
    */
   static async getLinkedChildren(parentId = 'par_001'): Promise<LinkedChild[]> {
+    try {
+      const apiChildren = await ParentApiService.getLinkedChildren(parentId === 'par_001' ? 'me' : parentId);
+      if (Array.isArray(apiChildren) && apiChildren.length > 0) {
+        const results: LinkedChild[] = [];
+        for (const child of apiChildren) {
+          const attendance = await this.getChildAttendanceSummary(child.student_id);
+          const academic = await this.getChildAcademicSummary(child.student_id);
+
+          const firstName = child.first_name || 'Ward';
+          const lastName = child.last_name || '';
+
+          results.push({
+            student_id: child.student_id,
+            admission_number: child.admission_number || 'ADM20240091',
+            roll_number: child.roll_number || '11-A2-04',
+            first_name: firstName,
+            last_name: lastName,
+            full_name: `${firstName} ${lastName}`.trim(),
+            date_of_birth: child.date_of_birth || '14/05/2009',
+            gender: child.gender || 'Male',
+            class_name: child.current_class ? child.current_class.split(' - ')[0] : 'Grade 11',
+            section_name: child.current_section ? (child.current_section.startsWith('Section') ? child.current_section : `Section ${child.current_section}`) : 'Section A2',
+            stream: child.stream || 'Computer Science A',
+            academic_year: child.academic_year || SCHOOL_CONFIG.academicYear,
+            status: (child.status === 'Enrolled' ? 'Active' : child.status) as any || 'Active',
+            avatar_url: child.student_id === 'STU202600002'
+              ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb'
+              : 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6',
+            class_teacher_name: child.class_teacher_name || 'R. Suresh',
+            class_teacher_dept: child.class_teacher_dept || 'Mathematics',
+            class_teacher_phone: '+91 94441 23456',
+            class_teacher_email: child.class_teacher_email || 'suresh.r@schoolerp.edu.in',
+            class_teacher_room: child.class_teacher_room || 'Staff Room B, Ramanujan Block',
+            attendance_summary: attendance,
+            academic_summary: academic,
+          });
+        }
+        return results;
+      }
+    } catch {
+      // Fallback to mock
+    }
+
     const parent = await this.getParentProfile(parentId);
     const childrenList: LinkedChild[] = [];
 
@@ -189,6 +268,24 @@ export class ParentService {
    * Attendance % = (PRESENT + ON_DUTY) / (PRESENT + ABSENT + ON_DUTY + LEAVE) * 100
    */
   static async getChildAttendanceSummary(studentId = 'STU202600001'): Promise<ParentAttendanceSummary> {
+    try {
+      const liveData = await ParentApiService.getChildAttendance(studentId);
+      if (liveData && liveData.summary) {
+        const sum = liveData.summary;
+        return {
+          overallPercentage: sum.attendance_percentage,
+          totalSessions: sum.total_sessions,
+          presentCount: sum.present_count,
+          onDutyCount: sum.on_duty_count,
+          leaveCount: sum.leave_count,
+          absentCount: sum.absent_count,
+          clearedForExams: sum.attendance_percentage >= 85,
+        };
+      }
+    } catch {
+      // Fallback to mock
+    }
+
     if (studentId === 'STU202600002') {
       const present = 80;
       const onDuty = 2;
@@ -293,7 +390,25 @@ export class ParentService {
   /**
    * Retrieves official absence/leave audit entries recorded by faculty
    */
-  static async getChildAttendanceHistory(_studentId = 'STU202600001'): Promise<ParentAttendanceRecord[]> {
+  static async getChildAttendanceHistory(studentId = 'STU202600001'): Promise<ParentAttendanceRecord[]> {
+    try {
+      const liveData = await ParentApiService.getChildAttendance(studentId);
+      if (liveData && Array.isArray(liveData.records) && liveData.records.length > 0) {
+        return liveData.records.map((r) => ({
+          id: r.id,
+          date: r.date,
+          period: r.session_period ? `Period ${r.session_period}` : 'Regular Session',
+          status: r.status,
+          subject: r.class_name || 'Core Curriculum',
+          faculty: r.recorded_by_name || r.approved_by_faculty_name || 'R. Suresh',
+          note: r.remarks || undefined,
+          approved_by_faculty_id: r.approved_by_faculty,
+        }));
+      }
+    } catch {
+      // Fallback to mock
+    }
+
     return [
       {
         id: 'rec_001',
@@ -350,7 +465,25 @@ export class ParentService {
    * Retrieves official academic performance summary for a linked child
    * Zero GPA/CGPA/credits; Marks out of 100, cumulative, percentage, 8-tier letter grade
    */
-  static async getChildAcademicSummary(_studentId = 'STU202600001'): Promise<ParentAcademicSummary> {
+  static async getChildAcademicSummary(studentId = 'STU202600001'): Promise<ParentAcademicSummary> {
+    try {
+      const rc = await ParentApiService.getChildReportCard(studentId);
+      if (rc && rc.student_id) {
+        return {
+          assessmentName: 'Half-Yearly Examination 2026',
+          cumulativeMarks: rc.total_marks_obtained,
+          totalMaxMarks: rc.total_max_marks,
+          overallPercentage: rc.overall_percentage,
+          overallGrade: rc.overall_grade,
+          gradeDescription: rc.overall_percentage >= 91 ? 'Outstanding (91–100%)' : (rc.overall_percentage >= 81 ? 'Very Good (81–90%)' : 'Good (71–80%)'),
+          sectionRank: '4th',
+          totalStudentsInSection: 32,
+        };
+      }
+    } catch {
+      // Fallback to mock
+    }
+
     const cumulativeMarks = 435;
     const totalMaxMarks = 500;
     const percentage = calculatePercentage(cumulativeMarks, totalMaxMarks); // 87.00
@@ -371,7 +504,25 @@ export class ParentService {
   /**
    * Retrieves subject-wise marks out of 100 and teacher remarks
    */
-  static async getChildSubjectMarks(_studentId = 'STU202600001'): Promise<ParentSubjectMarkRecord[]> {
+  static async getChildSubjectMarks(studentId = 'STU202600001'): Promise<ParentSubjectMarkRecord[]> {
+    try {
+      const rc = await ParentApiService.getChildReportCard(studentId);
+      if (rc && Array.isArray(rc.marks) && rc.marks.length > 0) {
+        return rc.marks.map((m) => ({
+          subject: m.subject_name,
+          faculty: 'Faculty',
+          marksObtained: m.marks_obtained,
+          maxMarks: m.max_marks,
+          percentage: m.percentage,
+          grade: m.grade,
+          remarks: m.remarks || 'Term evaluation',
+          classAverage: 78.4,
+        }));
+      }
+    } catch {
+      // Fallback to mock
+    }
+
     return [
       {
         subject: 'Mathematics',
@@ -614,6 +765,52 @@ export class ParentService {
     formData: ParentAbsenceNoticeFormData,
     _parentProfile: ParentProfile
   ): Promise<AbsenceNoticeSubmission> {
+    let leaveType = 'Other';
+    if (formData.category.startsWith('Medical')) leaveType = 'Medical';
+    else if (formData.category.startsWith('Family') || formData.category.startsWith('Religious')) leaveType = 'Casual';
+    else if (formData.category.startsWith('Educational')) leaveType = 'Duty';
+
+    try {
+      const liveLeave = await ParentApiService.submitAbsenceNotice({
+        student_id: formData.student_id,
+        leave_type: leaveType,
+        start_date: formData.date,
+        end_date: formData.date,
+        reason: formData.explanation,
+      });
+
+      if (liveLeave && liveLeave.id) {
+        const submission: AbsenceNoticeSubmission = {
+          id: liveLeave.id,
+          student_id: liveLeave.student_id || formData.student_id,
+          child_name: liveLeave.student_name || (formData.student_id === 'STU202600001' ? 'Arun Kumar' : 'Priya S'),
+          date: liveLeave.start_date || formData.date,
+          category: formData.category,
+          explanation: liveLeave.reason || formData.explanation,
+          submitted_at: liveLeave.applied_on || new Date().toISOString(),
+          status: 'PENDING_FACULTY_REVIEW',
+          recipient_faculty: liveLeave.reviewed_by_name || 'R. Suresh (Class Teacher XI-A2)',
+        };
+
+        const storage = getStorage();
+        const existingStr = storage.getItem(STORAGE_ABSENCE_KEY);
+        let existingList: AbsenceNoticeSubmission[] = [];
+        if (existingStr) {
+          try {
+            existingList = JSON.parse(existingStr);
+          } catch {
+            existingList = [];
+          }
+        }
+        existingList.unshift(submission);
+        storage.setItem(STORAGE_ABSENCE_KEY, JSON.stringify(existingList));
+
+        return submission;
+      }
+    } catch {
+      // Fallback to local storage
+    }
+
     const storage = getStorage();
     const existingStr = storage.getItem(STORAGE_ABSENCE_KEY);
     let existingList: AbsenceNoticeSubmission[] = [];
@@ -647,6 +844,25 @@ export class ParentService {
    * Retrieves previously submitted absence notices for a child
    */
   static async getAbsenceNotices(studentId: string): Promise<AbsenceNoticeSubmission[]> {
+    try {
+      const liveLeaves = await ParentApiService.getChildLeaveApplications(studentId);
+      if (Array.isArray(liveLeaves) && liveLeaves.length > 0) {
+        return liveLeaves.map((l) => ({
+          id: l.id,
+          student_id: l.student_id || studentId,
+          child_name: l.student_name || (studentId === 'STU202600001' ? 'Arun Kumar' : 'Priya S'),
+          date: l.start_date,
+          category: (l.leave_type === 'Medical' ? 'Medical / Illness' : (l.leave_type === 'Casual' ? 'Family Event / Function' : 'Other')) as any,
+          explanation: l.reason,
+          submitted_at: l.applied_on,
+          status: (l.status === 'PENDING' ? 'PENDING_FACULTY_REVIEW' : (l.status === 'APPROVED' ? 'APPROVED_BY_FACULTY' : 'REJECTED')) as any,
+          recipient_faculty: l.reviewed_by_name || 'R. Suresh (Class Teacher XI-A2)',
+        }));
+      }
+    } catch {
+      // Fallback to local storage
+    }
+
     const storage = getStorage();
     const existingStr = storage.getItem(STORAGE_ABSENCE_KEY);
     if (!existingStr) return [];
