@@ -3,8 +3,8 @@
 > **Phase**: Phase 5 (Core ERP API Integration & Advanced Workflows)  
 > **Status**: **IN PROGRESS**  
 > **Prerequisites**: Phase 1 (COMPLETE), Phase 2 (COMPLETE), Phase 3 (COMPLETE), Phase 4 (COMPLETE), MOD_001 (COMPLETED Approved Project Modification)  
-> **Active Task**: Task 5.3 (COMPLETE) | Next Task: Task 5.4 (NOT STARTED)  
-> **Last Updated**: 2026-10-07  
+> **Active Task**: Task 5.4 (COMPLETE) | Next Task: Task 5.5 (NOT STARTED)  
+> **Last Updated**: 2026-10-08  
 
 ---
 
@@ -23,7 +23,8 @@ Per authoritative project governance:
 - Task 5.1 (Student Module Live API Integration) is **COMPLETE**.
 - Task 5.2 (Parent Module Live API Integration) is **COMPLETE**.
 - Task 5.3 (Faculty Module Live API Integration) is **COMPLETE**.
-- Remaining Phase 5 tasks (Task 5.4, Task 5.5) remain pending kickoff.
+- Task 5.4 (Academic Structure + Administrative Integration) is **COMPLETE**.
+- Remaining Phase 5 task (Task 5.5) remains pending kickoff.
 
 ---
 
@@ -34,7 +35,7 @@ Per authoritative project governance:
 | **Task 5.1** | **Core ERP API Integration — Student Module** | Migrate Student profile, attendance, leaves, marks/report card to live DRF APIs; establish `ApiClient` with 401 refresh; maintain domain abstraction | **COMPLETE** | 390 backend tests passing (+13 new); 190 frontend tests passing (+9 new); clean build (8.78s); E2E browser verification completed (`task51_student_flow_1791321497316.webp`) |
 | **Task 5.2** | **Parent Live API Integration** | Wire Parent portal views, linked ward attendance, report cards, notices, and homework to live `/api/v1/` endpoints | **COMPLETE** | 412 backend tests passing (+22 new); 199 frontend tests passing (+9 new); clean build (14.43s); actual browser verification completed (login -> dashboard -> child selector -> attendance -> marks -> homework -> child switching -> logout) |
 | **Task 5.3** | **Faculty Live API Integration** | Wire Faculty views, profile, assigned classes/sections, student roster, marks entry, roll call, Class Teacher leave review, and homework to live `/api/v1/` endpoints | **COMPLETE** | 436 backend tests passing (+24 new); 213 frontend tests passing (+14 new); clean build (11.67s); live browser verification completed (login -> dashboard -> classes -> students roster -> attendance roll call -> marks entry -> homework -> logout; recording `faculty_browser_test_1791366974619.webp`) |
-| **Task 5.4** | **Admin & Principal Live Console Integration** | Wire Admin and Principal management consoles to live `/api/v1/` endpoints | **NOT STARTED** | Scheduled |
+| **Task 5.4** | **Academic Structure + Administrative Integration** | Wire Academic Years, Classes, Sections, Subjects, Enrollments, Admin directories (Students, Parents, Faculty), and Operational Allocations (Student Section & Class Teacher) to live `/api/v1/` endpoints | **COMPLETE** | 457 backend tests passing (+21 new in `test_phase5_admin_allocation_task54.py`, 33 in `test_endpoint_rbac_task44.py`); 229 frontend tests passing (+16 new in `admin_allocation_api_integration.test.ts`); clean build (9.09s); live browser verification completed for Admin, Principal, and Faculty |
 | **Task 5.5** | **Phase 5 Full System Verification & Release Gate** | End-to-end integration tests, regression test suites, performance audit | **NOT STARTED** | Scheduled |
 
 ---
@@ -115,4 +116,37 @@ Per authoritative project governance:
 - **Migration Drift**: 0 changes detected.
 - **Production Build**: Clean build in 11.67s with zero TypeScript errors.
 - **Live Browser QA**: Full automated browser verification against `http://localhost:5173` and `http://127.0.0.1:8000` for `faculty_suresh` (login -> dashboard -> classes -> students roster -> attendance roll call -> marks entry -> homework -> logout; recording `faculty_browser_test_1791366974619.webp`).
+
+---
+
+## 6. Task 5.4 Execution Summary
+
+### 6.1 Backend Endpoints Integrated
+- `GET /api/v1/academics/years/`: Listing of current and past academic years.
+- `GET, POST /api/v1/academics/classes/`: Classes and grade hierarchy catalog; section nesting.
+- `GET, POST /api/v1/academics/sections/` & `GET, PATCH /api/v1/academics/sections/{id}/`: Section management and filtering.
+- `GET, POST /api/v1/academics/subjects/`: Academic subjects catalog with codes and weekly periods.
+- `GET /api/v1/academics/enrollments/`: Authoritative student-section placements per academic year.
+- `GET /api/v1/students/` & `GET /api/v1/students/{id}/`: Admin master student directory.
+- `GET /api/v1/parents/` & `GET /api/v1/parents/{id}/`: Admin master parent directory.
+- `GET /api/v1/faculty/` & `GET /api/v1/faculty/{id}/`: Admin master faculty directory.
+- `GET, PATCH, DELETE /api/v1/allocation/students/`: Operational Student Section Allocation register and updates.
+- `GET, PATCH, DELETE /api/v1/allocation/class-teachers/`: Operational Class Teacher Allocation register and updates.
+- `GET /api/v1/allocation/`: Allocation module status and discovery overview.
+
+### 6.2 Frontend Architecture
+- **Admin API Service (`frontend/src/features/admin/services/adminApiService.ts`)**: Direct typed client for admin directories, academic years, classes, and subjects.
+- **Allocation API Service (`frontend/src/services/allocationApiService.ts`)**: Direct typed client for student section and class teacher allocations.
+- **Admin Domain Service (`frontend/src/features/admin/services/adminService.ts`)**: Connected live API calls with fallback to local stores.
+- **Allocation Domain Service (`frontend/src/services/allocationService.ts`)**: Wired student and class teacher allocation CRUD to live API with fallback.
+- **Component Error Handling & Safety**: Enhanced `StudentAllocationTable`, `ClassTeacherAllocationTable`, `FacultyDirectory`, and `PrincipalFacultyDirectory`.
+
+### 6.3 Test & Quality Metrics
+- **Backend Tests**: 457/457 pytest passed (21 new dedicated tests in `test_phase5_admin_allocation_task54.py`, 33 in `test_endpoint_rbac_task44.py`).
+- **Frontend Tests**: 229/229 Vitest passed across 14 test files (16 new dedicated tests in `admin_allocation_api_integration.test.ts`).
+- **Django System Check**: 0 issues.
+- **Migration Drift**: 0 changes detected.
+- **Production Build**: Clean build in 9.09s with zero TypeScript errors.
+- **Live Browser QA**: Full verification for Admin, Principal, and Faculty accounts against `http://localhost:5173` and `http://127.0.0.1:8000`.
+
 

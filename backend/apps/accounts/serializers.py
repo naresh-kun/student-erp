@@ -189,17 +189,20 @@ class UserSummarySerializer(serializers.ModelSerializer):
 class ParentSerializer(serializers.ModelSerializer):
     """Serializer for Parent profile with nested User representation."""
     user = UserSummarySerializer(read_only=True)
+    name = serializers.SerializerMethodField()
     first_name = serializers.CharField(source='user.first_name', read_only=True)
     last_name = serializers.CharField(source='user.last_name', read_only=True)
     email = serializers.EmailField(source='user.email', read_only=True)
     phone = serializers.CharField(source='user.phone', read_only=True)
     children_count = serializers.SerializerMethodField()
+    children = serializers.SerializerMethodField()
 
     class Meta:
         model = Parent
         fields = [
             'id',
             'user',
+            'name',
             'first_name',
             'last_name',
             'email',
@@ -208,13 +211,31 @@ class ParentSerializer(serializers.ModelSerializer):
             'occupation',
             'address',
             'children_count',
+            'children',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'children_count']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'children_count', 'children']
+
+    def get_name(self, obj) -> str:
+        return obj.user.get_full_name() if obj.user else ''
 
     def get_children_count(self, obj) -> int:
         return obj.children.count() if hasattr(obj, 'children') else 0
+
+    def get_children(self, obj) -> list:
+        result = []
+        if hasattr(obj, 'children'):
+            for child in obj.children.select_related('user').all():
+                enrollment = child.enrollments.select_related('section__school_class').first()
+                class_name = enrollment.section.school_class.name if enrollment and enrollment.section and enrollment.section.school_class else '—'
+                result.append({
+                    'student_id': child.student_id,
+                    'name': child.user.get_full_name() if child.user else '',
+                    'class_name': class_name,
+                    'roll_number': child.roll_number or '—',
+                })
+        return result
 
 
 class ParentSummarySerializer(serializers.ModelSerializer):
@@ -242,11 +263,14 @@ class FacultySerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='user.first_name', read_only=True)
     last_name = serializers.CharField(source='user.last_name', read_only=True)
     full_name = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
     email = serializers.EmailField(source='user.email', read_only=True)
     phone = serializers.CharField(source='user.phone', read_only=True)
     class_teacher_of = serializers.SerializerMethodField()
     assigned_classes_count = serializers.SerializerMethodField()
     assigned_students_count = serializers.SerializerMethodField()
+    assigned_subjects = serializers.SerializerMethodField()
+    assigned_classes = serializers.SerializerMethodField()
     weekly_periods = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
 
@@ -259,6 +283,7 @@ class FacultySerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'full_name',
+            'name',
             'email',
             'phone',
             'employee_code',
@@ -273,6 +298,8 @@ class FacultySerializer(serializers.ModelSerializer):
             'class_teacher_of',
             'assigned_classes_count',
             'assigned_students_count',
+            'assigned_subjects',
+            'assigned_classes',
             'weekly_periods',
             'created_at',
             'updated_at',
@@ -282,15 +309,38 @@ class FacultySerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'full_name',
+            'name',
             'status',
             'class_teacher_of',
             'assigned_classes_count',
             'assigned_students_count',
+            'assigned_subjects',
+            'assigned_classes',
             'weekly_periods',
         ]
 
     def get_full_name(self, obj) -> str:
         return obj.user.get_full_name() if obj.user else ''
+
+    def get_name(self, obj) -> str:
+        return self.get_full_name(obj)
+
+    def get_assigned_subjects(self, obj) -> list:
+        from apps.academics.models import TeachingAssignment
+        return list(TeachingAssignment.objects.filter(faculty=obj, is_active=True).values_list('subject__name', flat=True).distinct())
+
+    def get_assigned_classes(self, obj) -> list:
+        from apps.academics.models import TeachingAssignment
+        assignments = TeachingAssignment.objects.filter(
+            faculty=obj, is_active=True
+        ).select_related('school_class', 'section', 'subject')
+        results = []
+        for a in assignments:
+            c_name = a.school_class.name if a.school_class else ''
+            s_name = a.section.name if a.section else ''
+            sub_name = a.subject.name if a.subject else ''
+            results.append(f"{c_name}-{s_name} ({sub_name})".strip())
+        return results
 
     def get_class_teacher_of(self, obj) -> Optional[dict]:
         section = obj.assigned_sections.select_related('school_class').first()

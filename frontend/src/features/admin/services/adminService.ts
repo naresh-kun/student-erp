@@ -18,6 +18,7 @@
 import { MockDataService } from '@/services/mockService';
 import { calculateAttendancePercentage, calculateGrade } from '@/utils';
 import { SCHOOL_CONFIG } from '@/config/schoolConfig';
+import { AdminApiService } from './adminApiService';
 import type {
   AdminDashboardKPIs,
   AdminStudentItem,
@@ -76,6 +77,14 @@ export class AdminService {
     kpis: AdminDashboardKPIs;
     attendanceTrend: { month: string; attendance: number }[];
   }> {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      if (token) {
+        return await AdminApiService.getDashboardSummary();
+      }
+    } catch (err) {
+      console.warn('[AdminService] Live KPI fetch failed, using fallback:', err);
+    }
     await delay();
     const rawKpis = await MockDataService.getSchoolKPIs();
     const trend = await MockDataService.getMonthlyAttendanceTrend();
@@ -108,6 +117,15 @@ export class AdminService {
     section?: string;
     status?: string;
   }): Promise<AdminStudentItem[]> {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      if (token) {
+        const live = await AdminApiService.getStudents(filters);
+        if (live && live.length > 0) return live;
+      }
+    } catch (err) {
+      console.warn('[AdminService] Live students fetch failed, using fallback:', err);
+    }
     await delay();
     const rawStudents = await MockDataService.getStudents();
     const classes = await MockDataService.getClasses();
@@ -316,6 +334,15 @@ export class AdminService {
   }
 
   static async getStudentById(studentId: string): Promise<AdminStudentItem | undefined> {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      if (token) {
+        const live = await AdminApiService.getStudentById(studentId);
+        if (live) return live;
+      }
+    } catch (err) {
+      console.warn('[AdminService] Live student by ID fetch failed, using fallback:', err);
+    }
     const list = await this.getStudents();
     return list.find((s) => s.student_id === studentId || s.id === studentId);
   }
@@ -324,6 +351,15 @@ export class AdminService {
   // 3. PARENT DIRECTORY
   // ==========================================
   static async getParents(search?: string): Promise<AdminParentItem[]> {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      if (token) {
+        const live = await AdminApiService.getParents(search);
+        if (live && live.length > 0) return live;
+      }
+    } catch (err) {
+      console.warn('[AdminService] Live parents fetch failed, using fallback:', err);
+    }
     await delay();
     const rawParents = await MockDataService.getParents();
     const students = await this.getStudents();
@@ -375,6 +411,15 @@ export class AdminService {
     searchOrOptions?: string | { search?: string; department?: string },
     department?: string
   ): Promise<AdminFacultyItem[]> {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      if (token) {
+        const live = await AdminApiService.getFaculty(searchOrOptions, department);
+        if (live && live.length > 0) return live;
+      }
+    } catch (err) {
+      console.warn('[AdminService] Live faculty fetch failed, using fallback:', err);
+    }
     await delay();
     const rawFaculty = await MockDataService.getFaculty();
     const subjects = await MockDataService.getSubjects();
@@ -443,6 +488,15 @@ export class AdminService {
   // 5. CLASSES & SECTIONS HIERARCHY
   // ==========================================
   static async getClassesAndSections(): Promise<AdminClassHierarchyItem[]> {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      if (token) {
+        const live = await AdminApiService.getClassesAndSections();
+        if (live && live.length > 0) return live;
+      }
+    } catch (err) {
+      console.warn('[AdminService] Live classes fetch failed, using fallback:', err);
+    }
     await delay();
     const rawClasses = await MockDataService.getClasses();
     const faculty = await MockDataService.getFaculty();
@@ -473,6 +527,15 @@ export class AdminService {
   // 6. SUBJECTS CATALOG (No Credits)
   // ==========================================
   static async getSubjectsCatalog(): Promise<AdminSubjectCatalogItem[]> {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      if (token) {
+        const live = await AdminApiService.getSubjectsCatalog();
+        if (live && live.length > 0) return live;
+      }
+    } catch (err) {
+      console.warn('[AdminService] Live subjects fetch failed, using fallback:', err);
+    }
     await delay();
     const rawSubjects = await MockDataService.getSubjects();
     const faculty = await MockDataService.getFaculty();

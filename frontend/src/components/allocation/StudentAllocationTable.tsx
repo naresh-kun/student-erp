@@ -8,7 +8,7 @@ import { StudentAllocationModal } from './StudentAllocationModal';
 import { LoadingState, EmptyState } from '@/components/ui/States';
 import { AllocationService } from '@/services/allocationService';
 import type { StudentAllocationItem } from '@/types';
-import { Edit2, Trash2, CheckCircle2, Layers } from 'lucide-react';
+import { Edit2, Trash2, CheckCircle2, Layers, Shield } from 'lucide-react';
 
 export interface StudentAllocationTableProps {
   canManage?: boolean; // True for Admin and Principal; False for Faculty
@@ -30,6 +30,7 @@ export const StudentAllocationTable: React.FC<StudentAllocationTableProps> = ({
   const [deletingStudent, setDeletingStudent] = useState<StudentAllocationItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -40,6 +41,8 @@ export const StudentAllocationTable: React.FC<StudentAllocationTableProps> = ({
         stream: streamFilter,
       });
       setStudents(data);
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to load student allocations.');
     } finally {
       setIsLoading(false);
     }
@@ -60,21 +63,31 @@ export const StudentAllocationTable: React.FC<StudentAllocationTableProps> = ({
       roll_number: string;
     }
   ) => {
-    await AllocationService.updateStudentAllocation(studentId, updates);
-    setNotice(`Successfully updated section allocation for student ${studentId}.`);
-    setTimeout(() => setNotice(null), 4000);
-    await loadData();
+    try {
+      setErrorMessage(null);
+      await AllocationService.updateStudentAllocation(studentId, updates);
+      setNotice(`Successfully updated section allocation for student ${studentId}.`);
+      setTimeout(() => setNotice(null), 4000);
+      await loadData();
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to update student section allocation.');
+      setTimeout(() => setErrorMessage(null), 6000);
+    }
   };
 
   const handleDelete = async () => {
     if (!deletingStudent) return;
     setIsDeleting(true);
     try {
+      setErrorMessage(null);
       await AllocationService.deleteStudentAllocation(deletingStudent.student_id);
       setNotice(`Removed ${deletingStudent.student_name} (${deletingStudent.student_id}) from section allocation.`);
       setTimeout(() => setNotice(null), 4000);
       setDeletingStudent(null);
       await loadData();
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to remove student from section allocation.');
+      setTimeout(() => setErrorMessage(null), 6000);
     } finally {
       setIsDeleting(false);
     }
@@ -82,6 +95,22 @@ export const StudentAllocationTable: React.FC<StudentAllocationTableProps> = ({
 
   return (
     <div className="space-y-4">
+      {/* Error feedback notice */}
+      {errorMessage && (
+        <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-800 dark:text-rose-300 flex items-center justify-between shadow-xs animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="text-rose-700 hover:text-rose-900 dark:hover:text-rose-100 font-semibold cursor-pointer"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Non-blocking feedback notice */}
       {notice && (
         <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between shadow-xs animate-in fade-in">

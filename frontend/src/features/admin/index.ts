@@ -7,5 +7,6 @@ export * from './types';
 export * from './schemas/allocationSchema';
 export * from './schemas/eventSchema';
 export * from './services/adminService';
+export * from './services/adminApiService';
 export * from './hooks';
 export * from './components';

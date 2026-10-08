@@ -141,7 +141,9 @@ export const PrincipalFacultyDirectory: React.FC = () => {
                       </div>
                       {f.class_teacher_of && (
                         <span className="text-[10px] text-blue-700 dark:text-blue-400 font-semibold block mt-1">
-                          Class Teacher: {f.class_teacher_of}
+                          Class Teacher: {typeof f.class_teacher_of === 'object' && f.class_teacher_of !== null
+                            ? ((f.class_teacher_of as any).display_name || `${(f.class_teacher_of as any).class_name || ''} — Sec ${(f.class_teacher_of as any).section_name || ''}`)
+                            : String(f.class_teacher_of)}
                         </span>
                       )}
                     </td>

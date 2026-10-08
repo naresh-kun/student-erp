@@ -126,7 +126,11 @@ export const FacultyDirectory: React.FC = () => {
                   {f.class_teacher_of ? (
                     <div className="p-2 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60 font-semibold flex items-center gap-1.5">
                       <GraduationCap className="w-3.5 h-3.5 text-blue-700" />
-                      <span>Class Teacher: {f.class_teacher_of}</span>
+                      <span>
+                        Class Teacher: {typeof f.class_teacher_of === 'object' && f.class_teacher_of !== null
+                          ? ((f.class_teacher_of as any).display_name || `${(f.class_teacher_of as any).class_name || ''} — Sec ${(f.class_teacher_of as any).section_name || ''}`)
+                          : String(f.class_teacher_of)}
+                      </span>
                     </div>
                   ) : (
                     <div className="p-2 rounded bg-slate-50 dark:bg-slate-800/40 text-slate-500 text-[11px]">

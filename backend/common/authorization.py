@@ -143,7 +143,6 @@ ROLE_PERMISSIONS_MATRIX: Dict[str, FrozenSet[str]] = {
         PERM_STUDENTS_VIEW,
         # Academics (Read-only oversight & approval)
         PERM_ACADEMICS_VIEW,
-        PERM_ACADEMICS_MANAGE,
         PERM_TEACHING_ASSIGNMENT_VIEW,
         # Attendance (School-wide oversight, absentees, not-entered)
         PERM_ATTENDANCE_VIEW,

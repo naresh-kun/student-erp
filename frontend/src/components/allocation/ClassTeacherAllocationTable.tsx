@@ -30,6 +30,7 @@ export const ClassTeacherAllocationTable: React.FC<ClassTeacherAllocationTablePr
   const [deletingRecord, setDeletingRecord] = useState<ClassTeacherAllocationItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -40,6 +41,8 @@ export const ClassTeacherAllocationTable: React.FC<ClassTeacherAllocationTablePr
         stream: streamFilter,
       });
       setAllocations(data);
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to load Class Teacher allocations.');
     } finally {
       setIsLoading(false);
     }
@@ -59,21 +62,31 @@ export const ClassTeacherAllocationTable: React.FC<ClassTeacherAllocationTablePr
       subjects: string[];
     }
   ) => {
-    await AllocationService.updateClassTeacherAllocation(sectionId, faculty);
-    setNotice(`Assigned ${faculty.faculty_name} as Class Teacher.`);
-    setTimeout(() => setNotice(null), 4000);
-    await loadData();
+    try {
+      setErrorMessage(null);
+      await AllocationService.updateClassTeacherAllocation(sectionId, faculty);
+      setNotice(`Assigned ${faculty.faculty_name} as Class Teacher.`);
+      setTimeout(() => setNotice(null), 4000);
+      await loadData();
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to update Class Teacher assignment.');
+      setTimeout(() => setErrorMessage(null), 6000);
+    }
   };
 
   const handleDelete = async () => {
     if (!deletingRecord) return;
     setIsDeleting(true);
     try {
+      setErrorMessage(null);
       await AllocationService.deleteClassTeacherAllocation(deletingRecord.section_id);
       setNotice(`Removed Class Teacher assignment for ${deletingRecord.grade_name} — ${deletingRecord.section_name}.`);
       setTimeout(() => setNotice(null), 4000);
       setDeletingRecord(null);
       await loadData();
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to remove Class Teacher assignment.');
+      setTimeout(() => setErrorMessage(null), 6000);
     } finally {
       setIsDeleting(false);
     }
@@ -81,6 +94,22 @@ export const ClassTeacherAllocationTable: React.FC<ClassTeacherAllocationTablePr
 
   return (
     <div className="space-y-4">
+      {/* Error feedback notice */}
+      {errorMessage && (
+        <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-800 dark:text-rose-300 flex items-center justify-between shadow-xs animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="text-rose-700 hover:text-rose-900 dark:hover:text-rose-100 font-semibold cursor-pointer"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Non-blocking feedback notice */}
       {notice && (
         <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between shadow-xs animate-in fade-in">

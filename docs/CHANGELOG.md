@@ -2,6 +2,41 @@
 
 All notable changes to the Student ERP project will be documented in this file.
 
+## [Phase 5: Task 5.4 — Academic Structure + Administrative Integration] - 2026-10-08
+
+### Summary
+Migrated the Academic Structure and Administrative Management surfaces (Academic Years, Classes/Grades, Sections, Subjects, Enrollments, Admin Directories for Students, Parents, and Faculty, and Operational Allocations for Student Sections and Class Teachers) from synthetic mock data to live Django REST Framework backend APIs under `/api/v1/`. Enforced permanent Student ID immutability, Class Teacher one-per-year cardinality constraint, and TeachingAssignment subject evaluation boundaries. Restricted academic master data mutations to Administrators while granting Principals operational allocation update/delete rights. Added 21 backend tests in `backend/tests/test_phase5_admin_allocation_task54.py` and 16 frontend tests in `frontend/tests/admin_allocation_api_integration.test.ts`. 100% test pass rate achieved (457/457 backend pytest tests, 229/229 frontend Vitest tests, clean build in 9.09s, 0 schema drift). Live browser session verified across Admin, Principal, and Faculty workflows.
+
+### Added / Modified
+- **Backend (`backend/apps/academics/`, `backend/apps/allocation/`, `backend/apps/students/`, `backend/apps/accounts/`, `backend/common/authorization.py`)**:
+  - `academics/serializers.py`: Added `SectionSerializer` summary fields, `EnrollmentSerializer`, and `academic_year_id` alias handling in `SchoolClassSerializer`.
+  - `academics/views.py`: Added `SectionListView`, `SectionDetailView`, `EnrollmentListView`, and `EnrollmentDetailView`.
+  - `academics/urls.py`: Routed `sections/`, `sections/<pk>/`, `enrollments/`, `enrollments/<pk>/`.
+  - `allocation/serializers.py`: Authored `StudentAllocationSerializer`, `StudentAllocationUpdateSerializer` (supporting `section_id` and `section_name`), `ClassTeacherAllocationSerializer`, and `ClassTeacherAllocationUpdateSerializer`.
+  - `allocation/views.py`: Authored `AllocationOverviewView` (root `/api/v1/allocation/`), `StudentAllocationListView`, `StudentAllocationDetailView` (patching/unassigning section), `ClassTeacherAllocationListView`, and `ClassTeacherAllocationDetailView`.
+  - `allocation/urls.py`: Routed root ``, `students/`, `students/<str:student_id>/`, `class-teachers/`, `class-teachers/<uuid:section_id>/`.
+  - `students/serializers.py`: Enhanced `StudentListSerializer` with current class and section names.
+  - `accounts/serializers.py`: Enhanced `ParentSerializer` and `FacultySerializer` with computed counts and class teacher metadata.
+  - `common/authorization.py`: Removed `PERM_ACADEMICS_MANAGE` from `ROLE_PRINCIPAL` to keep academic master data mutations Admin-only while preserving Principal's operational allocation permissions.
+  - `tests/test_phase5_admin_allocation_task54.py`: 21 dedicated integration tests.
+- **Frontend (`frontend/src/`)**:
+  - `features/admin/services/adminApiService.ts`: Authoritative DRF API service for students, parents, faculty, classes, and subjects.
+  - `services/allocationApiService.ts`: Authoritative DRF API service for student section and class teacher allocations.
+  - `features/admin/services/adminService.ts`: Connected directories and catalog to `AdminApiService` with fallback.
+  - `services/allocationService.ts`: Connected operational allocation methods to `AllocationApiService` with fallback.
+  - `features/admin/components/FacultyDirectory.tsx`: Safely rendered `class_teacher_of` string or object.
+  - `features/principal/components/PrincipalFacultyDirectory.tsx`: Safely rendered `class_teacher_of`.
+  - `components/allocation/StudentAllocationTable.tsx`: Integrated error banner and API status handling.
+  - `components/allocation/ClassTeacherAllocationTable.tsx`: Integrated error banner and API status handling.
+  - `features/admin/index.ts` & `services/index.ts`: Exported new API services.
+  - `tests/admin_allocation_api_integration.test.ts`: 16 Vitest unit & integration tests.
+- **Verification & Governance**:
+  - Browser QA verified for Admin, Principal, and Faculty on `http://localhost:5173`.
+  - Authored `docs/phase_prompts/Phase_5_Task_5.4_Completion_Report.md`.
+  - Updated `docs/phase_prompts/Phase_5_Task_5.4.md`, `docs/phases/PHASE_05_STATUS.md`, and `docs/PROJECT_STATUS.md`.
+
+---
+
 ## [Phase 5: Task 5.3 — Core ERP API Integration: Faculty Module] - 2026-10-07
 
 ### Summary

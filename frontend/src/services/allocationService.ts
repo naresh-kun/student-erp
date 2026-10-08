@@ -21,6 +21,7 @@ import type {
   GlobalSearchResultItem,
   UserRole,
 } from '@/types';
+import { AllocationApiService } from './allocationApiService';
 
 const delay = (ms = 35) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -410,6 +411,33 @@ let attendanceNotEnteredState: AttendanceNotEnteredItem[] = INITIAL_ATTENDANCE_N
 // ==========================================
 
 export class AllocationService {
+  static resetState(): void {
+    studentAllocationsState = INITIAL_STUDENT_ALLOCATIONS.map((s) => ({
+      ...s,
+      grade: s.grade_name,
+      section: s.section_name,
+    }));
+    classTeacherAllocationsState = INITIAL_CLASS_TEACHER_ALLOCATIONS.map((cta) => ({
+      ...cta,
+      grade: cta.grade_name,
+      section: cta.section_name,
+      assigned_subjects: cta.subjects,
+      status: cta.assignment_status,
+    }));
+    studentAbsenteesState = INITIAL_STUDENT_ABSENTEES.map((a) => ({
+      ...a,
+      grade: a.grade_name,
+      section: a.section_name,
+      subject: a.subject_name,
+    }));
+    attendanceNotEnteredState = INITIAL_ATTENDANCE_NOT_ENTERED.map((u) => ({
+      ...u,
+      grade: u.grade_name,
+      section: u.section_name,
+      subject: u.subject_name,
+    }));
+  }
+
   // ----------------------------------------
   // 1. STUDENT SECTION ALLOCATION
   // ----------------------------------------
@@ -420,6 +448,22 @@ export class AllocationService {
     stream?: string;
     section?: string;
   }): Promise<StudentAllocationItem[]> {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      if (token) {
+        const live = await AllocationApiService.getStudentAllocations(filters);
+        if (live && live.length > 0) {
+          studentAllocationsState = live.map((s) => ({
+            ...s,
+            grade: s.grade_name,
+            section: s.section_name,
+          }));
+          return studentAllocationsState;
+        }
+      }
+    } catch (err) {
+      console.warn('[AllocationService] Live student allocations fetch failed, using fallback:', err);
+    }
     await delay();
     let records = [...studentAllocationsState];
 
@@ -463,6 +507,21 @@ export class AllocationService {
       roll_number?: string;
     }
   ): Promise<StudentAllocationItem> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    if (token) {
+      const liveUpdated = await AllocationApiService.updateStudentAllocation(studentId, updates);
+      if (liveUpdated) {
+        const idx = studentAllocationsState.findIndex((s) => s.student_id === studentId || s.id === studentId);
+        if (idx !== -1) {
+          studentAllocationsState[idx] = {
+            ...liveUpdated,
+            grade: liveUpdated.grade_name,
+            section: liveUpdated.section_name,
+          };
+        }
+        return liveUpdated;
+      }
+    }
     await delay();
     const index = studentAllocationsState.findIndex((s) => s.student_id === studentId || s.id === studentId);
     if (index === -1) {
@@ -494,6 +553,22 @@ export class AllocationService {
   }
 
   static async deleteStudentAllocation(studentId: string): Promise<boolean> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    if (token) {
+      await AllocationApiService.deleteStudentAllocation(studentId);
+      const idx = studentAllocationsState.findIndex((s) => s.student_id === studentId || s.id === studentId);
+      if (idx !== -1) {
+        const current = studentAllocationsState[idx];
+        studentAllocationsState[idx] = {
+          ...current,
+          section_name: '—',
+          section: '—',
+          section_id: 'none',
+          allocation_status: 'Unassigned',
+        };
+      }
+      return true;
+    }
     await delay();
     const index = studentAllocationsState.findIndex((s) => s.student_id === studentId || s.id === studentId);
     if (index === -1) {
@@ -522,6 +597,24 @@ export class AllocationService {
     grade?: string;
     stream?: string;
   }): Promise<ClassTeacherAllocationItem[]> {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      if (token) {
+        const live = await AllocationApiService.getClassTeacherAllocations(filters);
+        if (live && live.length > 0) {
+          classTeacherAllocationsState = live.map((cta) => ({
+            ...cta,
+            grade: cta.grade_name,
+            section: cta.section_name,
+            assigned_subjects: cta.subjects,
+            status: cta.assignment_status,
+          }));
+          return classTeacherAllocationsState;
+        }
+      }
+    } catch (err) {
+      console.warn('[AllocationService] Live class teacher allocations fetch failed, using fallback:', err);
+    }
     await delay();
     let records = [...classTeacherAllocationsState];
 
@@ -560,6 +653,25 @@ export class AllocationService {
       assigned_subjects?: string[];
     }
   ): Promise<ClassTeacherAllocationItem> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    if (token) {
+      const liveUpdated = await AllocationApiService.updateClassTeacherAllocation(sectionOrRecordId, faculty);
+      if (liveUpdated) {
+        const idx = classTeacherAllocationsState.findIndex(
+          (cta) => cta.section_id === sectionOrRecordId || cta.id === sectionOrRecordId
+        );
+        if (idx !== -1) {
+          classTeacherAllocationsState[idx] = {
+            ...liveUpdated,
+            grade: liveUpdated.grade_name,
+            section: liveUpdated.section_name,
+            assigned_subjects: liveUpdated.subjects,
+            status: liveUpdated.assignment_status,
+          };
+        }
+        return liveUpdated;
+      }
+    }
     await delay();
     const index = classTeacherAllocationsState.findIndex(
       (cta) => cta.section_id === sectionOrRecordId || cta.id === sectionOrRecordId
@@ -590,6 +702,31 @@ export class AllocationService {
   }
 
   static async deleteClassTeacherAllocation(sectionOrRecordId: string): Promise<boolean> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    if (token) {
+      await AllocationApiService.deleteClassTeacherAllocation(sectionOrRecordId);
+      const idx = classTeacherAllocationsState.findIndex(
+        (cta) => cta.section_id === sectionOrRecordId || cta.id === sectionOrRecordId
+      );
+      if (idx !== -1) {
+        const current = classTeacherAllocationsState[idx];
+        classTeacherAllocationsState[idx] = {
+          ...current,
+          faculty_id: '',
+          faculty_name: 'Unassigned',
+          employee_code: '-',
+          designation: '-',
+          subjects: [],
+          assigned_subjects: [],
+          grade: current.grade_name,
+          section: current.section_name,
+          status: 'Unassigned',
+          is_assigned: false,
+          assignment_status: 'Unassigned',
+        };
+      }
+      return true;
+    }
     await delay();
     const index = classTeacherAllocationsState.findIndex(
       (cta) => cta.section_id === sectionOrRecordId || cta.id === sectionOrRecordId
