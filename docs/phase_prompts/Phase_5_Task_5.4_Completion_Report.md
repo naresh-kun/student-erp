@@ -52,7 +52,7 @@ All target administrative modules were migrated from synthetic mock dependencies
 | **Faculty Directory** | `/api/v1/faculty/` | GET | `PERM_USERS_VIEW`; staff profiles, departments, designations |
 | **Student Allocation** | `/api/v1/allocation/students/` | GET | `PERM_ALLOCATION_VIEW`; permitted for Admin, Principal, Faculty (view-only) |
 | **Student Section Patch** | `/api/v1/allocation/students/{id}/` | PATCH | `PERM_ALLOCATION_UPDATE_STUDENT_SECTION`; Admin & Principal; permanent Student ID |
-| **Student Section Delete** | `/api/v1/allocation/students/{id}/` | DELETE | `PERM_ALLOCATION_DELETE_STUDENT_SECTION`; sets status to `Withdrawn` (Unassigned) |
+| **Student Section Delete** | `/api/v1/allocation/students/{id}/` | DELETE | `PERM_ALLOCATION_DELETE_STUDENT_SECTION`; sets status to `Unassigned` (section `—`) |
 | **Class Teacher List** | `/api/v1/allocation/class-teachers/` | GET | `PERM_ALLOCATION_VIEW`; permitted for Admin, Principal, Faculty (view-only) |
 | **Class Teacher Patch** | `/api/v1/allocation/class-teachers/{id}/` | PATCH | `PERM_ALLOCATION_UPDATE_CLASS_TEACHER`; Admin & Principal; enforces 1-per-year invariant |
 | **Class Teacher Delete** | `/api/v1/allocation/class-teachers/{id}/` | DELETE | `PERM_ALLOCATION_DELETE_CLASS_TEACHER`; Admin & Principal; clears class teacher |
@@ -71,7 +71,7 @@ All target administrative modules were migrated from synthetic mock dependencies
 | **Principal Allocation Authority** | Principal can Update and Delete student/teacher allocations | Permitted with `200 OK` | `test_student_allocation_update_by_principal`, `test_class_teacher_allocation_update_by_principal` |
 | **Faculty Allocation Restrictions** | Faculty is strictly view-only for allocation | PATCH/DELETE blocked with `403 Forbidden` | `test_student_allocation_faculty_view_only`, `test_class_teacher_allocation_faculty_view_only` |
 | **Student / Parent Allocation Access** | Student and Parent cannot access allocation register | Blocked with `403 Forbidden` | `test_student_allocation_student_parent_forbidden`, `test_class_teacher_allocation_student_parent_forbidden` |
-| **Student Section Unassignment** | Deleting student allocation sets status to Withdrawn | Mapped to `Unassigned` and section `—` | `test_student_allocation_delete_unassigns_section` |
+| **Student Section Unassignment** | Deleting student allocation sets status to Unassigned | Mapped to `Unassigned` and section `—`; permanent Student ID preserved | `test_student_allocation_delete_unassigns_section`, `test_student_allocation_delete_unassigns_section_by_principal` |
 | **Class Teacher Unassignment** | Deleting class teacher allocation clears foreign key | Section `class_teacher` is set to null, `is_assigned: false` | `test_class_teacher_allocation_delete_unassigns` |
 | **Grades 11–12 Stream Integrity** | Stream awareness preserved for higher secondary | Streams mapped: Computer Science A, Bio-Maths B, Commerce C | `test_classes_hierarchy_list`, `test_sections_list_and_filtering` |
 
@@ -89,8 +89,8 @@ python manage.py makemigrations --check
 ```
 
 ### 4.2 Backend Test Suite (`pytest`)
-- **Total Backend Tests in Suite**: **457 passed in 1094s**
-- **Task 5.4 Test Suite (`tests/test_phase5_admin_allocation_task54.py`)**: **21 / 21 passed (100%)**
+- **Total Backend Tests in Suite**: **458 passed**
+- **Task 5.4 Test Suite (`tests/test_phase5_admin_allocation_task54.py`)**: **22 / 22 passed (100%)**
   - Academic Years retrieval: Passed
   - Classes hierarchy & sections: Passed
   - Section filtering by class: Passed
@@ -102,7 +102,8 @@ python manage.py makemigrations --check
   - Student allocation update by Admin: Passed
   - Student allocation update by Principal: Passed
   - Student ID immutability enforcement: Passed
-  - Student allocation delete unassigns section: Passed
+  - Student allocation delete unassigns section (Admin): Passed
+  - Student allocation delete unassigns section (Principal): Passed
   - Class Teacher allocation listing for Admin & Principal: Passed
   - Class Teacher allocation Faculty view-only boundary: Passed
   - Class Teacher allocation Student/Parent forbidden: Passed

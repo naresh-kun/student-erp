@@ -142,7 +142,7 @@ Per authoritative project governance:
 - **Component Error Handling & Safety**: Enhanced `StudentAllocationTable`, `ClassTeacherAllocationTable`, `FacultyDirectory`, and `PrincipalFacultyDirectory`.
 
 ### 6.3 Test & Quality Metrics
-- **Backend Tests**: 457/457 pytest passed (21 new dedicated tests in `test_phase5_admin_allocation_task54.py`, 33 in `test_endpoint_rbac_task44.py`).
+- **Backend Tests**: 458/458 pytest passed (22 new dedicated tests in `test_phase5_admin_allocation_task54.py`, 33 in `test_endpoint_rbac_task44.py`).
 - **Frontend Tests**: 229/229 Vitest passed across 14 test files (16 new dedicated tests in `admin_allocation_api_integration.test.ts`).
 - **Django System Check**: 0 issues.
 - **Migration Drift**: 0 changes detected.

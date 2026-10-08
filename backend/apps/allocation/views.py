@@ -181,9 +181,9 @@ class StudentAllocationDetailView(APIView):
 
     def delete(self, request, student_id, *args, **kwargs):
         student = self._resolve_student(student_id)
-        enrollment = student.enrollments.filter(status='Enrolled').first()
+        enrollment = student.enrollments.filter(status='Enrolled').first() or student.enrollments.first()
         if enrollment:
-            enrollment.status = 'Withdrawn'
+            enrollment.status = 'Unassigned'
             enrollment.save(update_fields=['status'])
 
         return success_response(

@@ -410,9 +410,49 @@ def test_student_allocation_delete_unassigns_section(api_client, task54_setup):
 
     res = api_client.delete(f'/api/v1/allocation/students/{student.student_id}/')
     assert res.status_code == status.HTTP_200_OK
+    assert res.data['data']['student_id'] == student.student_id
+    assert res.data['data']['allocation_status'] == 'Unassigned'
+    assert res.data['data']['section_name'] == '—'
 
+    # Student record itself is NOT deleted; Student ID remains unchanged
+    student.refresh_from_db()
+    assert student.student_id == 'STU202600001'
+    assert Student.objects.filter(student_id='STU202600001').exists() is True
+
+    # Backend stored status is Unassigned (no semantic Withdrawn state)
     task54_setup['enrollment'].refresh_from_db()
-    assert task54_setup['enrollment'].status == 'Withdrawn'
+    assert task54_setup['enrollment'].status == 'Unassigned'
+
+    # Persistence after refresh/GET
+    get_res = api_client.get('/api/v1/allocation/students/')
+    assert get_res.status_code == status.HTTP_200_OK
+    record = next(r for r in get_res.data['data'] if r['student_id'] == student.student_id)
+    assert record['allocation_status'] == 'Unassigned'
+    assert record['section_name'] == '—'
+    assert record['status'] == 'Unassigned'
+    assert record['section'] is None
+    assert 'Withdrawn' not in str(record)
+
+
+@pytest.mark.django_db
+def test_student_allocation_delete_unassigns_section_by_principal(api_client, task54_setup):
+    authenticate(api_client, task54_setup['principal_user'])
+    student = task54_setup['student']
+
+    res = api_client.delete(f'/api/v1/allocation/students/{student.student_id}/')
+    assert res.status_code == status.HTTP_200_OK
+    assert res.data['data']['student_id'] == student.student_id
+    assert res.data['data']['allocation_status'] == 'Unassigned'
+    assert res.data['data']['section_name'] == '—'
+
+    # Persistence verification via GET for Principal
+    get_res = api_client.get('/api/v1/allocation/students/')
+    assert get_res.status_code == status.HTTP_200_OK
+    record = next(r for r in get_res.data['data'] if r['student_id'] == student.student_id)
+    assert record['allocation_status'] == 'Unassigned'
+    assert record['section_name'] == '—'
+    assert record['status'] == 'Unassigned'
+    assert 'Withdrawn' not in str(record)
 
 
 # ==========================================

@@ -19,11 +19,13 @@ class StudentAllocationSerializer(serializers.ModelSerializer):
     grade_level = serializers.SerializerMethodField()
     grade_name = serializers.SerializerMethodField()
     stream = serializers.SerializerMethodField()
+    section = serializers.SerializerMethodField()
     section_name = serializers.SerializerMethodField()
     roll_number = serializers.CharField(source='student.roll_number', read_only=True)
     academic_year = serializers.CharField(source='academic_year.name', read_only=True)
     academic_year_id = serializers.UUIDField(source='academic_year.id', read_only=True)
     allocation_status = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Enrollment
@@ -76,8 +78,13 @@ class StudentAllocationSerializer(serializers.ModelSerializer):
                 return 'Pure Science D'
         return ''
 
+    def get_section(self, obj):
+        if self.get_allocation_status(obj) == 'Unassigned' or not obj.section:
+            return None
+        return str(obj.section_id) if obj.section_id else None
+
     def get_section_name(self, obj) -> str:
-        if obj.status == 'Withdrawn' or not obj.section:
+        if self.get_allocation_status(obj) == 'Unassigned' or not obj.section:
             return '—'
         sec_name = obj.section.name or ''
         if sec_name.startswith('Section '):
@@ -88,6 +95,9 @@ class StudentAllocationSerializer(serializers.ModelSerializer):
         if obj.status in ('Enrolled', 'Active', 'ACTIVE', 'enrolled') and obj.section:
             return 'Allocated'
         return 'Unassigned'
+
+    def get_status(self, obj) -> str:
+        return self.get_allocation_status(obj)
 
 
 class StudentAllocationUpdateSerializer(serializers.Serializer):
