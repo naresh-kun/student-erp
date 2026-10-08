@@ -22,6 +22,7 @@ from common.constants import (
     PERM_ATTENDANCE_MARK,
     PERM_ATTENDANCE_APPROVE_LEAVE,
     PERM_ATTENDANCE_VIEW_ABSENTEES,
+    PERM_ATTENDANCE_VIEW_NOT_ENTERED,
 )
 from common.authorization import AuthorizationService
 from common.permissions import HasRequiredPermission, IsOwnerOrScopedAccess, require_permission
@@ -182,14 +183,20 @@ class StudentAbsenteesView(APIView):
         class_id = request.query_params.get('class_id')
         section_id = request.query_params.get('section_id')
         date = request.query_params.get('date')
+        grade = request.query_params.get('grade')
+        search = request.query_params.get('search')
 
         qs = service.get_attendance_queryset(
             class_id=class_id,
             section_id=section_id,
             date=date,
             status='ABSENT',
+            grade=grade,
+            search=search,
         )
         qs = AuthorizationService.filter_queryset_for_user(qs, request.user, domain='attendance')
+        # Strict server-side guarantee: exclude all non-ABSENT records
+        qs = qs.filter(status='ABSENT')
 
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(qs, request, view=self)
@@ -199,6 +206,83 @@ class StudentAbsenteesView(APIView):
 
         serializer = AttendanceRecordSerializer(qs, many=True)
         return success_response(data=serializer.data)
+
+
+class AttendanceSummaryOversightView(APIView):
+    """
+    GET /api/v1/attendance/summary/
+    Provides section-by-section daily attendance audit roll-up for Admin and Principal oversight.
+    Scoped: Admin & Principal (all sections), Faculty (assigned sections only).
+    Student & Parent: Denied (403 Forbidden).
+    """
+    permission_classes = [require_permission(PERM_ATTENDANCE_VIEW)]
+
+    def get(self, request, *args, **kwargs):
+        user_role = AuthorizationService.get_user_role(request.user)
+        if user_role in (ROLE_STUDENT, ROLE_PARENT):
+            raise PermissionDenied("Students and Parents lack clearance for administrative attendance oversight.")
+
+        service = AttendanceService()
+        date = request.query_params.get('date')
+        grade_level = request.query_params.get('grade_level')
+        gl_int = int(grade_level) if grade_level and grade_level.isdigit() else None
+
+        data = service.get_sections_attendance_summary(
+            date=date,
+            grade_level=gl_int,
+            user=request.user,
+        )
+        return success_response(data=data)
+
+
+class AttendanceAnalyticsView(APIView):
+    """
+    GET /api/v1/attendance/analytics/
+    Provides institutional presence telemetry, canonical 4-status distribution,
+    and cohort longitudinal trends for Principal & Admin.
+    Student & Parent: Denied (403 Forbidden).
+    """
+    permission_classes = [require_permission(PERM_ATTENDANCE_VIEW)]
+
+    def get(self, request, *args, **kwargs):
+        user_role = AuthorizationService.get_user_role(request.user)
+        if user_role in (ROLE_STUDENT, ROLE_PARENT):
+            raise PermissionDenied("Students and Parents lack clearance for institutional attendance intelligence.")
+
+        service = AttendanceService()
+        telemetry = service.get_attendance_telemetry()
+        return success_response(data=telemetry)
+
+
+class AttendanceNotEnteredView(APIView):
+    """
+    GET /api/v1/attendance/not-entered/
+    Dedicated visibility surface returning scheduled sessions where attendance has not yet been submitted.
+    Distinct from student absence.
+    Permitted: Admin (school-wide), Principal (school-wide), Faculty (assigned scope).
+    Forbidden: Student, Parent (403 Forbidden).
+    """
+    permission_classes = [require_permission(PERM_ATTENDANCE_VIEW_NOT_ENTERED)]
+
+    def get(self, request, *args, **kwargs):
+        service = AttendanceService()
+        date = request.query_params.get('date')
+        faculty_id = request.query_params.get('facultyId') or request.query_params.get('faculty_id')
+        class_id = request.query_params.get('class_id')
+        section_id = request.query_params.get('section_id')
+        grade = request.query_params.get('grade')
+        search = request.query_params.get('search')
+
+        data = service.get_attendance_not_entered(
+            date=date,
+            faculty_id=faculty_id,
+            class_id=class_id,
+            section_id=section_id,
+            grade=grade,
+            search=search,
+            user=request.user,
+        )
+        return success_response(data=data)
 
 
 class LeaveApplicationListView(APIView):

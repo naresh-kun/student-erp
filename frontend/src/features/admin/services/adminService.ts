@@ -19,6 +19,7 @@ import { MockDataService } from '@/services/mockService';
 import { calculateAttendancePercentage, calculateGrade } from '@/utils';
 import { SCHOOL_CONFIG } from '@/config/schoolConfig';
 import { AdminApiService } from './adminApiService';
+import { AttendanceApiService } from '@/services/attendanceApiService';
 import type {
   AdminDashboardKPIs,
   AdminStudentItem,
@@ -579,6 +580,18 @@ export class AdminService {
   // 7. ATTENDANCE OVERSIGHT (Canonical 4-Status)
   // ==========================================
   static async getAttendanceOverview(_date?: string, _gradeLevel?: number): Promise<AdminAttendanceOverviewItem[]> {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      if (token) {
+        const live = await AttendanceApiService.getAttendanceOverview({
+          date: _date,
+          grade_level: _gradeLevel,
+        });
+        if (live && live.length > 0) return live;
+      }
+    } catch (err) {
+      console.warn('[AdminService] Live attendance overview fetch failed, using fallback:', err);
+    }
     await delay();
     const auditLogs = await MockDataService.getAttendanceAuditLogs();
 

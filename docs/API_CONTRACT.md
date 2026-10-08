@@ -176,6 +176,20 @@
   - Authentication: Required
   - Required Permission: `attendance.view_absentees`
   - Permitted Roles: Admin, Principal, Faculty (Assigned scope). Student/Parent denied.
+  - Strict Filter: Enforces status strictly `ABSENT` (excludes PRESENT, ON_DUTY, LEAVE).
+- `GET /api/v1/attendance/summary/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `attendance.view`
+  - Permitted Roles: Admin, Principal (Global section daily audit roll-up), Faculty (Assigned sections).
+- `GET /api/v1/attendance/analytics/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `attendance.view`
+  - Permitted Roles: Admin, Principal. Institutional presence telemetry, 4-status distribution, and cohort trends.
+- `GET /api/v1/attendance/not-entered/` `[IMPLEMENTED]`
+  - Authentication: Required
+  - Required Permission: `attendance.view_not_entered`
+  - Permitted Roles: Admin, Principal, Faculty (Assigned scope). Student/Parent denied.
+  - Identifies scheduled sessions with no attendance submission.
 - `GET /api/v1/attendance/leaves/` `[IMPLEMENTED]`
   - Authentication: Required
   - Required Permission: `attendance.view` (Scoped by user)

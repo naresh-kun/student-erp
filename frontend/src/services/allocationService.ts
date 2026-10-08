@@ -22,6 +22,7 @@ import type {
   UserRole,
 } from '@/types';
 import { AllocationApiService } from './allocationApiService';
+import { AttendanceApiService } from './attendanceApiService';
 
 const delay = (ms = 35) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -766,8 +767,22 @@ export class AllocationService {
     section?: string;
     search?: string;
   }): Promise<StudentAbsenteeItem[]> {
-    await delay();
     const opts = typeof options === 'string' ? { facultyId: options } : options;
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      if (token) {
+        const live = await AttendanceApiService.getStudentAbsentees({
+          date: opts?.date,
+          grade: opts?.grade,
+          search: opts?.search,
+          facultyId: opts?.facultyId,
+        });
+        if (live && live.length > 0) return live;
+      }
+    } catch (err) {
+      console.warn('[AllocationService] Live student absentees fetch failed, using fallback:', err);
+    }
+    await delay();
     let records = [...studentAbsenteesState];
 
     // Enforce role scoping: Faculty only sees absentees for assigned classes/responsibilities
@@ -814,8 +829,22 @@ export class AllocationService {
     grade?: string;
     search?: string;
   }): Promise<AttendanceNotEnteredItem[]> {
-    await delay();
     const opts = typeof options === 'string' ? { facultyId: options } : options;
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      if (token) {
+        const live = await AttendanceApiService.getAttendanceNotEntered({
+          date: opts?.date,
+          grade: opts?.grade,
+          search: opts?.search,
+          facultyId: opts?.facultyId,
+        });
+        if (live && live.length > 0) return live;
+      }
+    } catch (err) {
+      console.warn('[AllocationService] Live attendance not entered fetch failed, using fallback:', err);
+    }
+    await delay();
     let records = [...attendanceNotEnteredState];
 
     // Role scoping: Faculty only sees sessions assigned to them

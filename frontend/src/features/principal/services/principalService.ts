@@ -11,6 +11,7 @@
  */
 
 import { MockDataService } from '@/services/mockService';
+import { AttendanceApiService } from '@/services/attendanceApiService';
 import { SCHOOL_CONFIG } from '@/config/schoolConfig';
 import type {
   PrincipalDashboardSummary,
@@ -165,6 +166,17 @@ export class PrincipalService {
   // 3. ATTENDANCE ANALYTICS
   // ==========================================
   static async getAttendanceAnalytics(): Promise<PrincipalAttendanceTelemetry> {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      if (token) {
+        const live = await AttendanceApiService.getAttendanceAnalytics();
+        if (live && live.statusDistribution && live.statusDistribution.length > 0) {
+          return live;
+        }
+      }
+    } catch (err) {
+      console.warn('[PrincipalService] Live attendance analytics fetch failed, using fallback:', err);
+    }
     await delay();
     const distribution = await MockDataService.getPrincipalAttendanceDistribution();
     const trends = await MockDataService.getGradeAttendanceTrends();

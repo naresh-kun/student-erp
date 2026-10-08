@@ -18,7 +18,17 @@ class AttendanceRecordSerializer(serializers.ModelSerializer):
     student_id = serializers.CharField(source='enrollment.student.student_id', read_only=True)
     student_name = serializers.SerializerMethodField()
     class_name = serializers.CharField(source='enrollment.section.school_class.name', read_only=True)
+    grade_name = serializers.CharField(source='enrollment.section.school_class.name', read_only=True)
+    grade = serializers.CharField(source='enrollment.section.school_class.name', read_only=True)
+    class_id = serializers.UUIDField(source='enrollment.section.school_class_id', read_only=True)
+    section_id = serializers.UUIDField(source='enrollment.section_id', read_only=True)
     section_name = serializers.CharField(source='enrollment.section.name', read_only=True)
+    period = serializers.IntegerField(source='session_period', read_only=True)
+    stream = serializers.SerializerMethodField()
+    subject_name = serializers.SerializerMethodField()
+    subject = serializers.SerializerMethodField()
+    faculty_name = serializers.SerializerMethodField()
+    faculty_id = serializers.SerializerMethodField()
     recorded_by_name = serializers.SerializerMethodField()
     approved_by_faculty_name = serializers.SerializerMethodField()
 
@@ -29,16 +39,26 @@ class AttendanceRecordSerializer(serializers.ModelSerializer):
             'enrollment',
             'student_id',
             'student_name',
+            'class_id',
             'class_name',
+            'grade_name',
+            'grade',
+            'section_id',
             'section_name',
+            'stream',
+            'subject_name',
+            'subject',
             'date',
             'session_period',
+            'period',
             'status',
             'remarks',
             'recorded_by',
             'recorded_by_name',
             'approved_by_faculty',
             'approved_by_faculty_name',
+            'faculty_name',
+            'faculty_id',
             'created_at',
             'updated_at',
         ]
@@ -47,6 +67,42 @@ class AttendanceRecordSerializer(serializers.ModelSerializer):
     def get_student_name(self, obj) -> str:
         if obj.enrollment and obj.enrollment.student and obj.enrollment.student.user:
             return obj.enrollment.student.user.get_full_name()
+        return ''
+
+    def get_stream(self, obj) -> str:
+        if obj.enrollment and obj.enrollment.section and obj.enrollment.section.school_class:
+            sc = obj.enrollment.section.school_class
+            return getattr(sc, 'stream', None) or (
+                'Computer Science A' if 'Comp' in sc.name else
+                'Bio-Maths B' if 'Bio' in sc.name else
+                'Commerce C' if 'Com' in sc.name else ''
+            )
+        return ''
+
+    def get_subject_name(self, obj) -> str:
+        if obj.enrollment and obj.enrollment.section:
+            ta = obj.enrollment.section.teaching_assignments.first()
+            if ta and ta.subject:
+                return ta.subject.name
+        return 'General Attendance'
+
+    def get_subject(self, obj) -> str:
+        return self.get_subject_name(obj)
+
+    def get_faculty_name(self, obj) -> str:
+        if obj.approved_by_faculty and obj.approved_by_faculty.user:
+            return obj.approved_by_faculty.user.get_full_name()
+        if obj.recorded_by:
+            return obj.recorded_by.get_full_name()
+        if obj.enrollment and obj.enrollment.section and obj.enrollment.section.class_teacher and obj.enrollment.section.class_teacher.user:
+            return obj.enrollment.section.class_teacher.user.get_full_name()
+        return ''
+
+    def get_faculty_id(self, obj) -> str:
+        if obj.approved_by_faculty:
+            return str(obj.approved_by_faculty.id)
+        if obj.enrollment and obj.enrollment.section and obj.enrollment.section.class_teacher:
+            return str(obj.enrollment.section.class_teacher.id)
         return ''
 
     def get_recorded_by_name(self, obj) -> str:

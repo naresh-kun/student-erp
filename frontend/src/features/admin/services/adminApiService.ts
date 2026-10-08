@@ -13,6 +13,7 @@
  */
 
 import { ApiClient } from '@/services/api';
+import { AttendanceApiService } from '@/services/attendanceApiService';
 import type {
   AdminStudentItem,
   AdminParentItem,
@@ -194,4 +195,12 @@ export class AdminApiService {
 
     return { kpis, attendanceTrend };
   }
+
+  /**
+   * Fetch section-by-section attendance oversight roll-up (/api/v1/attendance/summary/)
+   */
+  static async getAttendanceOverview(date?: string, gradeLevel?: number) {
+    return AttendanceApiService.getAttendanceOverview({ date, grade_level: gradeLevel });
+  }
 }
+

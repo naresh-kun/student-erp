@@ -2,6 +2,33 @@
 
 All notable changes to the Student ERP project will be documented in this file.
 
+## [Phase 5: Task 5.5 — Attendance API Integration + Oversight] - 2026-10-08
+
+### Summary
+Migrated institutional Attendance Oversight surfaces (Admin Daily Section Attendance Overview, Principal Attendance Analytics & Intelligence Telemetry, Student Absentees register, and Attendance Not Entered register) to live Django REST Framework backend APIs under `/api/v1/attendance/`. Strictly enforced canonical 4-status model (`PRESENT`, `ABSENT`, `ON_DUTY`, `LEAVE`), canonical attendance percentage formula `(PRESENT + ON_DUTY) / (PRESENT + ABSENT + ON_DUTY + LEAVE) * 100`, server-side `ABSENT`-only filtering on student absentees register, and role-based scoping (Admin school-wide management, Principal read-only school-wide oversight without mutation controls, Faculty assigned-section scope with cross-section mutation blocking). Added 17 backend tests in `backend/tests/test_phase5_attendance_integration_task55.py` and 16 frontend tests in `frontend/tests/attendance_api_integration.test.ts`. 100% test pass rate achieved (475/475 backend pytest tests, 245/245 frontend Vitest tests, clean build in 6.75s, 0 schema drift). Live browser QA verified across Admin, Principal, and Faculty workflows with recorded session.
+
+### Added / Modified
+- **Backend (`backend/apps/attendance/`, `backend/common/authorization.py`)**:
+  - `apps/attendance/services.py`: Added `search` and `grade` query filtering to `get_attendance_queryset`; implemented `get_sections_attendance_summary` for section daily audit roll-up; implemented `get_attendance_telemetry` for presence telemetry and canonical 4-status distribution; implemented `get_attendance_not_entered` evaluating active `TeachingAssignment` entries against recorded attendance dates.
+  - `apps/attendance/serializers.py`: Enriched `AttendanceRecordSerializer` with `class_id`, `section_id`, `grade_name`, `grade`, `stream`, `subject_name`, `subject`, `period`, `faculty_name`, `faculty_id`.
+  - `apps/attendance/views.py`: Authored `AttendanceSummaryOversightView` (`/api/v1/attendance/summary/`), `AttendanceAnalyticsView` (`/api/v1/attendance/analytics/`), `AttendanceNotEnteredView` (`/api/v1/attendance/not-entered/`), and updated `StudentAbsenteesView` (`/api/v1/attendance/absentees/`) with search and grade filtering plus strict `qs.filter(status='ABSENT')`.
+  - `apps/attendance/urls.py`: Routed `summary/`, `analytics/`, `absentees/`, `not-entered/`.
+  - `tests/test_phase5_attendance_integration_task55.py`: 17 dedicated integration tests.
+- **Frontend (`frontend/src/`)**:
+  - `services/attendanceApiService.ts`: Authoritative DRF API service for `getAttendanceOverview`, `getAttendanceAnalytics`, `getStudentAbsentees`, `getAttendanceNotEntered`, `getAttendanceRecords`.
+  - `services/index.ts`: Exported `AttendanceApiService`.
+  - `features/admin/services/adminService.ts`: Connected `getAttendanceOverview` to `AttendanceApiService` with fallback.
+  - `features/admin/services/adminApiService.ts`: Added `getAttendanceOverview`.
+  - `features/principal/services/principalService.ts`: Connected `getAttendanceAnalytics` to `AttendanceApiService` with fallback.
+  - `services/allocationService.ts`: Connected `getStudentAbsentees` and `getAttendanceNotEntered` to `AttendanceApiService` with fallback.
+  - `tests/attendance_api_integration.test.ts`: 16 Vitest unit and integration tests.
+- **Verification & Governance**:
+  - Automated Browser QA recorded for Admin, Principal, and Faculty (`task55_browser_qa_1791444398880.webp`).
+  - Authored `docs/phase_prompts/Phase_5_Task_5.5_Completion_Report.md`.
+  - Updated `docs/phase_prompts/Phase_5_Task_5.5.md`, `docs/phases/PHASE_05_STATUS.md`, `docs/PROJECT_STATUS.md`, and `docs/API_CONTRACT.md`.
+
+---
+
 ## [Phase 5: Task 5.4 — Academic Structure + Administrative Integration] - 2026-10-08
 
 ### Summary
