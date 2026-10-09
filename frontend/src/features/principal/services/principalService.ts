@@ -12,6 +12,7 @@
 
 import { MockDataService } from '@/services/mockService';
 import { AttendanceApiService } from '@/services/attendanceApiService';
+import { MarksApiService } from '@/services/marksApiService';
 import { SCHOOL_CONFIG } from '@/config/schoolConfig';
 import type {
   PrincipalDashboardSummary,
@@ -104,12 +105,47 @@ export class PrincipalService {
     gradeLevel?: number;
     stream?: string;
   }): Promise<{
+    kpis: {
+      schoolAverageMarks: number;
+      overallPassPercentage: number;
+      distinctionCount: number;
+      totalStudentsEvaluated: number;
+    };
     gradePerformance: GradeAcademicPerformance[];
     streamPerformance: StreamPerformanceItem[];
     subjectPerformance: SubjectPerformanceItem[];
     schoolGradeDistribution: { tier: string; count: number; percentage: number }[];
   }> {
+    try {
+      const live = await MarksApiService.getAcademicAnalytics({
+        grade_level: filters?.gradeLevel,
+        stream: filters?.stream,
+      });
+      if (live && live.gradePerformance && live.gradePerformance.length > 0) {
+        return {
+          kpis: live.kpis || {
+            schoolAverageMarks: 85.6,
+            overallPassPercentage: 98.2,
+            distinctionCount: 750,
+            totalStudentsEvaluated: 1248,
+          },
+          gradePerformance: live.gradePerformance,
+          streamPerformance: live.streamPerformance,
+          subjectPerformance: live.subjectPerformance,
+          schoolGradeDistribution: live.schoolGradeDistribution,
+        };
+      }
+    } catch (err) {
+      console.warn('[PrincipalService] Live academic analytics fetch failed, using fallback:', err);
+    }
     await delay();
+
+    const kpis = {
+      schoolAverageMarks: 85.6,
+      overallPassPercentage: 98.2,
+      distinctionCount: 750,
+      totalStudentsEvaluated: 1248,
+    };
 
     const gradePerformance: GradeAcademicPerformance[] = [
       { grade: 'Grade 9', gradeLevel: 9, academicAverage: 81.2, passRate: 94.4, highestScore: 96.5, enrolledStudents: 310, sectionsCount: 8 },
@@ -155,6 +191,7 @@ export class PrincipalService {
     }
 
     return {
+      kpis,
       gradePerformance: filteredGrades,
       streamPerformance: filteredStreams,
       subjectPerformance,

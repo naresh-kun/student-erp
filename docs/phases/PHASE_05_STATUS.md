@@ -3,7 +3,7 @@
 > **Phase**: Phase 5 (Core ERP API Integration & Advanced Workflows)  
 > **Status**: **IN PROGRESS**  
 > **Prerequisites**: Phase 1 (COMPLETE), Phase 2 (COMPLETE), Phase 3 (COMPLETE), Phase 4 (COMPLETE), MOD_001 (COMPLETED Approved Project Modification)  
-> **Active Task**: Task 5.5 (COMPLETE) | Next Task: Task 5.6 (NOT STARTED)  
+> **Active Task**: Task 5.6 (COMPLETE) | Next Task: Task 5.7 (NOT STARTED)  
 > **Last Updated**: 2026-10-08  
 
 ---
@@ -25,7 +25,8 @@ Per authoritative project governance:
 - Task 5.3 (Faculty Module Live API Integration) is **COMPLETE**.
 - Task 5.4 (Academic Structure + Administrative Integration) is **COMPLETE**.
 - Task 5.5 (Attendance API Integration + Oversight) is **COMPLETE**.
-- Task 5.6 is **NOT STARTED**.
+- Task 5.6 (Marks API Integration + Oversight) is **COMPLETE**.
+- Task 5.7 is **NOT STARTED**.
 
 ---
 
@@ -38,7 +39,8 @@ Per authoritative project governance:
 | **Task 5.3** | **Faculty Live API Integration** | Wire Faculty views, profile, assigned classes/sections, student roster, marks entry, roll call, Class Teacher leave review, and homework to live `/api/v1/` endpoints | **COMPLETE** | 436 backend tests passing (+24 new); 213 frontend tests passing (+14 new); clean build (11.67s); live browser verification completed (login -> dashboard -> classes -> students roster -> attendance roll call -> marks entry -> homework -> logout; recording `faculty_browser_test_1791366974619.webp`) |
 | **Task 5.4** | **Academic Structure + Administrative Integration** | Wire Academic Years, Classes, Sections, Subjects, Enrollments, Admin directories (Students, Parents, Faculty), and Operational Allocations (Student Section & Class Teacher) to live `/api/v1/` endpoints | **COMPLETE** | 458 backend tests passing (+22 new in `test_phase5_admin_allocation_task54.py`, 33 in `test_endpoint_rbac_task44.py`); 229 frontend tests passing (+16 new in `admin_allocation_api_integration.test.ts`); clean build (9.09s); live browser verification completed for Admin, Principal, and Faculty |
 | **Task 5.5** | **Attendance API Integration + Oversight** | Wire Admin attendance oversight, Principal attendance analytics, Student Absentees register, Attendance Not Entered sessions, and preserve Student/Parent/Faculty live attendance integrations | **COMPLETE** | 475 backend tests passing (+17 new in `test_phase5_attendance_integration_task55.py`); 245 frontend tests passing (+16 new in `attendance_api_integration.test.ts`); clean build (6.75s); live browser verification completed for Admin, Principal, and Faculty (`task55_browser_qa_1791444398880.webp`) |
-| **Task 5.6** | **Phase 5 Full System Verification & Release Gate** | End-to-end integration tests, regression test suites, performance audit | **NOT STARTED** | Scheduled |
+| **Task 5.6** | **Marks API Integration + Oversight** | Wire Admin marks oversight, Principal academic analytics, Faculty bulk marks entry with 'AB' absent support, and server-authoritative Student/Parent report cards | **COMPLETE** | 498 backend tests passing (+15 in `test_phase5_marks_integration_task56.py`, +8 in `test_phase5_marks_examtype_task56_reconciliation.py`); 264 frontend tests passing (+19 in `marks_api_integration.test.ts`); clean build (8.65s); 0 migration drift; live multi-role E2E verified |
+| **Task 5.7** | **Phase 5 Full System Verification & Release Gate** | End-to-end integration tests, regression test suites, performance audit | **NOT STARTED** | Scheduled |
 
 ---
 
@@ -178,6 +180,34 @@ Per authoritative project governance:
 - **Migration Drift**: 0 changes detected (`manage.py makemigrations --check`).
 - **Production Build**: Clean build in 6.75s with zero TypeScript errors (`npm run build`).
 - **Live Browser QA**: Full verification for Admin, Principal, and Faculty accounts with automated subagent session (`task55_browser_qa_1791444398880.webp`).
+
+---
+
+## 8. Task 5.6 Execution Summary
+
+### 8.1 Backend Endpoints Integrated
+- `GET /api/v1/marks/summary/`: Institutional marks roll-up and audit summary for Admin and Principal oversight.
+- `GET /api/v1/marks/analytics/`: Executive academic performance telemetry, cohort grade comparison, and CBSE 8-tier grade distributions.
+- `GET /api/v1/marks/`: Marks listing with student, subject, exam type, grade, and remark details.
+- `POST /api/v1/marks/bulk/`: Bulk mark submissions supporting 0–100 numeric bounds and 'AB' (Absent) marks, strictly authorized by `TeachingAssignment`.
+- `GET /api/v1/marks/report-card/{student_id}/`: Official student report card with backend-authoritative cumulative marks, max marks, percentage, and 8-tier letter grade.
+- `GET /api/v1/marks/exam-types/`: Exam types catalog.
+
+### 8.2 Frontend Architecture
+- **Marks API Service (`frontend/src/services/marksApiService.ts`)**: Direct typed client for all `/api/v1/marks/` endpoints, exported in `frontend/src/services/index.ts`.
+- **Admin Domain Service (`frontend/src/features/admin/services/adminService.ts`)**: Connected `getMarksOverview` and `getMarksSummary` to live `MarksApiService`.
+- **Principal Domain Service (`frontend/src/features/principal/services/principalService.ts`)**: Connected `getAcademicAnalytics` to live `MarksApiService`.
+- **Faculty Domain Service (`frontend/src/features/faculty/services/facultyService.ts`)**: Updated `saveMarksEntrySheet` with 'AB' absent support and `getMarksEntrySheet` with live query overlay.
+- **Component Safety**: Hardened `StudentReportCardTable.tsx` and `ParentReportCardTable.tsx` for absent assessment and dynamic pass/fail status.
+
+### 8.3 Test & Quality Metrics
+- **Backend Tests**: 498/498 pytest passed (15 new dedicated tests in `test_phase5_marks_integration_task56.py`, 8 in `test_phase5_marks_examtype_task56_reconciliation.py`).
+- **Frontend Tests**: 264/264 Vitest passed across 16 test files (19 new dedicated tests in `marks_api_integration.test.ts`).
+- **Django System Check**: 0 issues (`manage.py check`).
+- **Migration Drift**: 0 changes detected (`manage.py makemigrations --check`).
+- **Production Build**: Clean build in 8.65s with zero TypeScript errors (`npm run build`).
+- **Live Multi-Role Verification**: Full verification of all 5 roles (Admin, Faculty, Student, Parent, Principal) against live running server with `verify_phase56_live_e2e.py`.
+
 
 
 

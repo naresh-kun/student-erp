@@ -15,4 +15,5 @@ export * from './allocationService';
 export * from './allocationApiService';
 export * from './attendanceApiService';
 export * from './homeworkService';
+export * from './marksApiService';
 export * from './api';

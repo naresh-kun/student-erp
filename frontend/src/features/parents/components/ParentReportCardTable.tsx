@@ -106,7 +106,11 @@ export const ParentReportCardTable: React.FC<ParentReportCardTableProps> = ({
                       {m.maxMarks}
                     </td>
                     <td className="py-3 px-3 text-center font-mono font-semibold text-slate-800 dark:text-slate-200">
-                      {m.percentage.toFixed(2)}%
+                      {m.grade === 'AB' || m.marksObtained === 'AB'
+                        ? '—'
+                        : typeof m.percentage === 'number'
+                        ? `${m.percentage.toFixed(2)}%`
+                        : '—'}
                     </td>
                     <td className="py-3 px-3 text-center">
                       <span className={`inline-block px-2 py-0.5 rounded font-mono font-bold text-xs border ${getGradeBadgeClass(m.grade)}`}>

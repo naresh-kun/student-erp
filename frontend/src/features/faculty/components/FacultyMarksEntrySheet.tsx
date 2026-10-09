@@ -21,12 +21,14 @@ import {
   GraduationCap 
 } from 'lucide-react';
 import { getGradeBadgeClass } from '@/utils/grading';
+import type { ExamTypeItem } from '@/services/marksApiService';
 import type { FacultyMarkEntryItem, FacultyExamSummary } from '../types';
 
 interface FacultyMarksEntrySheetProps {
   entries: FacultyMarkEntryItem[];
   summary: FacultyExamSummary | null;
   examName: string;
+  availableExamTypes?: ExamTypeItem[];
   isSaving: boolean;
   isPublished: boolean;
   onScoreChange: (studentId: string, val: string) => void;
@@ -40,6 +42,7 @@ export const FacultyMarksEntrySheet: React.FC<FacultyMarksEntrySheetProps> = ({
   entries,
   summary,
   examName,
+  availableExamTypes,
   isSaving,
   isPublished,
   onScoreChange,
@@ -64,12 +67,17 @@ export const FacultyMarksEntrySheet: React.FC<FacultyMarksEntrySheetProps> = ({
     }
   };
 
-  const EXAM_TYPES = [
-    'Half-Yearly Examination 2026–27',
-    'Quarterly Examination 2026',
-    'Cycle Test 1 (Unit Test)',
-    'Annual Examination 2026–27',
+  const DEFAULT_EXAM_TYPES = [
+    'Cycle Test',
+    'Quarterly Examination',
+    'Half-Yearly Examination',
+    'Final / Annual Examination',
   ];
+
+  const activeExamOptions =
+    availableExamTypes && availableExamTypes.length > 0
+      ? availableExamTypes.filter((et) => et.is_active).map((et) => ({ id: et.id, name: et.name }))
+      : DEFAULT_EXAM_TYPES.map((name) => ({ id: name, name }));
 
   return (
     <div className="space-y-4">
@@ -175,9 +183,9 @@ export const FacultyMarksEntrySheet: React.FC<FacultyMarksEntrySheetProps> = ({
                 onChange={(e) => onExamChange?.(e.target.value)}
                 className="text-xs p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-semibold text-slate-800 dark:text-slate-200"
               >
-                {EXAM_TYPES.map((ex) => (
-                  <option key={ex} value={ex}>
-                    {ex}
+                {activeExamOptions.map((ex) => (
+                  <option key={ex.id} value={ex.name}>
+                    {ex.name}
                   </option>
                 ))}
               </select>

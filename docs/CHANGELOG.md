@@ -2,6 +2,40 @@
 
 All notable changes to the Student ERP project will be documented in this file.
 
+## [Phase 5: Task 5.6 — Marks API Integration + Oversight] - 2026-10-09
+
+### Summary
+Migrated institutional Marks Oversight and Academic Analytics surfaces (Admin Examination Marks Oversight, Principal Academic Analytics & Performance Intelligence, Faculty bulk marks entry with 'AB' absent support, and server-authoritative Student & Parent report cards) to live Django REST Framework backend APIs under `/api/v1/marks/`. Strictly enforced CBSE Senior Secondary 8-tier letter grading scale (A1, A2, B1, B2, C1, C2, D, E), 33% passing threshold, 0–100 marks bounds validation, absent ('AB') assessment support without data loss, backend-authoritative cumulative marks, max marks, and overall percentage calculations, active `TeachingAssignment` authorization boundaries for Faculty, and role-based scoping (Admin school-wide operational oversight/corrections, Principal read-only executive intelligence without faculty rankings or ratings, Student self-only report cards, Parent linked-ward report cards). Added 15 backend tests in `backend/tests/test_phase5_marks_integration_task56.py`, 8 reconciliation tests in `backend/tests/test_phase5_marks_examtype_task56_reconciliation.py`, and 19 frontend tests in `frontend/tests/marks_api_integration.test.ts`. 100% test pass rate achieved (498/498 backend pytest tests, 264/264 frontend Vitest tests, clean production build in 8.65s, 0 schema drift). Live multi-role E2E verification completed across all 5 user roles (Admin, Faculty, Student, Parent, Principal) via `tests/verify_phase56_live_e2e.py`.
+
+### Added / Modified
+- **Backend (`backend/apps/marks/`)**:
+  - `apps/marks/models.py`: Preserved `self.grade = 'AB'` for absent marks when `marks_obtained == 0.00`; refined string representation.
+  - `apps/marks/serializers.py`: Handled `'AB'` string coercion and 0–100 bounds validation in `MarkSerializer` and `MarkBulkItemSerializer`.
+  - `apps/marks/services.py`: Implemented `'AB'` absent mark persistence, broadened `subject_id` and `exam_type_id` resolution by UUID or code/name, implemented `get_marks_summary` (Admin roll-ups) and `get_academic_analytics` (Principal performance telemetry).
+  - `apps/marks/views.py`: Supported query filtering by code/name in `MarkListView`; resolved `Subject` for assignment authorization in `BulkMarkCreateView`; implemented `MarksSummaryOversightView` (`/api/v1/marks/summary/`) and `AcademicAnalyticsView` (`/api/v1/marks/analytics/`).
+  - `apps/marks/urls.py`: Routed `summary/` and `analytics/`.
+  - `tests/test_phase5_marks_integration_task56.py`: 15 dedicated integration tests.
+  - `tests/test_phase5_marks_examtype_task56_reconciliation.py`: 8 dedicated ExamType reconciliation and RBAC tests.
+  - `tests/verify_phase56_live_e2e.py`: Live 5-role E2E operational and security verification script.
+- **Frontend (`frontend/src/`)**:
+  - `services/marksApiService.ts`: Authoritative DRF API service for `getMarksSummary`, `getAcademicAnalytics`, `getMarksList`, `recordBulkMarks`, `getReportCard`, and `getExamTypes`.
+  - `services/index.ts`: Exported `MarksApiService`.
+  - `features/admin/services/adminService.ts`: Connected `getMarksOverview` and `getMarksSummary` to live `MarksApiService`.
+  - `features/admin/services/adminApiService.ts`: Added `getMarksOverview`.
+  - `features/principal/services/principalService.ts`: Connected `getAcademicAnalytics` to live `MarksApiService`.
+  - `features/faculty/services/facultyApiService.ts`: Updated `BulkMarkRecordPayload` to accept `marks_obtained: number | string`.
+  - `features/faculty/services/facultyService.ts`: Supported `'AB'` absent entry in `saveMarksEntrySheet` and live query overlay in `getMarksEntrySheet`.
+  - `features/students/components/StudentReportCardTable.tsx`: Safely formats `'AB'` percentages and derives dynamic pass/fail summary remarks.
+  - `features/parents/components/ParentReportCardTable.tsx`: Safely formats `'AB'` percentages without crashing.
+  - `features/parents/types/index.ts`: Allowed optional/nullable percentage for absent marks in `ParentSubjectMarkRecord`.
+  - `tests/marks_api_integration.test.ts`: 19 Vitest unit and integration tests.
+- **Verification & Governance**:
+  - Authored `docs/phase_prompts/Phase_5_Task_5.6_Completion_Report.md`.
+  - Updated `docs/phase_prompts/Phase_5_Task_5.6.md`, `docs/phases/PHASE_05_STATUS.md`, `docs/PROJECT_STATUS.md`, and `docs/API_CONTRACT.md`.
+  - Executed live multi-role operational and security verification across all 5 roles against local development server.
+
+---
+
 ## [Phase 5: Task 5.5 — Attendance API Integration + Oversight] - 2026-10-08
 
 ### Summary

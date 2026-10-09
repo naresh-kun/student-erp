@@ -20,6 +20,7 @@ import { calculateAttendancePercentage, calculateGrade } from '@/utils';
 import { SCHOOL_CONFIG } from '@/config/schoolConfig';
 import { AdminApiService } from './adminApiService';
 import { AttendanceApiService } from '@/services/attendanceApiService';
+import { MarksApiService } from '@/services/marksApiService';
 import type {
   AdminDashboardKPIs,
   AdminStudentItem,
@@ -625,7 +626,102 @@ export class AdminService {
   // ==========================================
   // 8. MARKS OVERSIGHT (CBSE 8-Tier Grades)
   // ==========================================
-  static async getMarksOverview(): Promise<AdminMarksOverviewItem[]> {
+  static async getMarksSummary(params?: {
+    academic_year_id?: string;
+    academic_year?: string;
+    exam_type_id?: string;
+    exam_type?: string;
+    grade_level?: number;
+    gradeLevel?: number;
+    class_id?: string;
+    section_id?: string;
+    subject_id?: string;
+    subject_code?: string;
+  }) {
+    try {
+      const live = await MarksApiService.getMarksSummary(params);
+      if (live && live.total_records !== undefined) return live;
+    } catch (err) {
+      console.warn('[AdminService] Live marks summary fetch failed, using fallback:', err);
+    }
+    await delay();
+    return {
+      total_records: 120,
+      evaluated_students: 40,
+      school_average: 83.2,
+      pass_rate: 98.5,
+      grade_distribution: [
+        { grade: 'A1', count: 35, percentage: 29.17 },
+        { grade: 'A2', count: 40, percentage: 33.33 },
+        { grade: 'B1', count: 25, percentage: 20.83 },
+        { grade: 'B2', count: 12, percentage: 10.0 },
+        { grade: 'C1', count: 5, percentage: 4.17 },
+        { grade: 'C2', count: 2, percentage: 1.67 },
+        { grade: 'D', count: 1, percentage: 0.83 },
+        { grade: 'E', count: 0, percentage: 0.0 },
+      ],
+      section_rollups: [
+        {
+          section_id: 'sec-1',
+          section_name: '11-A2',
+          class_name: 'Grade 11',
+          student_count: 20,
+          average_marks: 86.4,
+          pass_rate: 100.0,
+        },
+      ],
+      subject_rollups: [
+        {
+          subject_id: 'sub-1',
+          subject_name: 'Mathematics',
+          subject_code: 'MATH-041',
+          evaluated_count: 40,
+          average_marks: 84.0,
+          highest_mark: 99.0,
+          lowest_mark: 45.0,
+        },
+      ],
+    };
+  }
+
+  static async getMarksOverview(params?: {
+    academic_year_id?: string;
+    exam_type_id?: string;
+    class_id?: string;
+    section_id?: string;
+    subject_id?: string;
+  }): Promise<AdminMarksOverviewItem[]> {
+    try {
+      const summary = await MarksApiService.getMarksSummary(params);
+      if (summary && summary.subject_rollups && summary.subject_rollups.length > 0) {
+        const gradeDistRecord: any = {
+          A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0, D: 0, E: 0,
+        };
+        summary.grade_distribution?.forEach((g) => {
+          if (g.grade in gradeDistRecord) {
+            gradeDistRecord[g.grade] = g.count;
+          }
+        });
+
+        return summary.subject_rollups.map((sub) => ({
+          exam_type: 'Half-Yearly Examination',
+          academic_year: '2026–27',
+          class_name: 'Senior Secondary',
+          stream: 'General',
+          section_name: 'All Sections',
+          subject_name: sub.subject_name,
+          total_students: sub.evaluated_count,
+          evaluated_count: sub.evaluated_count,
+          average_percentage: sub.average_marks,
+          highest_marks: sub.highest_mark,
+          pass_percentage: summary.pass_rate,
+          grade_distribution: { ...gradeDistRecord },
+          status: 'Published' as const,
+        }));
+      }
+    } catch (err) {
+      console.warn('[AdminService] Live marks oversight fetch failed, using fallback:', err);
+    }
     await delay();
     return [
       {

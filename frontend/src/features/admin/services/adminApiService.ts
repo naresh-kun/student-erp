@@ -14,6 +14,7 @@
 
 import { ApiClient } from '@/services/api';
 import { AttendanceApiService } from '@/services/attendanceApiService';
+import { MarksApiService } from '@/services/marksApiService';
 import type {
   AdminStudentItem,
   AdminParentItem,
@@ -201,6 +202,19 @@ export class AdminApiService {
    */
   static async getAttendanceOverview(date?: string, gradeLevel?: number) {
     return AttendanceApiService.getAttendanceOverview({ date, grade_level: gradeLevel });
+  }
+
+  /**
+   * Fetch section-and-subject marks oversight roll-up (/api/v1/marks/summary/)
+   */
+  static async getMarksOverview(params?: {
+    academic_year_id?: string;
+    exam_type_id?: string;
+    class_id?: string;
+    section_id?: string;
+    subject_id?: string;
+  }) {
+    return MarksApiService.getMarksSummary(params);
   }
 }
 

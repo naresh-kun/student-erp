@@ -118,7 +118,7 @@ export interface BulkMarkRecordPayload {
   student_id: string;
   subject_id: string;
   exam_type_id: string;
-  marks_obtained: number;
+  marks_obtained: number | string;
   max_marks?: number;
   remarks?: string;
 }

@@ -325,8 +325,24 @@ class Command(BaseCommand):
             }
         )
 
-        # 5. Marks Data
-        midterm_exam, _ = ExamType.objects.get_or_create(
+        # 5. Authoritative Default Exam Types (CBSE Assessment Schedule)
+        default_exam_types = [
+            ('Cycle Test', Decimal('10.00')),
+            ('Quarterly Examination', Decimal('20.00')),
+            ('Half-Yearly Examination', Decimal('30.00')),
+            ('Final / Annual Examination', Decimal('40.00')),
+        ]
+        created_exam_types = {}
+        for exam_name, weight in default_exam_types:
+            et, _ = ExamType.objects.get_or_create(
+                name=exam_name,
+                defaults={'weightage': weight, 'is_active': True}
+            )
+            created_exam_types[exam_name] = et
+
+        midterm_exam = created_exam_types['Half-Yearly Examination']
+        # Maintain legacy name compatibility
+        ExamType.objects.get_or_create(
             name='Half-Yearly Examination 2026',
             defaults={'weightage': Decimal('50.00'), 'is_active': True}
         )

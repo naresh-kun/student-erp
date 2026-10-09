@@ -64,7 +64,7 @@ export interface ParentSubjectMarkRecord {
   faculty: string;
   marksObtained: number | 'AB';
   maxMarks: number;
-  percentage: number;
+  percentage?: number | null;
   grade: string;
   remarks: string;
   classAverage: number;

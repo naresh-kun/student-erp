@@ -33,6 +33,7 @@ import type {
 } from '../types';
 import { validateMarkInput } from '../schemas/marksSchema';
 import { FacultyApiService } from './facultyApiService';
+import { MarksApiService, type MarkRecordItem } from '@/services/marksApiService';
 
 // Storage keys coordinated across Student, Parent, and Faculty domains
 const STORAGE_PARENT_ABSENCE_KEY = 'student_erp_parent_absence_notices';
@@ -1055,6 +1056,52 @@ export class FacultyService {
     entries: FacultyMarkEntryItem[];
     summary: FacultyExamSummary;
   }> {
+    // Attempt live fetch from Marks API first
+    try {
+      const liveRecords = await MarksApiService.getMarksList({
+        subject_code: subjectCode,
+        exam_type: examName,
+      });
+      if (liveRecords && liveRecords.length > 0) {
+        const students = await this.getAssignedStudents(classId);
+        const recordMap = new Map<string, MarkRecordItem>();
+        for (const r of liveRecords) {
+          if (r.student_id) recordMap.set(r.student_id, r);
+        }
+        if (students.some((s) => recordMap.has(s.student_id))) {
+          const entries: FacultyMarkEntryItem[] = students.map((s) => {
+            const rec = recordMap.get(s.student_id);
+            if (rec) {
+              const isAbsent = rec.grade === 'AB' || String(rec.marks_obtained).toUpperCase() === 'AB';
+              const scoreVal = isAbsent ? ('AB' as const) : Number(rec.marks_obtained);
+              return {
+                student_id: s.student_id,
+                roll_number: s.roll_number,
+                student_name: s.full_name,
+                score: scoreVal,
+                derived_percentage: isAbsent ? null : calculatePercentage(Number(scoreVal), rec.max_marks || 100),
+                derived_grade: rec.grade as LetterGrade,
+                feedback: rec.remarks || '',
+              };
+            }
+            return {
+              student_id: s.student_id,
+              roll_number: s.roll_number,
+              student_name: s.full_name,
+              score: '' as const,
+              derived_percentage: null,
+              derived_grade: '—' as const,
+              feedback: '',
+            };
+          });
+          const summary = this.computeExamSummary(examName, 'Mathematics', 'Grade 11 — Section A2', entries);
+          return { entries, summary };
+        }
+      }
+    } catch {
+      // offline / fallback
+    }
+
     const storage = getStorage();
     const sheetKey = `${classId}_${subjectCode}_${examName}`;
     const rawStored = storage.getItem(STORAGE_MARKS_RECORDS_KEY);
@@ -1111,7 +1158,8 @@ export class FacultyService {
     classId: string,
     subjectCode: string,
     examName: string,
-    entries: FacultyMarkEntryItem[]
+    entries: FacultyMarkEntryItem[],
+    examTypeId?: string
   ): Promise<{
     success: boolean;
     summary: FacultyExamSummary;
@@ -1162,12 +1210,12 @@ export class FacultyService {
     // Sync to live backend marks API
     try {
       const liveMarks = processedEntries
-        .filter((e) => typeof e.score === 'number')
+        .filter((e) => typeof e.score === 'number' || e.score === 'AB')
         .map((e) => ({
           student_id: e.student_id,
           subject_id: subjectCode,
-          exam_type_id: examName,
-          marks_obtained: Number(e.score),
+          exam_type_id: examTypeId || examName,
+          marks_obtained: e.score === 'AB' ? ('AB' as const) : Number(e.score),
           max_marks: 100,
           remarks: e.feedback || '',
         }));

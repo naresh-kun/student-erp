@@ -208,10 +208,25 @@
   - Authentication: Required
   - Required Permission: `marks.view`
   - Scoping: Admin/Principal: Global; Faculty: Assigned section; Student: Self; Parent: Linked child.
+  - Query Parameters: `student_id`, `subject_id`, `subject_code`, `exam_type_id`, `exam_type`, `class_id`, `section_id`
+- `GET /api/v1/marks/summary/` `[IMPLEMENTED — TASK 5.6]`
+  - Authentication: Required
+  - Required Permission: `marks.view`
+  - Permitted Roles: Admin, Principal (Global school-wide marks oversight), Faculty (Scoped to assigned teaching sections). Student and Parent denied (403).
+  - Query Parameters: `academic_year_id`, `exam_type_id`, `grade_level`, `section_id`, `subject_id`
+  - Response: Institutional roll-ups (`total_records`, `evaluated_students`, `school_average`, `pass_rate`, `grade_distribution`, `section_rollups`, `subject_rollups`).
+- `GET /api/v1/marks/analytics/` `[IMPLEMENTED — TASK 5.6]`
+  - Authentication: Required
+  - Required Permission: `marks.view`
+  - Permitted Roles: Admin, Principal (Executive academic analytics). Faculty, Student, and Parent denied (403).
+  - Query Parameters: `grade_level`, `stream`, `academic_year_id`, `exam_type_id`
+  - Response: Longitudinal academic performance (`kpis`, `gradePerformance`, `streamPerformance`, `subjectPerformance`, `schoolGradeDistribution`).
 - `POST /api/v1/marks/bulk/` `[IMPLEMENTED]`
   - Authentication: Required
   - Required Permission: `marks.enter`
-  - Permitted Roles: Admin/Principal (Global), Faculty (Authorized Subject Faculty with active `TeachingAssignment` for that section and subject; Class Teacher alone does NOT grant all-subject marks authority; unassigned subject rejected with 403)
+  - Permitted Roles: Admin (Global), Faculty (Authorized Subject Faculty with active `TeachingAssignment` for that section and subject; Class Teacher alone does NOT grant all-subject marks authority; unassigned subject rejected with 403). Principal, Student, Parent denied (403).
+  - Body: `{ records: [{ student_id, subject_id, exam_type_id, marks_obtained, max_marks?, remarks? }] }`
+  - Validation: `marks_obtained` must be numeric 0–100 or `'AB'` (Absent). Negative or >100 rejected. Accepts UUID or code/name for `subject_id` and `exam_type_id`.
 - `GET /api/v1/marks/exam-types/` `[IMPLEMENTED]`
   - Authentication: Required
   - Required Permission: `marks.view` (All authenticated roles)
@@ -222,6 +237,7 @@
   - Authentication: Required
   - Required Permission: `reports.view` + Object Check (`can_access_object`)
   - Permitted Roles: Admin, Principal, Faculty (Assigned section), Student (Self), Parent (Linked child)
+  - Computations: Backend-authoritative cumulative marks, max marks, overall percentage, and CBSE 8-tier letter grade. Absent ('AB') subjects counted with 0 marks obtained.
 - `GET /api/v1/marks/{id}/` `[IMPLEMENTED]`
   - Authentication: Required
   - Required Permission: `marks.view` + Object Check (`IsOwnerOrScopedAccess`)

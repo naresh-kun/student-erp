@@ -109,7 +109,7 @@ export const StudentReportCardTable: React.FC<StudentReportCardTableProps> = ({
                     {r.score}
                   </td>
                   <td className="py-2.5 px-3 font-mono font-medium text-slate-700 dark:text-slate-300">
-                    {formatPercentage(r.percentage)}
+                    {r.grade === 'AB' ? '—' : formatPercentage(r.percentage)}
                   </td>
                   <td className="py-2.5 px-3">
                     <span
@@ -143,8 +143,14 @@ export const StudentReportCardTable: React.FC<StudentReportCardTableProps> = ({
                     {summary.overallGrade}
                   </span>
                 </td>
-                <td className="py-3 px-3 text-emerald-700 dark:text-emerald-400 font-bold">
-                  PASSED (FIRST CLASS WITH DISTINCTION)
+                <td className={`py-3 px-3 font-bold ${summary.isPassed ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`}>
+                  {summary.isPassed
+                    ? summary.percentage >= 75
+                      ? 'PASSED (FIRST CLASS WITH DISTINCTION)'
+                      : summary.percentage >= 60
+                      ? 'PASSED (FIRST CLASS)'
+                      : 'PASSED'
+                    : 'ESSENTIAL REPEAT / COMPARTMENT'}
                 </td>
               </tr>
             </tfoot>

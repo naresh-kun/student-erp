@@ -30,6 +30,7 @@ export const FacultyMarksPage: React.FC = () => {
   const {
     examName,
     setExamName,
+    availableExamTypes,
     entries,
     summary,
     updateEntryScore,
@@ -42,7 +43,7 @@ export const FacultyMarksPage: React.FC = () => {
   } = useFacultyMarksEntry(
     activeClass?.id || 'cls_001_sec_002',
     activeClass?.subject_code || 'MATH-041',
-    'Half-Yearly Examination 2026–27'
+    'Half-Yearly Examination'
   );
 
   if (classesLoading || marksLoading) {
@@ -86,6 +87,7 @@ export const FacultyMarksPage: React.FC = () => {
           entries={entries}
           summary={summary}
           examName={examName}
+          availableExamTypes={availableExamTypes}
           isSaving={isSaving}
           isPublished={isPublished}
           onScoreChange={updateEntryScore}

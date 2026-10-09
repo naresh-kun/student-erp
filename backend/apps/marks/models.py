@@ -106,13 +106,17 @@ class Mark(UUIDModel, TimeStampedModel):
             if self.max_marks is not None and self.marks_obtained > self.max_marks:
                 raise ValidationError({'marks_obtained': f'Marks obtained ({self.marks_obtained}) cannot exceed maximum marks ({self.max_marks}).'})
 
-            # Derive grade deterministically
-            pct = calculate_percentage(float(self.marks_obtained), float(self.max_marks or 100.0))
-            self.grade = calculate_grade(pct)
+            # Derive grade deterministically, preserving 'AB' only if marked absent and marks_obtained is 0
+            if getattr(self, 'grade', '') == 'AB' and self.marks_obtained == Decimal('0.00'):
+                pass
+            else:
+                pct = calculate_percentage(float(self.marks_obtained), float(self.max_marks or 100.0))
+                self.grade = calculate_grade(pct)
 
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Mark ({self.enrollment.student.student_id} - {self.subject.code} - {self.exam_type.name}): {self.marks_obtained}/{self.max_marks} [{self.grade}]"
+        score_display = "AB" if self.grade == 'AB' else f"{self.marks_obtained}/{self.max_marks}"
+        return f"Mark ({self.enrollment.student.student_id} - {self.subject.code} - {self.exam_type.name}): {score_display} [{self.grade}]"

@@ -10,6 +10,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { FacultyService } from '../services/facultyService';
+import { MarksApiService, type ExamTypeItem } from '@/services/marksApiService';
 import { calculateGrade, calculatePercentage } from '@/utils';
 import { validateMarkInput } from '../schemas/marksSchema';
 import type { FacultyMarkEntryItem, FacultyExamSummary } from '../types';
@@ -17,15 +18,39 @@ import type { FacultyMarkEntryItem, FacultyExamSummary } from '../types';
 export function useFacultyMarksEntry(
   classId = 'cls_001_sec_002',
   subjectCode = 'MATH-041',
-  initialExam = 'Half-Yearly Examination 2026–27'
+  initialExam = 'Half-Yearly Examination'
 ) {
   const [examName, setExamName] = useState(initialExam);
+  const [availableExamTypes, setAvailableExamTypes] = useState<ExamTypeItem[]>([]);
   const [entries, setEntries] = useState<FacultyMarkEntryItem[]>([]);
   const [summary, setSummary] = useState<FacultyExamSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    MarksApiService.getExamTypes({ is_active: true })
+      .then((types) => {
+        if (!mounted) return;
+        setAvailableExamTypes(types);
+        if (types.length > 0) {
+          const match = types.find((t) => t.name === initialExam || t.id === initialExam);
+          if (match) {
+            setExamName(match.name);
+          } else if (!types.some((t) => t.name === examName || t.id === examName)) {
+            setExamName(types[0].name);
+          }
+        }
+      })
+      .catch(() => {
+        // Fallback gracefully to default list if offline
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const loadMarks = useCallback(async () => {
     try {
@@ -102,7 +127,17 @@ export function useFacultyMarksEntry(
   const saveMarks = async (publish = false) => {
     try {
       setIsSaving(true);
-      const res = await FacultyService.saveMarksEntrySheet(classId, subjectCode, examName, entries);
+      const matchingType = availableExamTypes.find(
+        (t) => t.id === examName || t.name === examName
+      );
+      const resolvedExamTypeId = matchingType?.id || examName;
+      const res = await FacultyService.saveMarksEntrySheet(
+        classId,
+        subjectCode,
+        examName,
+        entries,
+        resolvedExamTypeId
+      );
       setSummary(res.summary);
       if (publish) {
         setIsPublished(true);
@@ -120,6 +155,7 @@ export function useFacultyMarksEntry(
   return {
     examName,
     setExamName,
+    availableExamTypes,
     entries,
     summary,
     updateEntryScore,
