@@ -671,6 +671,35 @@ describe('Phase 5 Task 5.6 — Marks API Integration & Multi-Role Oversight', ()
       const capturedPayload = recordBulkSpy.mock.calls[0][0];
       expect(capturedPayload.records[0].exam_type_id).toBe('00000000-0000-0000-0000-000000000002');
     });
+
+    it('rejects silent fallback and surfaces error when live bulk marks submission fails in authenticated session', async () => {
+      localStorage.setItem('access_token', 'mock-valid-auth-token');
+      vi.spyOn(FacultyApiService, 'recordBulkMarks').mockRejectedValueOnce(
+        new Error('Exam type is inactive and cannot accept marks.')
+      );
+
+      const entries = [
+        {
+          student_id: 'STU202600001',
+          roll_number: '11-A2-01',
+          student_name: 'Arun Kumar',
+          score: 88,
+          derived_percentage: 88,
+          derived_grade: 'A2' as const,
+          feedback: 'Solid work',
+        },
+      ];
+
+      await expect(
+        FacultyService.saveMarksEntrySheet(
+          'cls_001_sec_002',
+          'MATH-041',
+          'Cycle Test',
+          entries,
+          '00000000-0000-0000-0000-000000000001'
+        )
+      ).rejects.toThrow('Exam type is inactive and cannot accept marks.');
+    });
   });
 
   describe('5. Student & Parent Report Card Live Integration', () => {

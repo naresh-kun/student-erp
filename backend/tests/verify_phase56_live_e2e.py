@@ -109,6 +109,13 @@ def run_verification():
     assert len(exam_types) >= 4
     cycle_test = next(et for et in exam_types if "Cycle Test" in et["name"])
 
+    # Admin exam type detail GET /api/v1/marks/exam-types/{id}/
+    s, res_detail = get_json(f"/api/v1/marks/exam-types/{cycle_test['id']}/", admin_token)
+    assert s == 200, f"Expected 200 for exam type detail, got {s}: {res_detail}"
+    assert res_detail["data"]["id"] == cycle_test["id"]
+    assert "Cycle Test" in res_detail["data"]["name"]
+    print(f" -> GET /api/v1/marks/exam-types/{cycle_test['id']}/ verified (HTTP 200)")
+
     # Admin patch exam type
     s, res = patch_json(f"/api/v1/marks/exam-types/{cycle_test['id']}/", {"weightage": "10.00"}, admin_token)
     assert s == 200

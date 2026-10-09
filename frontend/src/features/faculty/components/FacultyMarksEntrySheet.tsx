@@ -18,7 +18,8 @@ import {
   FileCheck2, 
   Save, 
   CheckCircle2, 
-  GraduationCap 
+  GraduationCap,
+  AlertCircle 
 } from 'lucide-react';
 import { getGradeBadgeClass } from '@/utils/grading';
 import type { ExamTypeItem } from '@/services/marksApiService';
@@ -52,9 +53,11 @@ export const FacultyMarksEntrySheet: React.FC<FacultyMarksEntrySheetProps> = ({
   onDismissPublishNotice,
 }) => {
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const handleSave = async (publish: boolean) => {
     try {
+      setSaveError(null);
       await onSaveMarks(publish);
       setSaveSuccess(
         publish
@@ -62,8 +65,10 @@ export const FacultyMarksEntrySheet: React.FC<FacultyMarksEntrySheetProps> = ({
           : 'Marks score draft saved securely to local ledger.'
       );
       setTimeout(() => setSaveSuccess(null), 4000);
-    } catch {
-      // error handled upstream
+    } catch (err) {
+      setSaveError(
+        err instanceof Error ? err.message : 'Examination marks submission was rejected by the server.'
+      );
     }
   };
 
@@ -106,6 +111,27 @@ export const FacultyMarksEntrySheet: React.FC<FacultyMarksEntrySheetProps> = ({
               Dismiss
             </Button>
           )}
+        </div>
+      )}
+
+      {/* Save Error Alert */}
+      {saveError && (
+        <div className="p-4 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+            <div>
+              <p className="font-bold text-sm">Examination Marks Submission Failed</p>
+              <p className="text-rose-700 dark:text-rose-400">{saveError}</p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSaveError(null)}
+            className="text-xs h-8 text-rose-900 dark:text-rose-200 hover:bg-rose-100 self-end sm:self-auto"
+          >
+            Dismiss
+          </Button>
         </div>
       )}
 

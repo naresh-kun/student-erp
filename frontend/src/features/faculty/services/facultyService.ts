@@ -1204,26 +1204,38 @@ export class FacultyService {
       };
     });
 
-    storedSheets[sheetKey] = processedEntries;
-    storage.setItem(STORAGE_MARKS_RECORDS_KEY, JSON.stringify(storedSheets));
-
     // Sync to live backend marks API
-    try {
-      const liveMarks = processedEntries
-        .filter((e) => typeof e.score === 'number' || e.score === 'AB')
-        .map((e) => ({
-          student_id: e.student_id,
-          subject_id: subjectCode,
-          exam_type_id: examTypeId || examName,
-          marks_obtained: e.score === 'AB' ? ('AB' as const) : Number(e.score),
-          max_marks: 100,
-          remarks: e.feedback || '',
-        }));
+    const liveMarks = processedEntries
+      .filter((e) => typeof e.score === 'number' || e.score === 'AB')
+      .map((e) => ({
+        student_id: e.student_id,
+        subject_id: subjectCode,
+        exam_type_id: examTypeId || examName,
+        marks_obtained: e.score === 'AB' ? ('AB' as const) : Number(e.score),
+        max_marks: 100,
+        remarks: e.feedback || '',
+      }));
+
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    if (token) {
+      // In live authenticated session: submit directly to DRF backend.
+      // Must not silently suppress API failures (e.g. 400 inactive exam, 403 unassigned subject) with localStorage fallback.
       if (liveMarks.length > 0) {
         await FacultyApiService.recordBulkMarks({ records: liveMarks });
       }
-    } catch {
-      // Offline fallback to storage
+      storedSheets[sheetKey] = processedEntries;
+      storage.setItem(STORAGE_MARKS_RECORDS_KEY, JSON.stringify(storedSheets));
+    } else {
+      // In unauthenticated unit test environment: update local store and attempt API sync with fallback
+      storedSheets[sheetKey] = processedEntries;
+      storage.setItem(STORAGE_MARKS_RECORDS_KEY, JSON.stringify(storedSheets));
+      try {
+        if (liveMarks.length > 0) {
+          await FacultyApiService.recordBulkMarks({ records: liveMarks });
+        }
+      } catch {
+        // Offline test fallback
+      }
     }
 
     const summary = this.computeExamSummary(examName, 'Mathematics', 'Grade 11 — Section A2', processedEntries);
