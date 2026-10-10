@@ -58,6 +58,16 @@ def verify_option_b_security():
     assert not unowned_tables, f"Tables not owned by {migrator_user}: {unowned_tables}"
     print(f"[PASS] All public tables are owned by '{migrator_user}'.")
 
+    cur_mig.execute("""
+        SELECT sequencename, sequenceowner
+        FROM pg_sequences
+        WHERE schemaname = 'public';
+    """)
+    sequences = cur_mig.fetchall()
+    unowned_seqs = [s for s, o in sequences if o != migrator_user]
+    assert not unowned_seqs, f"Sequences not owned by {migrator_user}: {unowned_seqs}"
+    print(f"[PASS] All {len(sequences)} public sequences are owned by '{migrator_user}'.")
+
     # -------------------------------------------------------------------------
     # 2. Verify DDL capabilities on existing tables (erp_migrator vs erp_app)
     # -------------------------------------------------------------------------

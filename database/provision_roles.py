@@ -78,7 +78,7 @@ def provision_roles():
             cur.execute(f'ALTER TABLE public."{tbl}" OWNER TO erp_migrator;')
         print(f"Transferred ownership of {len(tables)} tables to erp_migrator.")
 
-        cur.execute("SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = 'public';")
+        cur.execute("SELECT sequencename FROM pg_sequences WHERE schemaname = 'public';")
         sequences = [r[0] for r in cur.fetchall()]
         for seq in sequences:
             cur.execute(f'ALTER SEQUENCE public."{seq}" OWNER TO erp_migrator;')
