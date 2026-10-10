@@ -3,7 +3,7 @@
 > **Document ID**: PROP_001  
 > **Title**: Durable Database-Backed Audit Trail for ExamType & Core ERP Mutations  
 > **Governance Status**: **PROPOSAL ONLY — IMPLEMENTATION NOT AUTHORIZED (REVISED)**  
-> **Revision**: 2.0 (Targeted Append-Only Strengthening, QuerySet Guards, Payload Minimization & Limitation Clarification)  
+> **Revision**: 2.1 (Security Clarification: PostgreSQL Trigger Privileges, Event Authenticity, Raw SQL Acceptance Tests & Explicit Security Boundaries)  
 > **Target Release Gate**: Phase 5 Task 5.6 Final Sign-off Precondition  
 > **Blocked Task**: Phase 5 Task 5.7 (Full System Verification & Release Gate)  
 > **Author**: Antigravity AI / Engineering Architecture  
@@ -322,7 +322,45 @@ We explicitly inventory all potential mechanisms in ordinary application code th
 | **6. Raw SQL via `connection.cursor()`** | Developer executes `cursor.execute("UPDATE audit_logs ...")` | **BLOCKED**: PostgreSQL engine trigger `trg_audit_logs_immutable` raises an exception and aborts transaction. |
 | **7. Cascading Foreign Key Deletion** | Upstream model deletion cascades to `audit_logs` | **BLOCKED**: No external model references `AuditLog` as a parent table. Downstream cascade is impossible. |
 | **8. Bulk Ingestion (`bulk_create`)** | Multiple audit records created in a batch | **ALLOWED**: `bulk_create` performs SQL `INSERT` only, which satisfies append-only requirements without mutation. |
-```
+
+### 4.6 PostgreSQL Trigger Privileges, Database Roles & Table Ownership
+
+To establish the exact security boundary and operational envelope of the PostgreSQL database trigger across environments:
+
+#### 1. Environment Role Inventory & Table Ownership
+* **Development & Local Docker Compose**: The application connects to PostgreSQL using a single application user `erp_user` (configured via `DATABASE_USER` / `DB_USER` in [backend/config/settings.py:116](file:///d:/student-erp/backend/config/settings.py#L116)). Django migrations are executed by this user. As a result, `erp_user` is the PostgreSQL owner of the `audit_logs` table and owner of the trigger function.
+* **Continuous Integration (CI Pipeline)**: Pytest runs against a containerized PostgreSQL instance using the test database user (e.g. `postgres` or `erp_user`). Migrations execute during test harness initialization under that role.
+* **Production Deployment**: The production backend connects using the credential provided in `DATABASE_URL` (typically `erp_user`). In a baseline single-role deployment, `audit_logs` is owned by this application role.
+
+#### 2. Trigger Disablement & Removal Capability
+* **Can the Runtime Application Database Role Disable or Remove the Trigger?**
+  * In a **single-role architecture** (`erp_user` owns the table and executes runtime queries): Because PostgreSQL grants table owners full DDL permissions over their tables, the `erp_user` connection possesses the *theoretical database privilege* to run DDL statements such as `ALTER TABLE audit_logs DISABLE TRIGGER trg_audit_logs_immutable;` or `DROP TRIGGER trg_audit_logs_immutable ON audit_logs;`.
+  * However, under ordinary application operation, Django's runtime code, ORM queries, and API endpoints **never issue DDL**. The application runtime issues only DML (`SELECT`, `INSERT`, `UPDATE`, `DELETE`).
+
+#### 3. Exact Protection Provided by the Trigger Under Proposed Single-Role Permissions
+* Under the proposed permissions, the trigger provides **100% protection against all DML mutation and deletion attempts**:
+  - `UPDATE audit_logs ...` statements: **BLOCKED** (`RAISE EXCEPTION 'Table audit_logs is append-only. UPDATE and DELETE operations are forbidden.'`).
+  - `DELETE FROM audit_logs ...` statements: **BLOCKED** (`RAISE EXCEPTION 'Table audit_logs is append-only. UPDATE and DELETE operations are forbidden.'`).
+* This protection actively blocks:
+  1. Application code bugs or rogue ORM update queries that bypass Python guards.
+  2. Ad-hoc commands or developer mistakes executed in `python manage.py shell`.
+  3. Raw SQL queries executed through `django.db.connection.cursor()`.
+  4. SQL injection attacks that attempt to mutate or delete existing audit rows.
+
+#### 4. Distinction: Application Guarantees vs. Additional Production Role Hardening
+* **Current Proposed Architecture (Guaranteed)**: Combines Tier 1 (Django `ImmutableQuerySet` / `ImmutableManager` guards) with Tier 2 (PostgreSQL engine trigger `trg_audit_logs_immutable`). This provides complete operational immutability against ordinary application-code mutation and accidental raw SQL without requiring multi-role database infrastructure.
+* **Additional Production Database-Role Hardening (Optional Future Infrastructure)**:
+  - In high-security enterprise environments, institutions can enforce role separation at the PostgreSQL level:
+    - `erp_migrator`: Table owner, used exclusively during CI/CD migration deployments to run DDL.
+    - `erp_app`: Runtime application user granted only:
+      ```sql
+      GRANT SELECT, INSERT ON audit_logs TO erp_app;
+      REVOKE UPDATE, DELETE, TRUNCATE ON audit_logs FROM erp_app;
+      ```
+  - Under this separation, `erp_app` does **not** own `audit_logs` and cannot issue `ALTER TABLE audit_logs DISABLE TRIGGER`.
+* **Rationale for Not Introducing Extra Database Credentials in This Task**:
+  - Introducing dual database credentials now would require altering `settings.py` for multi-user database connection routing, creating separate migration runner scripts, updating Docker entrypoints with custom user-provisioning SQL, and reconfiguring CI runner secrets.
+  - This would introduce substantial deployment overhead and operational complexity without improving safety against application-level regressions. The Tier 1 ORM guards + Tier 2 PostgreSQL trigger provide the smallest appropriate protection footprint while completely blocking mutation in application code.
 
 ---
 
@@ -478,6 +516,29 @@ Security Boundary Diagram
    * **No Claim of Absolute Tamper-Proofing**: PROP_001 guarantees **application-level and engine-level operational immutability** for all transactions executed through the Django application and ordinary database connections. It does **not** claim cryptographic tamper-evidence (such as Merkle trees, digital signature chains, or immutable ledger blockchains) nor hardware immutability (such as Write-Once-Read-Many / WORM cloud storage appliances like AWS S3 Object Lock in compliance mode).
    * For the scope of Student ERP Task 5.6 and general ERP institutional compliance, application-level two-tier protection meets enterprise auditing standards without introducing unnecessary infrastructure complexity.
 
+### 7.4 Audit-Event Authenticity, Creation Controls & Residual Risks
+
+#### 1. Distinction: Immutability vs. Authenticity
+* **Immutability (Append-Only Protection)**: Ensures that once an audit record has been inserted into PostgreSQL, it cannot be modified (`UPDATE`) or deleted (`DELETE`) by application code, ORM queries, or direct SQL commands over application connections.
+* **Authenticity (Provenance & Non-Fabrication)**: Ensures that newly inserted audit records (`INSERT`) correspond to genuine, authorized business operations initiated by real, authenticated users, and prevents unauthorized actors from injecting fabricated or counterfeit audit history.
+
+#### 2. Controls Governing Audit-Event Creation
+To safeguard against the fabrication or illegitimate injection of audit records:
+1. **Zero External API Ingestion Routes**: The HTTP API exposes **no endpoints** for creating, submitting, or editing audit events. Any HTTP `POST`, `PUT`, `PATCH`, or `DELETE` directed to `/api/v1/audit/` is unconditionally rejected with HTTP 405 Method Not Allowed. External clients cannot submit synthetic audit events.
+2. **Centralized Service-Layer Ingestion**: Audit record instantiation is restricted exclusively to `AuditService.record_event()` in backend domain logic.
+3. **Synchronous Actor Verification**: `AuditService.record_event()` requires an authenticated Django `User` instance (`actor = request.user`). The actor's primary key UUID, immutable username snapshot (`actor_username`), and active role (`actor_role`) are captured synchronously from the authenticated request context. Unauthenticated or spoofed requests cannot create audit events.
+4. **Automated State Delta Derivation**: Field values (`old_values` and `new_values`) are computed directly by the service from the domain model pre-save and post-save instances, rather than being accepted from untrusted client payloads.
+5. **Atomic Transaction Binding**: An audit event is persisted within the same `transaction.atomic()` block as the underlying domain model mutation. If the business mutation is invalid or aborted, no audit event can be created.
+
+#### 3. Residual Risks from Privileged Code and Database Administrators
+To maintain complete architectural integrity without claiming unachievable guarantees:
+1. **Privileged Application Code (Internal Backend Scripts)**:
+   - Any code execution vulnerability (e.g. arbitrary code execution via compromised dependencies, unauthorized administrative shell sessions `python manage.py shell`) has access to the database connection and could execute `AuditLog.objects.create(...)` or `AuditService.record_event(...)` to insert synthetic events. Because the database trigger permits `INSERT` statements to support valid auditing, the database engine cannot distinguish a legitimate event from a fabricated `INSERT` originating from privileged backend code.
+2. **Direct Database Administrator Access (`psql`)**:
+   - A database administrator connecting directly via `psql` can execute arbitrary `INSERT INTO audit_logs ...` statements. The PostgreSQL trigger permits `INSERT` operations and cannot verify whether a database-level `INSERT` originated from the Django application or a manual SQL command.
+3. **Honest Claim on Authenticity**:
+   - PROP_001 establishes rigorous **application-level provenance and authorization barriers**. However, it does **not** implement asymmetric digital cryptographic signatures (e.g. per-event public/private key signing), hardware security module (HSM) attestation, or decentralized consensus. Absolute non-repudiation against internal privileged actors with administrative access is explicitly disclaimed.
+
 ---
 
 ## 8. Proposed API Contract for Audit Trail Inquiries
@@ -558,27 +619,45 @@ The existing scaffolding endpoint `GET /api/v1/audit/` will be activated to retu
 
 ## 10. Required Test Suite & Acceptance Plan
 
-A dedicated test suite `backend/tests/test_phase5_marks_examtype_audit.py` will be created covering 12 explicit test criteria:
+A dedicated test suite `backend/tests/test_phase5_marks_examtype_audit.py` will be created covering 14 explicit test criteria across engine, ORM, API, and transaction layers.
 
-### Immutability & Protection Tests
-1. **`test_audit_instance_save_modification_blocked`**: Assert that taking an existing persisted `AuditLog` instance and calling `log.action = 'TAMPERED'; log.save()` raises `django.core.exceptions.PermissionDenied`.
-2. **`test_audit_instance_delete_blocked`**: Assert that calling `log.delete()` on a persisted `AuditLog` raises `PermissionDenied`.
-3. **`test_audit_queryset_bulk_update_blocked`**: Assert that executing `AuditLog.objects.filter(id=log.id).update(action='TAMPERED')` raises `PermissionDenied`.
-4. **`test_audit_queryset_bulk_delete_blocked`**: Assert that executing `AuditLog.objects.filter(id=log.id).delete()` raises `PermissionDenied`.
-5. **`test_audit_api_has_no_mutation_routes`**: Assert that HTTP `POST`, `PUT`, `PATCH`, and `DELETE` requests to `/api/v1/audit/` return HTTP 405 Method Not Allowed.
+> **CRITICAL ACCEPTANCE STATUS NOTICE**:  
+> The acceptance tests enumerated below represent **proposed design criteria and test specifications**.  
+> **None of these tests have been executed or passed yet**, because audit implementation is strictly unauthorized and has not been started.
 
-### Persistence, Accuracy & Payload Minimization Tests
-6. **`test_exam_type_create_creates_audit_record`**: Verify `POST /api/v1/marks/exam-types/` inserts an `AuditLog` with `action='CREATE'`, `new_values={'name': ..., 'weightage': ..., 'is_active': ...}`, and `old_values={}`.
-7. **`test_exam_type_patch_creates_audit_record_with_diff`**: Verify patching `weightage` from `10.00` to `15.00` records `old_values={'weightage': '10.00'}` and `new_values={'weightage': '15.00'}` while omitting `name` and `is_active`.
-8. **`test_single_field_diff_captures_only_changed_field`**: Verify modifying only `is_active` captures only `is_active` in diff (`old_values={'is_active': true}`, `new_values={'is_active': false}`).
-9. **`test_validation_failure_creates_zero_audit_records`**: Assert invalid PATCH (e.g. weightage `150.00`) creates zero audit logs.
+### 10.1 Engine-Level Direct SQL Trigger Tests (PostgreSQL Required)
+These tests execute raw SQL via Django's connection cursor directly against the PostgreSQL engine to prove that the database trigger blocks mutations even when Django ORM guards are entirely bypassed:
 
-### Atomic Consistency & Failure Rollback Tests
-10. **`test_audit_write_failure_rolls_back_exam_type_mutation`**: Mock `AuditService.record_event` to raise `DatabaseError` during an ExamType PATCH. Assert that the ExamType in PostgreSQL remains unchanged (reverted) and API returns HTTP 500.
+1. **`test_psql_trigger_blocks_raw_sql_update`** *(PostgreSQL Engine Required)*:
+   * Action: Uses `connection.cursor()` to execute `UPDATE audit_logs SET action = 'TAMPERED' WHERE id = %s`.
+   * Assertion: Asserts that PostgreSQL raises `django.db.utils.InternalError` or `django.db.DatabaseError` containing the trigger exception text: `"Table audit_logs is append-only. UPDATE and DELETE operations are forbidden."`
+   * Engine Enforcement: Decorated with `@pytest.mark.skipif(connection.vendor != 'postgresql', reason="PostgreSQL trigger tests require PostgreSQL engine")` to prevent relying on or passing on SQLite fallback.
+2. **`test_psql_trigger_blocks_raw_sql_delete`** *(PostgreSQL Engine Required)*:
+   * Action: Uses `connection.cursor()` to execute `DELETE FROM audit_logs WHERE id = %s`.
+   * Assertion: Asserts that PostgreSQL raises `django.db.utils.InternalError` or `django.db.DatabaseError` containing the trigger exception text: `"Table audit_logs is append-only. UPDATE and DELETE operations are forbidden."`
+   * Engine Enforcement: Same PostgreSQL engine check enforced.
 
-### RBAC, Security & Regression Tests
-11. **`test_unauthorized_role_cannot_access_audit_api`**: Assert Faculty, Student, and Parent receive 403 Forbidden on `GET /api/v1/audit/`.
-12. **`test_legacy_records_and_historical_marks_unaffected`**: Verify `Half-Yearly Examination 2026` and its 5 marks records remain completely intact, and full regression runs verify 498 backend tests and 265 frontend tests pass with 0 schema drift.
+### 10.2 Application & ORM Immutability Tests
+3. **`test_audit_instance_save_modification_blocked`**: Assert that taking an existing persisted `AuditLog` instance and calling `log.action = 'TAMPERED'; log.save()` raises `django.core.exceptions.PermissionDenied`.
+4. **`test_audit_instance_delete_blocked`**: Assert that calling `log.delete()` on a persisted `AuditLog` raises `django.core.exceptions.PermissionDenied`.
+5. **`test_audit_queryset_bulk_update_blocked`**: Assert that executing `AuditLog.objects.filter(id=log.id).update(action='TAMPERED')` raises `django.core.exceptions.PermissionDenied`.
+6. **`test_audit_queryset_bulk_delete_blocked`**: Assert that executing `AuditLog.objects.filter(id=log.id).delete()` raises `django.core.exceptions.PermissionDenied`.
+
+### 10.3 API Route Immutability & RBAC Tests
+7. **`test_audit_api_has_no_mutation_routes`**: Assert that external HTTP `POST`, `PUT`, `PATCH`, and `DELETE` requests to `/api/v1/audit/` return HTTP 405 Method Not Allowed across all roles (Admin, Faculty, Student, Anonymous).
+8. **`test_unauthorized_role_cannot_access_audit_api`**: Assert Faculty, Student, and Parent receive HTTP 403 Forbidden on `GET /api/v1/audit/`, while Admin and Principal receive HTTP 200 OK.
+
+### 10.4 Persistence, Accuracy & Payload Minimization Tests
+9. **`test_exam_type_create_creates_audit_record`**: Verify `POST /api/v1/marks/exam-types/` inserts an `AuditLog` with `action='CREATE'`, `new_values={'name': ..., 'weightage': ..., 'is_active': ...}`, and `old_values={}`.
+10. **`test_exam_type_patch_creates_audit_record_with_diff`**: Verify patching `weightage` from `10.00` to `15.00` records `old_values={'weightage': '10.00'}` and `new_values={'weightage': '15.00'}` while omitting `name` and `is_active`.
+11. **`test_single_field_diff_captures_only_changed_field`**: Verify modifying only `is_active` captures only `is_active` in diff (`old_values={'is_active': true}`, `new_values={'is_active': false}`).
+12. **`test_validation_failure_creates_zero_audit_records`**: Assert invalid PATCH (e.g. weightage `150.00`) creates zero audit logs.
+
+### 10.5 Atomic Consistency & Failure Rollback Tests
+13. **`test_audit_write_failure_rolls_back_exam_type_mutation`**: Mock `AuditService.record_event` to raise `DatabaseError` during an ExamType PATCH. Assert that the ExamType in PostgreSQL remains unchanged (reverted) and API returns HTTP 500.
+
+### 10.6 Regression & Historical Integrity Tests
+14. **`test_legacy_records_and_historical_marks_unaffected`**: Verify `Half-Yearly Examination 2026` and its 5 marks records remain completely intact, and full regression runs verify 498 backend tests and 265 frontend tests pass with 0 schema drift.
 
 ---
 
@@ -608,8 +687,8 @@ A dedicated test suite `backend/tests/test_phase5_marks_examtype_audit.py` will 
 | **Task D** | Implement `AuditService.record_event()` with delta minimization in `backend/apps/audit/services.py` | Task A |
 | **Task E** | Integrate atomic transaction auditing in `backend/apps/marks/views.py` | Tasks B, D |
 | **Task F** | Wire `AuditLogListView` in `backend/apps/audit/views.py` & update serializers | Tasks A, D |
-| **Task G** | Author comprehensive test suite `test_phase5_marks_examtype_audit.py` (12 tests) | Tasks E, F |
-| **Task H** | Run full backend regression (510+ tests) and Vitest suite (265 tests) | Task G |
+| **Task G** | Author comprehensive test suite `test_phase5_marks_examtype_audit.py` (14 tests) | Tasks E, F |
+| **Task H** | Run full backend regression (512+ tests) and Vitest suite (265 tests) | Task G |
 | **Task I** | Update `API_CONTRACT.md`, `PHASE_05_STATUS.md`, and author final Task 5.6 completion report | Task H |
 
 ---
@@ -618,15 +697,16 @@ A dedicated test suite `backend/tests/test_phase5_marks_examtype_audit.py` will 
 
 Task 5.6 will achieve final sign-off only when the following criteria are met:
 1. `AuditLog` table created in PostgreSQL with zero schema drift on other models.
-2. Creating or patching an ExamType via DRF endpoints creates a corresponding `AuditLog` row in PostgreSQL with actor identity and minimized before/after diffs.
-3. Audit failure intentionally injected during tests causes atomic rollback of the ExamType modification.
-4. Non-Admin/Principal roles receive HTTP 403 on `GET /api/v1/audit/`.
-5. Direct `.save()` or `.delete()` calls on persisted `AuditLog` instances raise `PermissionDenied`.
-6. Bulk `.update()` or `.delete()` on `AuditLog.objects` QuerySets raise `PermissionDenied`.
-7. Legacy `Half-Yearly Examination 2026` record and its 5 marks records remain preserved intact.
-8. 100% test pass rate across backend pytest and frontend Vitest suites, with clean production build.
-9. Updated completion report accurately signed off with verifiable evidence.
-10. Task 5.7 remains strictly **NOT STARTED** until explicitly instructed.
+2. Direct raw SQL `UPDATE` and `DELETE` queries on persisted `audit_logs` rows are rejected by the PostgreSQL engine trigger `trg_audit_logs_immutable`.
+3. Creating or patching an ExamType via DRF endpoints creates a corresponding `AuditLog` row in PostgreSQL with actor identity and minimized before/after diffs.
+4. Audit failure intentionally injected during tests causes atomic rollback of the ExamType modification.
+5. Non-Admin/Principal roles receive HTTP 403 on `GET /api/v1/audit/`.
+6. Direct `.save()` or `.delete()` calls on persisted `AuditLog` instances raise `PermissionDenied`.
+7. Bulk `.update()` or `.delete()` on `AuditLog.objects` QuerySets raise `PermissionDenied`.
+8. Legacy `Half-Yearly Examination 2026` record and its 5 marks records remain preserved intact.
+9. 100% test pass rate across backend pytest and frontend Vitest suites, with clean production build.
+10. Updated completion report accurately signed off with verifiable evidence.
+11. Task 5.7 remains strictly **NOT STARTED** until explicitly instructed.
 
 ---
 
