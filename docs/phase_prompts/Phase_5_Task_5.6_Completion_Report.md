@@ -194,18 +194,40 @@ This section establishes verifiable evidence for every previously specified Exam
 ### 7.2 Database Initialization, Sequence Ownership & Upgrade Workflows Evidence
 Automated operational verification executed via `database/exercise_db_provisioning_workflows.py`:
 
-#### Sequence Catalog Investigation & Reconciliation
-- **PostgreSQL Catalog Finding**: In PostgreSQL 16+, standard `information_schema.sequences` queries returned 0 rows for sequences generated via Django's `AutoField` / `SERIAL` columns due to SQL-standard view scoping.
-- **Authoritative System Catalog (`pg_sequences` / `pg_class`)**: Exactly **8 sequences** exist in the `public` schema:
-  1. `django_migrations_id_seq`
-  2. `django_content_type_id_seq`
-  3. `auth_permission_id_seq`
-  4. `auth_group_id_seq`
-  5. `auth_group_permissions_id_seq`
-  6. `users_groups_id_seq`
-  7. `users_user_permissions_id_seq`
-  8. `django_admin_log_id_seq`
-- **Ownership Realignment**: [database/provision_roles.py](file:///d:/student-erp/database/provision_roles.py) was updated to query `pg_sequences WHERE schemaname = 'public'`, successfully transferring and verifying ownership of **all 8 sequences to `erp_migrator`**.
+#### Sequence Catalog Investigation & Discrepancy Reconciliation
+- **The Discrepancy**: Earlier investigations encountered a discrepancy where querying `information_schema.sequences` on a cloned database returned **0 sequences**, whereas system inspection had earlier recorded **8 sequences** transferred to `erp_migrator`.
+- **PostgreSQL 16 Catalog Root Cause**:
+  - The SQL-standard view `information_schema.sequences` is defined in PostgreSQL with an explicit dependency filter:
+    ```sql
+    WHERE NOT (EXISTS (
+        SELECT 1 FROM pg_depend 
+        WHERE pg_depend.classid = 'pg_class'::regclass::oid 
+          AND pg_depend.objid = c.oid 
+          AND pg_depend.deptype = 'i'::"char"
+    ))
+    ```
+  - In PostgreSQL, `deptype = 'i'` denotes an **internal dependency** (`DEPENDENCY_INTERNAL`).
+  - In Django, all auto-incrementing primary keys (`models.AutoField`, `models.BigAutoField`) create sequences internally owned by the corresponding table columns.
+  - Inspection of `pg_depend` confirmed that all 8 sequences in the application possess `deptype = 'i'` linked to their parent tables (`django_migrations`, `django_content_type`, `auth_permission`, `auth_group`, `auth_group_permissions`, `users_groups`, `users_user_permissions`, `django_admin_log`).
+  - Consequently, `SELECT * FROM information_schema.sequences` returns **0 rows by SQL-standard definition**.
+- **Authoritative System Catalogs (`pg_sequences` and `pg_class c WHERE relkind = 'S'`)**:
+  - Both authoritative catalogs reflect exactly **8 sequences** in the `public` schema.
+
+#### Development Database Catalog Inspection (`student_erp`)
+Inspected via an appropriately privileged connection (`postgres` superuser) without modifying `student_erp`:
+- **`information_schema.sequences`**: 0 rows (expected per `pg_depend` dependency filter).
+- **`pg_sequences`**: Exactly **8 sequences** in schema `public`:
+  | Sequence Name | Data Type | Schema | Owner | Table Linkage (`pg_depend`) |
+  |---|---|---|---|---|
+  | `auth_group_id_seq` | `integer` | `public` | `erp_migrator` | `auth_group.id` (`deptype='i'`) |
+  | `auth_group_permissions_id_seq` | `bigint` | `public` | `erp_migrator` | `auth_group_permissions.id` (`deptype='i'`) |
+  | `auth_permission_id_seq` | `integer` | `public` | `erp_migrator` | `auth_permission.id` (`deptype='i'`) |
+  | `django_admin_log_id_seq` | `integer` | `public` | `erp_migrator` | `django_admin_log.id` (`deptype='i'`) |
+  | `django_content_type_id_seq` | `integer` | `public` | `erp_migrator` | `django_content_type.id` (`deptype='i'`) |
+  | `django_migrations_id_seq` | `bigint` | `public` | `erp_migrator` | `django_migrations.id` (`deptype='i'`) |
+  | `users_groups_id_seq` | `bigint` | `public` | `erp_migrator` | `users_groups.id` (`deptype='i'`) |
+  | `users_user_permissions_id_seq` | `bigint` | `public` | `erp_migrator` | `users_user_permissions.id` (`deptype='i'`) |
+- **`pg_class c WHERE relkind = 'S'`**: Exactly 8 sequence relations in `public`, all 8 owned by `erp_migrator`.
 
 #### Workflow 1: Fresh Database Provisioning in Isolated Disposable Environment
 - **Target Database**: `erp_disposable_fresh` (provisioned and dropped without modifying development database)
@@ -216,7 +238,7 @@ Automated operational verification executed via `database/exercise_db_provisioni
   4. Executed `database/provision_roles.py` to establish table and sequence ownership transfer and enforce append-only privilege boundary on `audit_logs`.
 - **Verification Results**:
   - Total tables created: **26** (all 26 owned by `erp_migrator`).
-  - Total sequences created: **8** (all 8 owned by `erp_migrator`).
+  - Total sequences created: **8** in `pg_sequences` (all 8 owned by `erp_migrator`; 0 in `information_schema.sequences` as expected).
   - Immutability trigger: `trg_audit_logs_immutable` verified active on `audit_logs`.
   - Runtime permissions for `erp_app`:
     - `SELECT` on `audit_logs`: **ALLOWED** (initial count: 0).
@@ -228,17 +250,32 @@ Automated operational verification executed via `database/exercise_db_provisioni
 
 #### Workflow 2: Existing-Volume Provisioning & Upgrade Path in Disposable Copy
 - **Target Database**: `erp_disposable_upgrade` (exact clone created from template `student_erp`)
-- **Pre-Provisioning Baseline Inspection**:
-  - Tables: **26** | Sequences: **8**
+- **Simulated Unprovisioned Baseline**:
+  - In `erp_disposable_upgrade`, table and sequence ownership was set to superuser `postgres` to verify ownership transfer from an unprovisioned state.
+  - Pre-provisioning table count: **26** (all owned by `postgres`).
+  - Pre-provisioning sequence count:
+    - `information_schema.sequences`: **0**
+    - `pg_sequences`: **8** (all 8 owned by `postgres`).
   - Core domain record counts: `marks_exam_types`: 5, `marks_records`: 11, `users`: 12, `students`: 4, `faculty`: 3, `parents`: 3, `classes`: 2, `sections`: 4, `subjects`: 6, `enrollments`: 4, `teaching_assignments`: 5, `attendance_records`: 11, `audit_logs`: 2.
   - Historical exam type `Half-Yearly Examination 2026`: id `'8ed9817e-4f9f-4334-a64f-c9fb868266ea'`, `is_active: True`, `weightage: 50.00`.
   - Historical marks records: exactly 5 marks records associated with this legacy exam.
 - **Execution Steps**:
   1. Executed `database/provision_roles.py` against `erp_disposable_upgrade`.
   2. Executed Django migrations under `erp_migrator` (`DB_ROLE=migrator python manage.py migrate`): confirmed zero pending migrations.
-- **Post-Provisioning Verification Results**:
-  - Table ownership: **26 / 26 tables owned by `erp_migrator`**.
-  - Sequence ownership: **8 / 8 sequences owned by `erp_migrator`**.
+- **Post-Provisioning Verification Results & Sequence Ownership Reconciliation**:
+  - Table ownership: **26 / 26 tables transferred to `erp_migrator`**.
+  - Sequence ownership before vs after transfer in `erp_disposable_upgrade`:
+    | Sequence Name | Data Type | Schema | Owner Before | Owner After | Transfer Status |
+    |---|---|---|---|---|---|
+    | `auth_group_id_seq` | `integer` | `public` | `postgres` | `erp_migrator` | **TRANSFERRED** |
+    | `auth_group_permissions_id_seq` | `bigint` | `public` | `postgres` | `erp_migrator` | **TRANSFERRED** |
+    | `auth_permission_id_seq` | `integer` | `public` | `postgres` | `erp_migrator` | **TRANSFERRED** |
+    | `django_admin_log_id_seq` | `integer` | `public` | `postgres` | `erp_migrator` | **TRANSFERRED** |
+    | `django_content_type_id_seq` | `integer` | `public` | `postgres` | `erp_migrator` | **TRANSFERRED** |
+    | `django_migrations_id_seq` | `bigint` | `public` | `postgres` | `erp_migrator` | **TRANSFERRED** |
+    | `users_groups_id_seq` | `bigint` | `public` | `postgres` | `erp_migrator` | **TRANSFERRED** |
+    | `users_user_permissions_id_seq` | `bigint` | `public` | `postgres` | `erp_migrator` | **TRANSFERRED** |
+  - Sequence transfer mechanism: In PostgreSQL, `ALTER TABLE ... OWNER TO` cascades ownership to linked identity/serial sequences; `provision_roles.py` additionally inspects `pg_sequences` to verify and enforce `erp_migrator` ownership across 100% of sequences.
   - Record counts preservation: **100% match across all 13 domain tables** (`marks_exam_types`: 5, `marks_records`: 11, `users`: 12, `students`: 4, `faculty`: 3, `parents`: 3, `classes`: 2, `sections`: 4, `subjects`: 6, `enrollments`: 4, `teaching_assignments`: 5, `attendance_records`: 11, `audit_logs`: 2).
   - Historical `Half-Yearly Examination 2026` record: **100% identical** (`id`, `name`, `is_active`, `weightage`).
   - Historical 5 marks records: **100% identical** across all IDs, enrollment references, subject IDs, marks obtained, and grades.
@@ -251,24 +288,38 @@ Automated operational verification executed via `database/exercise_db_provisioni
     - Database trigger immutability: PostgreSQL trigger `trg_audit_logs_immutable` blocked raw SQL DELETE even for `erp_migrator`: **PASS**
     - Historical data preservation re-verified: **PASS**
   - Disposable clone `erp_disposable_upgrade` dropped cleanly.
+  - Re-verification of `student_erp`: Verified 100% untouched and unchanged.
 
 ### 7.3 Development Database Access History & Artifact Inspection
 - **Reconciled Access Accounting**:
-  1. `tests/verify_phase56_live_e2e.py`: Executed against the running development server connected to `student_erp`, legitimately generating 2 persistent business audit log entries (UUIDs `2e849f39-543e-467d-9f3c-07e4c1c8e44b` and `77653cff-b6a1-4edb-bab1-f939da083f06`) recording `admin_demo` patching `Cycle Test`.
-  2. `database/test_role_permissions.py`: Executed earlier against `student_erp` during initial Option B verification:
-     - Tested adding and dropping temporary column `_sec_test_col` on `marks_exam_types`.
-     - Created temporary table `_test_future_*` which was dropped in `finally`.
-     - Inserted temporary audit log (`resource_id='sec-test'`) which was subsequently cleaned up by disabling the trigger, deleting the test row, and re-enabling the trigger.
-- **Post-Test Artifact Inspection on `student_erp`**:
-  - Tables with temporary prefixes (`_`): **0 found** (zero leftover test tables).
-  - Audit log entries: Exactly **2 legitimate operational records**; the test row was completely removed.
+  To ensure total transparency, the following commands accessed or modified the development database (`student_erp`):
+  1. `database/provision_roles.py`: Executed against `student_erp` during initial Option B configuration:
+     - Created roles `erp_migrator` and `erp_app` (NOCREATEDB).
+     - Transferred ownership of all 26 public tables and 8 sequences to `erp_migrator`.
+     - Granted runtime CRUD to `erp_app` and configured default privileges for future objects.
+     - Restricted `audit_logs` permissions for `erp_app` to `SELECT, INSERT` only.
+  2. `database/test_role_permissions.py`: Executed earlier against `student_erp` during initial security boundary validation:
+     - Tested DDL on `marks_exam_types` by adding and immediately dropping column `_sec_test_col`.
+     - Tested future-object default privileges by creating table `_test_future_*` and dropping it in a `finally` block.
+     - Tested append-only enforcement on `audit_logs` by inserting a temporary test row (`resource_id='sec-test'`, `actor_username='test_actor'`), testing blocked mutations, and deleting the test row by disabling and re-enabling `trg_audit_logs_immutable` as table owner.
+  3. `tests/verify_phase56_live_e2e.py`: Executed against the running development server connected to `student_erp`:
+     - Authenticated across all 5 user roles.
+     - As `admin_demo`, patched `Cycle Test` properties, legitimately generating exactly 2 persistent business audit log entries (UUIDs `2e849f39-543e-467d-9f3c-07e4c1c8e44b` and `77653cff-b6a1-4edb-bab1-f939da083f06`).
+- **Post-Test Artifact Inspection on `student_erp` (Non-Mutating Inspection)**:
+  - Tables with temporary prefixes (`_`): **0 found** (exactly the 26 standard Django + ERP tables exist).
+  - Columns on `marks_exam_types`: Exactly 6 standard columns (`id`, `name`, `weightage`, `is_active`, `created_at`, `updated_at`). Temporary column `_sec_test_col` was completely removed.
+  - Audit log entries: Exactly **2 legitimate operational business records**; test row `sec-test` was completely removed during test cleanup.
   - Core domain records: `Half-Yearly Examination 2026` (`8ed9817e-4f9f-4334-a64f-c9fb868266ea`, active: True, weightage: 50.00) and its 5 marks records verified completely intact.
-- **Governance Realignment**: All subsequent mutating, provisioning, and upgrade verification workflows are strictly restricted to disposable database clones (`erp_disposable_fresh` and `erp_disposable_upgrade`), safeguarding the development database from mutating test runs.
+- **Strict Governance Boundary**: No production or development records were deleted merely to match counts. All subsequent mutating, provisioning, and upgrade verification workflows are strictly restricted to disposable database clones (`erp_disposable_fresh` and `erp_disposable_upgrade`), safeguarding `student_erp` against mutating test runs.
 
 ### 7.4 Credential Hygiene & Rotation Evidence
-- **Credential Hygiene Audit**: [database/exercise_db_provisioning_workflows.py](file:///d:/student-erp/database/exercise_db_provisioning_workflows.py) was audited and purged of all hardcoded passwords and default fallback strings. All credentials are now strictly loaded from environment variables (`DATABASE_PASSWORD`, `MIGRATION_DATABASE_PASSWORD`, `RUNTIME_DATABASE_PASSWORD`).
-- **Secret Rotation**: Exposed database credentials were immediately rotated in the PostgreSQL engine via `ALTER ROLE postgres WITH PASSWORD ...`. Verified that connections using the previous credentials fail with `OperationalError`, while the rotated credentials connect successfully.
-- **Git Commit Cleansing**: The commit history was amended to remove the exposed credential from git tracking. No secret values are exposed in documentation or reports.
+- **Credential Hygiene Audit**: 
+  - [database/exercise_db_provisioning_workflows.py](file:///d:/student-erp/database/exercise_db_provisioning_workflows.py), [database/provision_roles.py](file:///d:/student-erp/database/provision_roles.py), [database/test_role_permissions.py](file:///d:/student-erp/database/test_role_permissions.py), and [database/schema/00_init_roles.sql](file:///d:/student-erp/database/schema/00_init_roles.sql) were audited.
+  - All hardcoded passwords and default fallback strings have been completely removed.
+  - All credentials are now strictly loaded from environment variables (`ADMIN_DATABASE_USER`, `ADMIN_DATABASE_PASSWORD`, `DATABASE_PASSWORD`, `MIGRATION_DATABASE_PASSWORD`, `RUNTIME_DATABASE_PASSWORD`).
+  - Scripts explicitly raise `ValueError` or SQL exceptions if required credential environment variables are missing.
+- **Secret Rotation**: Database credentials previously exposed during development were rotated in the PostgreSQL engine via `ALTER ROLE postgres WITH PASSWORD ...`. Connections attempting to use the previous credentials fail with `OperationalError`, while rotated credentials connect successfully.
+- **Git Commit Cleansing**: The git commit history was cleansed to ensure zero usable secrets are tracked in version control. No secret values are exposed in documentation, git diffs, or reports.
 
 ### 7.5 Frontend Tests & Build
 - **Suite Command**: `npm test -- --run`

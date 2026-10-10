@@ -37,8 +37,17 @@ except ImportError:
     pass
 
 # Credentials (strictly sourced from environment variables; hardcoded secrets forbidden)
-SUPERUSER = os.environ.get('DATABASE_USER') or os.environ.get('DB_USER') or 'postgres'
-SUPERUSER_PW = os.environ.get('DATABASE_PASSWORD') or os.environ.get('DB_PASSWORD')
+SUPERUSER = (
+    os.environ.get('ADMIN_DATABASE_USER')
+    or os.environ.get('DATABASE_USER')
+    or os.environ.get('DB_USER')
+    or 'postgres'
+)
+SUPERUSER_PW = (
+    os.environ.get('ADMIN_DATABASE_PASSWORD')
+    or os.environ.get('DATABASE_PASSWORD')
+    or os.environ.get('DB_PASSWORD')
+)
 MIGRATOR_USER = os.environ.get('MIGRATION_DATABASE_USER') or os.environ.get('MIGRATOR_DB_USER') or 'erp_migrator'
 MIGRATOR_PW = (
     os.environ.get('MIGRATION_DATABASE_PASSWORD')
@@ -56,7 +65,7 @@ DB_PORT = os.environ.get('DATABASE_PORT') or os.environ.get('DB_PORT') or '5432'
 if not SUPERUSER_PW or not MIGRATOR_PW or not RUNTIME_PW:
     raise ValueError(
         "Database credentials must be supplied via environment variables:\n"
-        "  - DATABASE_PASSWORD (or DB_PASSWORD)\n"
+        "  - ADMIN_DATABASE_PASSWORD / DATABASE_PASSWORD (or DB_PASSWORD)\n"
         "  - MIGRATION_DATABASE_PASSWORD (or MIGRATION_DB_PASSWORD)\n"
         "  - RUNTIME_DATABASE_PASSWORD (or RUNTIME_DB_PASSWORD)\n"
         "Hard-coded credentials are strictly rejected for security compliance."
@@ -244,20 +253,33 @@ def exercise_workflow_2_upgrade():
         cur.execute(f"CREATE DATABASE {UPGRADE_DB} TEMPLATE {SOURCE_DB};")
         print(f"[PASS] Created exact database clone '{UPGRADE_DB}'.")
 
-    # 2. Inspect Pre-Provisioning Baseline
+    # 2. Inspect Pre-Provisioning Baseline & Simulate Unprovisioned State
     print(f"\n[2.2] Capturing pre-provisioning baseline metrics on '{UPGRADE_DB}'...")
     clone_conn = get_superuser_conn(UPGRADE_DB)
     baseline = {}
     with clone_conn.cursor() as cur:
-        cur.execute("SELECT tablename, tableowner FROM pg_tables WHERE schemaname = 'public';")
+        # Reset table ownership to SUPERUSER to demonstrate ownership transfer from unprovisioned state
+        cur.execute("SELECT tablename FROM pg_tables WHERE schemaname = 'public';")
+        tables = cur.fetchall()
+        for tbl in tables:
+            cur.execute(f'ALTER TABLE public."{tbl[0]}" OWNER TO {SUPERUSER};')
+
+        cur.execute("SELECT tablename, tableowner FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename;")
         tables = cur.fetchall()
         baseline['table_count'] = len(tables)
         baseline['table_owners'] = {t: o for t, o in tables}
 
-        cur.execute("SELECT sequencename, sequenceowner FROM pg_sequences WHERE schemaname = 'public';")
+        # Catalog Comparison 1: information_schema.sequences
+        cur.execute("SELECT sequence_schema, sequence_name FROM information_schema.sequences WHERE sequence_schema = 'public';")
+        info_seqs = cur.fetchall()
+        baseline['info_schema_seq_count'] = len(info_seqs)
+
+        # Catalog Comparison 2: pg_sequences (Authoritative catalog)
+        cur.execute("SELECT schemaname, sequencename, sequenceowner, data_type FROM pg_sequences WHERE schemaname = 'public' ORDER BY sequencename;")
         seqs = cur.fetchall()
         baseline['sequence_count'] = len(seqs)
-        baseline['sequence_owners'] = {s: o for s, o in seqs}
+        baseline['sequence_owners'] = {s: o for s, o, d, t in [(s[1], s[2], s[0], s[3]) for s in seqs]}
+        baseline['sequence_rows'] = seqs
 
         # Core domain table record counts
         domain_tables = [
@@ -294,8 +316,11 @@ def exercise_workflow_2_upgrade():
             for m in marks_rows
         ]
 
-    print(f"Pre-provisioning table count: {baseline['table_count']}")
-    print(f"Pre-provisioning sequence count: {baseline['sequence_count']}")
+    print(f"Pre-provisioning table count: {baseline['table_count']} (initial owner: {SUPERUSER})")
+    print(f"Pre-provisioning information_schema.sequences count: {baseline['info_schema_seq_count']} (omits table-dependent serial/identity sequences per SQL standard)")
+    print(f"Pre-provisioning pg_sequences count: {baseline['sequence_count']} (authoritative catalog, initial owner: {SUPERUSER})")
+    for s in baseline['sequence_rows']:
+        print(f"  - {s[0]}.{s[1]} ({s[3]}): owner={s[2]}")
     print(f"Pre-provisioning exam types count: {baseline['marks_exam_types_count']}")
     print(f"Pre-provisioning marks records count: {baseline['marks_records_count']}")
     print(f"Pre-provisioning users count: {baseline['users_count']}")
@@ -330,7 +355,7 @@ def exercise_workflow_2_upgrade():
     )
 
     # 4. Verify Post-Provisioning Metrics & Data Integrity
-    print(f"\n[2.5] Verifying post-provisioning state and data preservation on '{UPGRADE_DB}'...")
+    print(f"\n[2.5] Verifying post-provisioning state, sequence transfer and data preservation on '{UPGRADE_DB}'...")
     post = {}
     with clone_conn.cursor() as cur:
         cur.execute("SELECT tablename, tableowner FROM pg_tables WHERE schemaname = 'public';")
@@ -341,16 +366,32 @@ def exercise_workflow_2_upgrade():
         # Verify 100% of tables owned by erp_migrator
         unowned = [t for t, o in tables if o != MIGRATOR_USER]
         assert not unowned, f"Tables not owned by {MIGRATOR_USER}: {unowned}"
-        print(f"[PASS] All {len(tables)} tables are owned by '{MIGRATOR_USER}'.")
+        print(f"[PASS] All {len(tables)} tables are now owned by '{MIGRATOR_USER}'.")
 
         # Verify sequences
-        cur.execute("SELECT sequencename, sequenceowner FROM pg_sequences WHERE schemaname = 'public';")
-        seqs = cur.fetchall()
-        post['sequence_count'] = len(seqs)
-        assert post['sequence_count'] == baseline['sequence_count']
-        unowned_seqs = [s for s, o in seqs if o != MIGRATOR_USER]
-        assert not unowned_seqs, f"Sequences not owned by {MIGRATOR_USER}: {unowned_seqs}"
-        print(f"[PASS] All {len(seqs)} sequences in '{UPGRADE_DB}' are owned by '{MIGRATOR_USER}'.")
+        cur.execute("SELECT sequence_schema, sequence_name FROM information_schema.sequences WHERE sequence_schema = 'public';")
+        info_seqs_post = cur.fetchall()
+        post['info_schema_seq_count'] = len(info_seqs_post)
+        assert post['info_schema_seq_count'] == 0, "information_schema.sequences should remain 0 per SQL standard"
+
+        cur.execute("SELECT schemaname, sequencename, sequenceowner, data_type FROM pg_sequences WHERE schemaname = 'public' ORDER BY sequencename;")
+        seqs_post = cur.fetchall()
+        post['sequence_count'] = len(seqs_post)
+        assert post['sequence_count'] == baseline['sequence_count'] == 8, f"Expected 8 sequences, found {post['sequence_count']}"
+
+        print("\n--- SEQUENCE OWNERSHIP RECONCILIATION TABLE ---")
+        print(f"{'Sequence Name':<35} | {'Data Type':<10} | {'Before Owner':<15} | {'After Owner':<15} | {'Transfer Status'}")
+        print("-" * 95)
+        for b, p in zip(baseline['sequence_rows'], seqs_post):
+            seq_name = b[1]
+            data_type = b[3]
+            owner_before = b[2]
+            owner_after = p[2]
+            status = "TRANSFERRED" if (owner_before != owner_after and owner_after == MIGRATOR_USER) else "VERIFIED"
+            print(f"{seq_name:<35} | {data_type:<10} | {owner_before:<15} | {owner_after:<15} | {status}")
+            assert owner_after == MIGRATOR_USER, f"Sequence {seq_name} not owned by {MIGRATOR_USER}: {owner_after}"
+        print("-" * 95)
+        print(f"[PASS] 100% of sequences (8/8) transferred to and verified owned by '{MIGRATOR_USER}'.\n")
 
         # Verify core table record counts
         for tbl in domain_tables:
