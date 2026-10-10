@@ -125,10 +125,10 @@ else:
     db_name = os.environ.get('DATABASE_NAME') or os.environ.get('DB_NAME') or 'student_erp'
     if db_role == 'migrator':
         db_user = os.environ.get('MIGRATION_DATABASE_USER') or os.environ.get('DATABASE_USER') or os.environ.get('DB_USER') or 'erp_migrator'
-        db_password = os.environ.get('MIGRATION_DATABASE_PASSWORD') or os.environ.get('DATABASE_PASSWORD') or os.environ.get('DB_PASSWORD') or 'erp_migrator_password'
+        db_password = os.environ.get('MIGRATION_DATABASE_PASSWORD') or os.environ.get('DATABASE_PASSWORD') or os.environ.get('DB_PASSWORD') or ''
     else:
-        db_user = os.environ.get('DATABASE_USER') or os.environ.get('DB_USER') or 'erp_app'
-        db_password = os.environ.get('DATABASE_PASSWORD') or os.environ.get('DB_PASSWORD') or 'erp_app_password'
+        db_user = os.environ.get('RUNTIME_DATABASE_USER') or os.environ.get('DATABASE_USER') or os.environ.get('DB_USER') or 'erp_app'
+        db_password = os.environ.get('RUNTIME_DATABASE_PASSWORD') or os.environ.get('DATABASE_PASSWORD') or os.environ.get('DB_PASSWORD') or ''
     db_host = os.environ.get('DATABASE_HOST') or os.environ.get('DB_HOST') or 'localhost'
     db_port = os.environ.get('DATABASE_PORT') or os.environ.get('DB_PORT') or '5432'
 
@@ -149,7 +149,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': db_name,
         'USER': os.environ.get('MIGRATION_DATABASE_USER') or 'erp_migrator',
-        'PASSWORD': os.environ.get('MIGRATION_DATABASE_PASSWORD') or 'erp_migrator_password',
+        'PASSWORD': os.environ.get('MIGRATION_DATABASE_PASSWORD') or os.environ.get('DATABASE_PASSWORD') or '',
         'HOST': db_host,
         'PORT': db_port,
         'CONN_MAX_AGE': 600,
@@ -161,7 +161,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': db_name,
         'USER': os.environ.get('RUNTIME_DATABASE_USER') or 'erp_app',
-        'PASSWORD': os.environ.get('RUNTIME_DATABASE_PASSWORD') or 'erp_app_password',
+        'PASSWORD': os.environ.get('RUNTIME_DATABASE_PASSWORD') or os.environ.get('DATABASE_PASSWORD') or '',
         'HOST': db_host,
         'PORT': db_port,
         'CONN_MAX_AGE': 600,

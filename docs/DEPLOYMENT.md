@@ -68,20 +68,32 @@ All configuration is supplied via environment variables adhering to Twelve-Facto
 - `CORS_ALLOWED_ORIGINS`: Restricted domain origin list.
 
 ### 3.1 Dual-Role Database Deployment Architecture (PROP_001 Option B)
-To ensure durable auditability and least privilege, database access is segregated into two identities:
+To ensure durable auditability, least privilege, and schema evolution integrity, database access is segregated into two identities:
 1. **Migration Role (`erp_migrator`)**:
-   - Schema and table owner for Django models.
+   - Schema and table owner for all Django models and sequences in the `public` schema.
+   - Configured with `NOCREATEDB` in production (database creation is reserved for isolated admin/test provisioning).
    - Executes DDL, schema migrations, and PL/pgSQL triggers (`trg_audit_logs_immutable`).
    - Run as an explicit pre-deployment job: `DB_ROLE=migrator python manage.py migrate --noinput`.
-   - Migration credentials are kept in a separate deployment secret and never provided to application server pods.
+   - Migration credentials are kept in a separate deployment secret (`MIGRATION_DATABASE_PASSWORD`) and never provided to application server pods.
 2. **Runtime Application Role (`erp_app`)**:
    - Restricted role used by application workers (Uvicorn / Gunicorn).
-   - Granted standard CRUD and sequence privileges across normal ERP tables.
+   - Configured with `NOCREATEDB` and no table/schema ownership rights.
+   - Granted standard CRUD and sequence privileges across ordinary ERP tables via table grants and `ALTER DEFAULT PRIVILEGES`.
    - On the audit trail (`audit_logs`), granted only `SELECT` and `INSERT`.
    - Explicitly revoked: `UPDATE`, `DELETE`, `TRUNCATE`, and `ALTER` on `audit_logs`.
    - Cannot disable triggers or alter schema objects.
 
-Provisioning existing or fresh databases is idempotent via `python database/provision_roles.py` or `database/schema/00_init_roles.sql`.
+3. **Future-Object Privileges**:
+   - Configured via `ALTER DEFAULT PRIVILEGES FOR ROLE erp_migrator IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO erp_app;`.
+   - Any newly created domain table automatically grants CRUD to `erp_app` without manual intervention.
+   - Any future audit table explicitly revokes `UPDATE, DELETE, TRUNCATE` from `erp_app` in its migration.
+
+4. **Role Provisioning & Existing Schema Migration**:
+   - Provisioning existing databases or fresh volumes is performed idempotently via:
+     `MIGRATION_DATABASE_PASSWORD=... RUNTIME_DATABASE_PASSWORD=... python database/provision_roles.py`
+     or `database/schema/00_init_roles.sh` (mounted into Docker entrypoint).
+   - All passwords must be supplied via environment variables; hardcoded credentials are strictly rejected.
+   - The provisioning script automatically transfers table and sequence ownership of existing Django objects to `erp_migrator` so future migrations can alter tables.
 
 ### Critical Frontend Variables:
 - `VITE_API_BASE_URL`: Base path for the backend REST API (e.g. `/api/v1`).
