@@ -39,7 +39,7 @@ Per authoritative project governance:
 | **Task 5.3** | **Faculty Live API Integration** | Wire Faculty views, profile, assigned classes/sections, student roster, marks entry, roll call, Class Teacher leave review, and homework to live `/api/v1/` endpoints | **COMPLETE** | 436 backend tests passing (+24 new); 213 frontend tests passing (+14 new); clean build (11.67s); live browser verification completed (login -> dashboard -> classes -> students roster -> attendance roll call -> marks entry -> homework -> logout; recording `faculty_browser_test_1791366974619.webp`) |
 | **Task 5.4** | **Academic Structure + Administrative Integration** | Wire Academic Years, Classes, Sections, Subjects, Enrollments, Admin directories (Students, Parents, Faculty), and Operational Allocations (Student Section & Class Teacher) to live `/api/v1/` endpoints | **COMPLETE** | 458 backend tests passing (+22 new in `test_phase5_admin_allocation_task54.py`, 33 in `test_endpoint_rbac_task44.py`); 229 frontend tests passing (+16 new in `admin_allocation_api_integration.test.ts`); clean build (9.09s); live browser verification completed for Admin, Principal, and Faculty |
 | **Task 5.5** | **Attendance API Integration + Oversight** | Wire Admin attendance oversight, Principal attendance analytics, Student Absentees register, Attendance Not Entered sessions, and preserve Student/Parent/Faculty live attendance integrations | **COMPLETE** | 475 backend tests passing (+17 new in `test_phase5_attendance_integration_task55.py`); 245 frontend tests passing (+16 new in `attendance_api_integration.test.ts`); clean build (6.75s); live browser verification completed for Admin, Principal, and Faculty (`task55_browser_qa_1791444398880.webp`) |
-| **Task 5.6** | **Marks API Integration + Oversight** | Wire Admin marks oversight, Principal academic analytics, Faculty bulk marks entry with 'AB' absent support, and server-authoritative Student/Parent report cards | **COMPLETE** | 498 backend tests passing (+15 in `test_phase5_marks_integration_task56.py`, +8 in `test_phase5_marks_examtype_task56_reconciliation.py`); 264 frontend tests passing (+19 in `marks_api_integration.test.ts`); clean build (8.65s); 0 migration drift; live multi-role E2E verified |
+| **Task 5.6** | **Marks API Integration + Oversight** | Wire Admin marks oversight, Principal academic analytics, Faculty bulk marks entry with 'AB' absent support, and server-authoritative Student/Parent report cards | **COMPLETE** | 498 backend tests passing (+15 in `test_phase5_marks_integration_task56.py`, +8 in `test_phase5_marks_examtype_task56_reconciliation.py`); 265 frontend tests passing (+20 in `marks_api_integration.test.ts`); clean build (12.83s); 0 migration drift; live multi-role E2E & browser QA verified |
 | **Task 5.7** | **Phase 5 Full System Verification & Release Gate** | End-to-end integration tests, regression test suites, performance audit | **NOT STARTED** | Scheduled |
 
 ---
@@ -202,11 +202,12 @@ Per authoritative project governance:
 
 ### 8.3 Test & Quality Metrics
 - **Backend Tests**: 498/498 pytest passed (15 new dedicated tests in `test_phase5_marks_integration_task56.py`, 8 in `test_phase5_marks_examtype_task56_reconciliation.py`).
-- **Frontend Tests**: 264/264 Vitest passed across 16 test files (19 new dedicated tests in `marks_api_integration.test.ts`).
+- **Frontend Tests**: 265/265 Vitest passed across 16 test files (20 new dedicated tests in `marks_api_integration.test.ts`).
 - **Django System Check**: 0 issues (`manage.py check`).
 - **Migration Drift**: 0 changes detected (`manage.py makemigrations --check`).
-- **Production Build**: Clean build in 8.65s with zero TypeScript errors (`npm run build`).
+- **Production Build**: Clean build in 12.83s with zero TypeScript errors (`npm run build`).
 - **Live Multi-Role Verification**: Full verification of all 5 roles (Admin, Faculty, Student, Parent, Principal) against live running server with `verify_phase56_live_e2e.py`.
+- **Live Browser QA**: Full automated browser verification of Faculty marks-entry register, active ExamTypes loading, authoritative UUID dispatch, and rejection error banner (`faculty_marks_browser_qa_1791610618158.webp`).
 
 
 
