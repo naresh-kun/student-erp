@@ -3,13 +3,17 @@
 
 > **Phase**: Phase 5 (Core ERP API Integration & Advanced Workflows)  
 > **Task**: Task 5.6 (Marks API Integration + Oversight)  
-> **Status**: **COMPLETE & SIGNED OFF**  
-> **Date**: 2026-10-09  
+> **Status**: **RECONCILED — AWAITING EXPLICIT DECISION ON AUDITABILITY LIMITATION**  
+> **Date**: 2026-10-10  
+> **ExamType Implementation & Regression Verification**: **PASS**  
+> **Durable Audit Trail**: **NOT IMPLEMENTED** (Operational console logging and `updated_at` timestamps do not constitute a persistent audit history)  
+> **Overall Task 5.6 Reconciliation Acceptance**: **AWAITING EXPLICIT DECISION ON THE AUDITABILITY LIMITATION**  
 > **Backend Integration Tests**: **498 / 498 passing** (15 in `test_phase5_marks_integration_task56.py`, 8 in `test_phase5_marks_examtype_task56_reconciliation.py`, 17 in `test_phase5_attendance_integration_task55.py`, 22 in `test_phase5_admin_allocation_task54.py`, 24 in `test_phase5_faculty_integration_task53.py`, 33 in `test_endpoint_rbac_task44.py`)  
 > **Frontend Vitest Tests**: **265 / 265 passing across 16 test files** (20 in `marks_api_integration.test.ts`, 16 in `attendance_api_integration.test.ts`, 16 in `admin_allocation_api_integration.test.ts`, 19 in `grading.test.ts`, 18 in `admin.test.ts`, 10 in `principal.test.ts`, 22 in `faculty.test.ts`, 25 in `student.test.ts`, 21 in `parent.test.ts`)  
 > **Zero Migration Drift**: `python manage.py makemigrations --check` → *No changes detected*  
-> **Production Bundle**: `npm run build` → *Clean build in 8.65s, 0 TypeScript errors*  
+> **Production Bundle**: `npm run build` → *Clean build in 12.83s, 0 TypeScript errors*  
 > **Live Multi-Role Verification**: `verify_phase56_live_e2e.py` → *All 5 roles passed operational & security criteria against live server*  
+> **Live Browser QA**: Recorded session `faculty_marks_browser_qa_1791610618158.webp` (active ExamTypes dropdown, authoritative UUID submission, rejection error display)  
 
 ---
 
@@ -146,7 +150,7 @@ This section establishes verifiable evidence for every previously specified Exam
 | **3** | **Duplicate Names and Invalid Updates Rejected** | **PASS** | `backend/apps/marks/serializers.py`: `ExamTypeSerializer.validate_name` & `validate_weightage`<br>`backend/apps/marks/views.py`: `ExamTypeDetailView.patch` / `put` | `TestExamTypeReconciliation.test_exam_type_patch_duplicate_and_invalid_validation` (**PASSED**; asserts HTTP 400 on duplicate name, blank name, weightage > 100, and weightage < 0).<br>`test_exam_type_patch_unauthorized_roles_blocked` (**PASSED**; asserts HTTP 403 for non-Admin).<br>`marks_api_integration.test.ts`: `updates exam type via PATCH /api/v1/marks/exam-types/{id}/` (**PASSED**). | Admin patch in `verify_phase56_live_e2e.py` succeeds (HTTP 200); unauthorized mutations blocked with 403 Forbidden. |
 | **4** | **Inactive ExamTypes Handled Correctly** | **PASS** | `backend/apps/marks/views.py`: `ExamTypeListView.get` (?is_active=true/false)<br>`backend/apps/marks/services.py`: `MarksService.record_bulk_marks` (lines 147–148) | `TestExamTypeReconciliation.test_exam_type_list_and_active_filtering` (**PASSED**; filters `is_active=true` and `is_active=false`).<br>`test_marks_submission_rejects_inactive_exam_type` (**PASSED**; rejects bulk submission with HTTP 400 Bad Request containing `'inactive'`).<br>`marks_api_integration.test.ts`: `lists active exam types via GET /api/v1/marks/exam-types/?is_active=true` (**PASSED**). | Inactive exam types excluded from marks-entry dropdown; submission with inactive ID rejected server-side. |
 | **5** | **Faculty Marks-Entry UI Backend Loading, Identifier Resolution, Persistence & Zero Silent Fallback** | **PASS** | `frontend/src/features/faculty/hooks/useFacultyMarksEntry.ts`: calls `MarksApiService.getExamTypes({ is_active: true })`<br>`frontend/src/features/faculty/components/FacultyMarksEntrySheet.tsx`: dropdown binds active UUIDs; surfaces `saveError` banner on rejection.<br>`frontend/src/features/faculty/services/facultyService.ts`: `saveMarksEntrySheet` submits authoritative UUID to `FacultyApiService.recordBulkMarks` and throws on API error in authenticated sessions (no silent fallback). | `marks_api_integration.test.ts`: `resolves authoritative database UUID exam_type_id when saving marks sheet` (**PASSED**).<br>`marks_api_integration.test.ts`: `rejects silent fallback and surfaces error when live bulk marks submission fails in authenticated session` (**PASSED**).<br>`test_phase5_marks_examtype_task56_reconciliation.py`: `test_marks_submission_resolves_uuid_and_authoritative_name` (**PASSED**). | **Live Browser QA Recorded (`faculty_marks_browser_qa_1791610618158.webp`)**:<br>1. Logged in as `faculty_suresh` on `http://localhost:5173/faculty/marks`.<br>2. Verified `#exam-type-select` loaded all 5 active ExamTypes (`Cycle Test`, `Quarterly Examination`, `Half-Yearly Examination`, `Half-Yearly Examination 2026`, `Final / Annual Examination`).<br>3. Selected ExamType binds database ID and passes in bulk submission payload.<br>4. Rejection by backend immediately renders error alert banner: `Examination Marks Submission Failed: Faculty can only enter marks for their assigned section and subject.` (captured in `marks_submission_error_1791610933198.png`). |
-| **6** | **Auditability: Operational Logging, Temporal Timestamps & Audit Limitations** | **PASS / DOCUMENTED** | `backend/apps/marks/views.py`: `ExamTypeDetailView.patch`<br>`backend/common/models.py`: `TimeStampedModel` (`updated_at = models.DateTimeField(auto_now=True)`)<br>`backend/config/settings.py`: Structured console logging (`LOGGING['handlers']['console']`) | `TestExamTypeReconciliation.test_exam_type_patch_admin_authorized` (**PASSED**; verifies database `updated_at` temporal mutation and fields updated). | Operational audit record emitted via structured logger:<br>`[timestamp] INFO [apps.marks.views:266] ExamType updated: id=<uuid> name='...' is_active=True weightage=... by user_id=<admin_id> (<admin_email>)`.<br>**Architecture Limitation Formally Documented**: Operational logging and `updated_at` timestamps record execution and latest modification, but the project has no durable, queryable, database-persisted `AuditLog` model (concrete domain models deferred to later phases in `apps.audit`). Per governance directives, no unauthorized audit framework was created. Approval is formally requested for future persistent audit model implementation. |
+| **6** | **Auditability: Operational Logging, Temporal Timestamps & Audit Limitations** | **NOT IMPLEMENTED (Operational logs and timestamps are not persistent audit history)** | `backend/apps/marks/views.py`: `ExamTypeDetailView.patch`<br>`backend/common/models.py`: `TimeStampedModel` (`updated_at = models.DateTimeField(auto_now=True)`)<br>`backend/config/settings.py`: Structured console logging (`LOGGING['handlers']['console']`) | `TestExamTypeReconciliation.test_exam_type_patch_admin_authorized` (**PASSED**; verifies database `updated_at` temporal mutation and fields updated). | Operational audit record emitted via structured logger:<br>`[timestamp] INFO [apps.marks.views:266] ExamType updated: id=<uuid> name='...' is_active=True weightage=... by user_id=<admin_id> (<admin_email>)`.<br>**Architecture Limitation Formally Documented**: Operational logging and `updated_at` timestamps record execution and latest modification, but a durable audit trail does NOT exist in the project (concrete `AuditLog` domain models deferred to later phases in `apps.audit`). Per governance directives, no unauthorized audit framework was created. Overall Task 5.6 reconciliation acceptance is **AWAITING EXPLICIT DECISION ON THE AUDITABILITY LIMITATION**. |
 | **7** | **AB Assessment, Calculation & Scoping Guarantees Intact** | **PASS** | `backend/apps/marks/models.py`: `Mark` model (`grade = 'AB'`)<br>`backend/apps/marks/serializers.py`: `MarkBulkItemSerializer`<br>`backend/apps/marks/services.py`: `MarksService.generate_report_card`<br>`common/utils.py`: CBSE 8-tier letter grading scale | `test_phase5_marks_integration_task56.py`: 15 / 15 tests passed (including `test_absent_ab_marking_and_report_card_calculation`, `test_student_cross_access_denied`, `test_faculty_unassigned_subject_marks_rejected`, `test_purge_of_university_terms_and_faculty_rankings`).<br>`grading.test.ts`: 19 / 19 passed.<br>`marks_api_integration.test.ts`: 20 / 20 passed. | Live verification in `verify_phase56_live_e2e.py` validates student Arun (`801/1000`, `80.1%`, `B1`), parent Ramanathan ward scoping, faculty Suresh CS101 assignment, and zero faculty ranking/rating in principal analytics. |
 
 ---
@@ -191,13 +195,15 @@ This section establishes verifiable evidence for every previously specified Exam
 
 ## 9. Governance Stop Condition
 
-All verification criteria for Phase 5 Task 5.6 ExamType reconciliation have been met and validated:
+The governance status for Phase 5 Task 5.6 ExamType reconciliation accurately distinguishes implementation/regression verification from the auditability architectural limitation:
 
 ```text
-TASK 5.6 = COMPLETE
+EXAMTYPE IMPLEMENTATION & REGRESSION VERIFICATION = PASS
+DURABLE AUDIT TRAIL = NOT IMPLEMENTED (OPERATIONAL LOGS & TIMESTAMPS ONLY)
+OVERALL TASK 5.6 RECONCILIATION ACCEPTANCE = AWAITING EXPLICIT DECISION ON THE AUDITABILITY LIMITATION
 PHASE 5 = IN PROGRESS
 TASK 5.7 = NOT STARTED
 ```
 
-Task 5.7 remains **NOT STARTED** until explicitly instructed.
+Task 5.7 remains strictly **NOT STARTED** until explicitly authorized.
 

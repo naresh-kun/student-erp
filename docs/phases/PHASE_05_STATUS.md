@@ -3,8 +3,8 @@
 > **Phase**: Phase 5 (Core ERP API Integration & Advanced Workflows)  
 > **Status**: **IN PROGRESS**  
 > **Prerequisites**: Phase 1 (COMPLETE), Phase 2 (COMPLETE), Phase 3 (COMPLETE), Phase 4 (COMPLETE), MOD_001 (COMPLETED Approved Project Modification)  
-> **Active Task**: Task 5.6 (COMPLETE) | Next Task: Task 5.7 (NOT STARTED)  
-> **Last Updated**: 2026-10-08  
+> **Active Task**: Task 5.6 (Reconciliation: Awaiting Explicit Decision on Auditability Limitation) | Next Task: Task 5.7 (NOT STARTED)  
+> **Last Updated**: 2026-10-10  
 
 ---
 
@@ -25,7 +25,7 @@ Per authoritative project governance:
 - Task 5.3 (Faculty Module Live API Integration) is **COMPLETE**.
 - Task 5.4 (Academic Structure + Administrative Integration) is **COMPLETE**.
 - Task 5.5 (Attendance API Integration + Oversight) is **COMPLETE**.
-- Task 5.6 (Marks API Integration + Oversight) is **COMPLETE**.
+- Task 5.6 (Marks API Integration + Oversight): Implementation and regression verification is **PASS**; durable audit trail is **NOT IMPLEMENTED** (operational logs and timestamps are not persistent audit history); overall Task 5.6 reconciliation acceptance is **AWAITING EXPLICIT DECISION ON THE AUDITABILITY LIMITATION**.
 - Task 5.7 is **NOT STARTED**.
 
 ---
@@ -39,7 +39,7 @@ Per authoritative project governance:
 | **Task 5.3** | **Faculty Live API Integration** | Wire Faculty views, profile, assigned classes/sections, student roster, marks entry, roll call, Class Teacher leave review, and homework to live `/api/v1/` endpoints | **COMPLETE** | 436 backend tests passing (+24 new); 213 frontend tests passing (+14 new); clean build (11.67s); live browser verification completed (login -> dashboard -> classes -> students roster -> attendance roll call -> marks entry -> homework -> logout; recording `faculty_browser_test_1791366974619.webp`) |
 | **Task 5.4** | **Academic Structure + Administrative Integration** | Wire Academic Years, Classes, Sections, Subjects, Enrollments, Admin directories (Students, Parents, Faculty), and Operational Allocations (Student Section & Class Teacher) to live `/api/v1/` endpoints | **COMPLETE** | 458 backend tests passing (+22 new in `test_phase5_admin_allocation_task54.py`, 33 in `test_endpoint_rbac_task44.py`); 229 frontend tests passing (+16 new in `admin_allocation_api_integration.test.ts`); clean build (9.09s); live browser verification completed for Admin, Principal, and Faculty |
 | **Task 5.5** | **Attendance API Integration + Oversight** | Wire Admin attendance oversight, Principal attendance analytics, Student Absentees register, Attendance Not Entered sessions, and preserve Student/Parent/Faculty live attendance integrations | **COMPLETE** | 475 backend tests passing (+17 new in `test_phase5_attendance_integration_task55.py`); 245 frontend tests passing (+16 new in `attendance_api_integration.test.ts`); clean build (6.75s); live browser verification completed for Admin, Principal, and Faculty (`task55_browser_qa_1791444398880.webp`) |
-| **Task 5.6** | **Marks API Integration + Oversight** | Wire Admin marks oversight, Principal academic analytics, Faculty bulk marks entry with 'AB' absent support, and server-authoritative Student/Parent report cards | **COMPLETE** | 498 backend tests passing (+15 in `test_phase5_marks_integration_task56.py`, +8 in `test_phase5_marks_examtype_task56_reconciliation.py`); 265 frontend tests passing (+20 in `marks_api_integration.test.ts`); clean build (12.83s); 0 migration drift; live multi-role E2E & browser QA verified |
+| **Task 5.6** | **Marks API Integration + Oversight** | Wire Admin marks oversight, Principal academic analytics, Faculty bulk marks entry with 'AB' absent support, and server-authoritative Student/Parent report cards | **AWAITING DECISION ON AUDITABILITY LIMITATION** | Implementation & regression: **PASS** (498 backend tests passing, 265 frontend tests passing, clean build 12.83s, 0 migration drift, live multi-role E2E & browser QA verified); Durable audit trail: **NOT IMPLEMENTED** (operational logs only); Overall acceptance awaiting decision |
 | **Task 5.7** | **Phase 5 Full System Verification & Release Gate** | End-to-end integration tests, regression test suites, performance audit | **NOT STARTED** | Scheduled |
 
 ---
