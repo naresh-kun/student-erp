@@ -3,7 +3,7 @@
 > **Document ID**: PROP_001  
 > **Title**: Durable Database-Backed Audit Trail for ExamType & Core ERP Mutations  
 > **Governance Status**: **PROPOSAL ONLY — IMPLEMENTATION NOT AUTHORIZED (REVISED)**  
-> **Revision**: 2.1 (Security Clarification: PostgreSQL Trigger Privileges, Event Authenticity, Raw SQL Acceptance Tests & Explicit Security Boundaries)  
+> **Revision**: 2.2 (Security Boundary Consistency: PostgreSQL Role Resolution, DRF Permission Status Realignment & Explicit Threat Model)  
 > **Target Release Gate**: Phase 5 Task 5.6 Final Sign-off Precondition  
 > **Blocked Task**: Phase 5 Task 5.7 (Full System Verification & Release Gate)  
 > **Author**: Antigravity AI / Engineering Architecture  
@@ -323,44 +323,57 @@ We explicitly inventory all potential mechanisms in ordinary application code th
 | **7. Cascading Foreign Key Deletion** | Upstream model deletion cascades to `audit_logs` | **BLOCKED**: No external model references `AuditLog` as a parent table. Downstream cascade is impossible. |
 | **8. Bulk Ingestion (`bulk_create`)** | Multiple audit records created in a batch | **ALLOWED**: `bulk_create` performs SQL `INSERT` only, which satisfies append-only requirements without mutation. |
 
-### 4.6 PostgreSQL Trigger Privileges, Database Roles & Table Ownership
+### 4.6 PostgreSQL Role Architecture, Ownership Contradiction Resolution & Comparative Evaluation
 
-To establish the exact security boundary and operational envelope of the PostgreSQL database trigger across environments:
+#### 1. Resolution of the PostgreSQL Ownership Contradiction
+In PostgreSQL, the owner of a database table possesses full DDL administrative control over that table. If a database role owns `audit_logs`, it has the engine-level privilege to execute:
+```sql
+ALTER TABLE audit_logs DISABLE TRIGGER trg_audit_logs_immutable;
+```
+It is therefore a technical contradiction to claim that:
+1. `erp_user` owns the `audit_logs` table, AND
+2. The trigger provides "complete protection against raw SQL mutations" through that same connection.
 
-#### 1. Environment Role Inventory & Table Ownership
-* **Development & Local Docker Compose**: The application connects to PostgreSQL using a single application user `erp_user` (configured via `DATABASE_USER` / `DB_USER` in [backend/config/settings.py:116](file:///d:/student-erp/backend/config/settings.py#L116)). Django migrations are executed by this user. As a result, `erp_user` is the PostgreSQL owner of the `audit_logs` table and owner of the trigger function.
-* **Continuous Integration (CI Pipeline)**: Pytest runs against a containerized PostgreSQL instance using the test database user (e.g. `postgres` or `erp_user`). Migrations execute during test harness initialization under that role.
-* **Production Deployment**: The production backend connects using the credential provided in `DATABASE_URL` (typically `erp_user`). In a baseline single-role deployment, `audit_logs` is owned by this application role.
+Any SQL injection vulnerability or rogue code execution over that connection that possesses the ability to execute arbitrary DDL could disable or drop the trigger before executing an `UPDATE` or `DELETE`. Neither ORM guards nor the database trigger alone provide absolute immutability.
 
-#### 2. Trigger Disablement & Removal Capability
-* **Can the Runtime Application Database Role Disable or Remove the Trigger?**
-  * In a **single-role architecture** (`erp_user` owns the table and executes runtime queries): Because PostgreSQL grants table owners full DDL permissions over their tables, the `erp_user` connection possesses the *theoretical database privilege* to run DDL statements such as `ALTER TABLE audit_logs DISABLE TRIGGER trg_audit_logs_immutable;` or `DROP TRIGGER trg_audit_logs_immutable ON audit_logs;`.
-  * However, under ordinary application operation, Django's runtime code, ORM queries, and API endpoints **never issue DDL**. The application runtime issues only DML (`SELECT`, `INSERT`, `UPDATE`, `DELETE`).
+To resolve this contradiction with complete technical honesty, we evaluate and compare two architectural designs:
 
-#### 3. Exact Protection Provided by the Trigger Under Proposed Single-Role Permissions
-* Under the proposed permissions, the trigger provides **100% protection against all DML mutation and deletion attempts**:
-  - `UPDATE audit_logs ...` statements: **BLOCKED** (`RAISE EXCEPTION 'Table audit_logs is append-only. UPDATE and DELETE operations are forbidden.'`).
-  - `DELETE FROM audit_logs ...` statements: **BLOCKED** (`RAISE EXCEPTION 'Table audit_logs is append-only. UPDATE and DELETE operations are forbidden.'`).
-* This protection actively blocks:
-  1. Application code bugs or rogue ORM update queries that bypass Python guards.
-  2. Ad-hoc commands or developer mistakes executed in `python manage.py shell`.
-  3. Raw SQL queries executed through `django.db.connection.cursor()`.
-  4. SQL injection attacks that attempt to mutate or delete existing audit rows.
+#### 2. Comparative Evaluation of Architectural Options
 
-#### 4. Distinction: Application Guarantees vs. Additional Production Role Hardening
-* **Current Proposed Architecture (Guaranteed)**: Combines Tier 1 (Django `ImmutableQuerySet` / `ImmutableManager` guards) with Tier 2 (PostgreSQL engine trigger `trg_audit_logs_immutable`). This provides complete operational immutability against ordinary application-code mutation and accidental raw SQL without requiring multi-role database infrastructure.
-* **Additional Production Database-Role Hardening (Optional Future Infrastructure)**:
-  - In high-security enterprise environments, institutions can enforce role separation at the PostgreSQL level:
-    - `erp_migrator`: Table owner, used exclusively during CI/CD migration deployments to run DDL.
-    - `erp_app`: Runtime application user granted only:
-      ```sql
-      GRANT SELECT, INSERT ON audit_logs TO erp_app;
-      REVOKE UPDATE, DELETE, TRUNCATE ON audit_logs FROM erp_app;
-      ```
-  - Under this separation, `erp_app` does **not** own `audit_logs` and cannot issue `ALTER TABLE audit_logs DISABLE TRIGGER`.
-* **Rationale for Not Introducing Extra Database Credentials in This Task**:
-  - Introducing dual database credentials now would require altering `settings.py` for multi-user database connection routing, creating separate migration runner scripts, updating Docker entrypoints with custom user-provisioning SQL, and reconfiguring CI runner secrets.
-  - This would introduce substantial deployment overhead and operational complexity without improving safety against application-level regressions. The Tier 1 ORM guards + Tier 2 PostgreSQL trigger provide the smallest appropriate protection footprint while completely blocking mutation in application code.
+##### Option A: Retaining a Single Database Role (`erp_user`) with Explicitly Scoped Threat Model
+* **Mechanism**: Retain the existing single database user (`erp_user`) across Development, CI, and Production.
+* **Threat Model Scope**: Explicitly **limited to ordinary application-level execution that does not possess arbitrary DDL execution privileges**. The threat model encompasses:
+  - Application business logic bugs and accidental mutations.
+  - Django ORM bulk operation bypasses (`QuerySet.update()`, `QuerySet.delete()`).
+  - Standard DML queries issued via `django.db.connection.cursor()`.
+  - External HTTP requests and API consumers.
+* **Security Implications**:
+  - Provides robust defense against all application DML mutation and deletion paths.
+  - **Explicit Boundary**: Does **not** protect against adversaries capable of issuing arbitrary DDL (`ALTER TABLE`, `DROP TRIGGER`), table owners acting maliciously, or database superusers.
+* **Migration Implications**: Zero friction. Standard Django migration commands (`makemigrations apps.audit` and `migrate`) execute natively under the existing user.
+* **CI Pipeline Implications**: Zero changes. Pytest and CI test runners execute against the existing PostgreSQL test database without custom permission scripts.
+* **Docker Compose Implications**: Zero changes. Preserves existing `docker-compose.yml` environment variables (`DATABASE_USER`, `DATABASE_PASSWORD`) and requires no custom entrypoint SQL scripts.
+
+##### Option B: Separating Table/Migration Ownership from Runtime Application Role (`erp_migrator` vs `erp_app`)
+* **Mechanism**: Provision two distinct PostgreSQL database roles:
+  1. `erp_migrator`: Table owner. Used exclusively by CI/CD deployment pipelines to execute migrations and DDL.
+  2. `erp_app`: Runtime application user used by ASGI/WSGI processes. Granted strictly:
+     ```sql
+     GRANT SELECT, INSERT ON audit_logs TO erp_app;
+     REVOKE UPDATE, DELETE, TRUNCATE ON audit_logs FROM erp_app;
+     ```
+* **Security Implications**:
+  - Solves the ownership contradiction at the database engine level. Because `erp_app` does not own `audit_logs` and lacks `ALTER` privileges, even an adversary executing arbitrary raw SQL through the runtime connection cannot disable the trigger or alter the table.
+  - **Explicit Boundary**: Still does not protect against a database superuser with direct root `psql` access.
+* **Migration Implications**: Substantial complexity. Requires running migrations under `erp_migrator` credentials and web servers under `erp_app` credentials. Requires configuring `ALTER DEFAULT PRIVILEGES` or post-migrate signal hooks to grant table permissions to `erp_app` on every future schema migration.
+* **CI Pipeline Implications**: Increases test setup complexity. Test harness runners must provision both roles during container initialization and grant runtime permissions before executing test suites.
+* **Docker Compose Implications**: Requires mounting custom PostgreSQL initialization scripts (e.g., `/docker-entrypoint-initdb.d/init-roles.sql`) into the database container to create multiple users, assign passwords, and configure role grants.
+
+#### 3. Architectural Recommendation: Option A with Scoped Threat Model
+We recommend **Option A** as the smallest design that honestly satisfies the intended audit integrity requirement:
+* **Rationale**: The mandate for Student ERP Task 5.6 is to prevent accidental or unauthorized mutation of `ExamType` administrative audit history in ordinary application code and API requests.
+* Option A provides the smallest appropriate protection footprint without introducing multi-role connection routing, dual secret management, or custom Docker entrypoint overhead.
+* **Honest Threat Model Bound**: We do **not** claim that ORM guards or the trigger alone provide absolute immutability. Under Option A, protection is guaranteed against all ordinary application-runtime DML operations and ORM paths, while acknowledging that protection against DDL-capable actors requires administrative database role separation (Option B), which remains available as a future production infrastructure hardening blueprint.
 
 ---
 
@@ -453,9 +466,22 @@ Audit log inspection is restricted by the authoritative `ROLE_PERMISSIONS_MATRIX
 * **Parent (`ROLE_PARENT`)**: Strictly **DENIED** (returns HTTP 403 Forbidden).
 * **Unauthenticated**: Returns HTTP 401 Unauthorized.
 
-### 7.2 API Endpoint Immutability
+### 7.2 API Endpoint Immutability & Permission Invariant
 * `apps.audit.urls` routes **only `GET /api/v1/audit/`**.
-* No `POST`, `PUT`, `PATCH`, or `DELETE` endpoints exist. Any attempt by external clients or users to mutate audit records via the API receives HTTP 405 Method Not Allowed or 403 Forbidden.
+* No `POST`, `PUT`, `PATCH`, or `DELETE` endpoints exist on the audit API surface.
+* **DRF Permission Evaluation Lifecycle & Status Codes**:
+  Per the authoritative Django REST Framework request processing lifecycle (`APIView.initial`):
+  1. **Authentication & Authorization Evaluation**: Authentication and permission checks (`check_permissions`) execute *before* HTTP method handler dispatch:
+     - **Unauthenticated / Anonymous Clients**: Calling any method (`POST`, `PUT`, `PATCH`, `DELETE`) without valid bearer credentials fails authentication and receives **HTTP 401 Unauthorized**.
+     - **Unauthorized Authenticated Roles (Faculty, Student, Parent)**: Calling any method fails the `PERM_AUDIT_VIEW` role check during `check_permissions` and receives **HTTP 403 Forbidden** prior to method handler inspection.
+  2. **Method Handler Inspection (Authorized Roles: Admin, Principal)**:
+     - For authenticated users with `PERM_AUDIT_VIEW` (Admin, Principal), the permission check passes. DRF then dispatches to the view method. Because `AuditLogListView` only implements `get()`, DRF invokes `http_method_not_allowed()`, returning **HTTP 405 Method Not Allowed**.
+* **Acceptance Invariant**:
+  The fundamental acceptance invariant is that **NO UNAUTHORIZED MUTATION SUCCEEDS** across any role or endpoint:
+  - Anonymous callers are blocked with **HTTP 401 Unauthorized**.
+  - Non-auditing roles (Faculty, Student, Parent) are blocked with **HTTP 403 Forbidden**.
+  - Auditing roles (Admin, Principal) are blocked with **HTTP 405 Method Not Allowed**.
+  - Under no circumstances does any mutation, insertion, or deletion route exist or succeed via the HTTP API.
 
 ### 7.3 Clarification of Database-Level Limitations & Tamper-Proofing Realities
 To maintain strict architectural honesty, we clearly delineate application-level safeguards from storage-layer limitations:
@@ -465,7 +491,7 @@ Security Boundary Diagram
 ┌────────────────────────────────────────────────────────────────────────┐
 │ APPLICATION RUNTIME BOUNDARY (Guaranteed by PROP_001)                 │
 │                                                                        │
-│  [API Requests] ───> Disallow POST/PUT/PATCH/DELETE (405/403)           │
+│  [API Requests] ───> Block POST/PUT/PATCH/DELETE (401 / 403 / 405)     │
 │  [Django ORM]   ───> Instance save()/delete() raises PermissionDenied │
 │  [Django ORM]   ───> QuerySet update()/delete() raises PermissionDenied│
 │  [Transactions] ───> Atomic consistency; write failure rolls back       │
@@ -501,7 +527,7 @@ Security Boundary Diagram
    * **What PROP_001 Protects Against**:
      - Accidental or malicious mutations by application code (e.g., buggy scripts, developers attempting `AuditLog.objects.filter(...).update(...)` or `log.save()`).
      - Web clients or attackers attempting to send HTTP mutation requests (`POST`, `PUT`, `PATCH`, `DELETE`) to the audit endpoints.
-     - Raw SQL queries (`cursor.execute("UPDATE audit_logs ...")`) executed through standard application database connections, which are caught and blocked by PostgreSQL trigger `trg_audit_logs_immutable`.
+     - Raw SQL DML queries (`cursor.execute("UPDATE audit_logs ...")`) executed through standard application database connections, which are caught and blocked by PostgreSQL trigger `trg_audit_logs_immutable`.
      - Inconsistent or uncommitted business state: all audit entries are bound to business transactions via `transaction.atomic()`, ensuring audit failures roll back business changes.
 
 2. **Database Administrator & Superuser Boundaries (What PROP_001 Cannot Prevent)**:
@@ -524,7 +550,7 @@ Security Boundary Diagram
 
 #### 2. Controls Governing Audit-Event Creation
 To safeguard against the fabrication or illegitimate injection of audit records:
-1. **Zero External API Ingestion Routes**: The HTTP API exposes **no endpoints** for creating, submitting, or editing audit events. Any HTTP `POST`, `PUT`, `PATCH`, or `DELETE` directed to `/api/v1/audit/` is unconditionally rejected with HTTP 405 Method Not Allowed. External clients cannot submit synthetic audit events.
+1. **Zero External API Ingestion Routes**: The HTTP API exposes **no endpoints** for creating, submitting, or editing audit events. Any HTTP `POST`, `PUT`, `PATCH`, or `DELETE` directed to `/api/v1/audit/` is unconditionally rejected per DRF permission lifecycle (HTTP 401 Unauthorized for anonymous callers, HTTP 403 Forbidden for unauthorized roles, or HTTP 405 Method Not Allowed for authenticated admins). External clients cannot submit synthetic audit events.
 2. **Centralized Service-Layer Ingestion**: Audit record instantiation is restricted exclusively to `AuditService.record_event()` in backend domain logic.
 3. **Synchronous Actor Verification**: `AuditService.record_event()` requires an authenticated Django `User` instance (`actor = request.user`). The actor's primary key UUID, immutable username snapshot (`actor_username`), and active role (`actor_role`) are captured synchronously from the authenticated request context. Unauthenticated or spoofed requests cannot create audit events.
 4. **Automated State Delta Derivation**: Field values (`old_values` and `new_values`) are computed directly by the service from the domain model pre-save and post-save instances, rather than being accepted from untrusted client payloads.
@@ -644,7 +670,13 @@ These tests execute raw SQL via Django's connection cursor directly against the 
 6. **`test_audit_queryset_bulk_delete_blocked`**: Assert that executing `AuditLog.objects.filter(id=log.id).delete()` raises `django.core.exceptions.PermissionDenied`.
 
 ### 10.3 API Route Immutability & RBAC Tests
-7. **`test_audit_api_has_no_mutation_routes`**: Assert that external HTTP `POST`, `PUT`, `PATCH`, and `DELETE` requests to `/api/v1/audit/` return HTTP 405 Method Not Allowed across all roles (Admin, Faculty, Student, Anonymous).
+7. **`test_audit_api_has_no_mutation_routes`**:
+   * Action: Issue HTTP `POST`, `PUT`, `PATCH`, and `DELETE` requests to `/api/v1/audit/` across all roles.
+   * Invariant Assertion (No unauthorized mutation succeeds):
+     - Anonymous client receives **HTTP 401 Unauthorized**.
+     - Authenticated Faculty, Student, and Parent receive **HTTP 403 Forbidden** (role check fails before handler dispatch).
+     - Authenticated Admin and Principal receive **HTTP 405 Method Not Allowed** (permission check passes; method handler absent).
+     - Assert that zero `AuditLog` records are inserted, modified, or removed in PostgreSQL across all attempts.
 8. **`test_unauthorized_role_cannot_access_audit_api`**: Assert Faculty, Student, and Parent receive HTTP 403 Forbidden on `GET /api/v1/audit/`, while Admin and Principal receive HTTP 200 OK.
 
 ### 10.4 Persistence, Accuracy & Payload Minimization Tests
