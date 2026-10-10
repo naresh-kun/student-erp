@@ -102,10 +102,20 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 ASGI_APPLICATION = 'config.asgi.application'
 
-# 2. Database (PostgreSQL 16+ Authoritative Backend)
+# 2. Database (PostgreSQL 16+ Authoritative Backend with Dual-Role Support per PROP_001 Option B)
+db_role = os.environ.get('DB_ROLE') or os.environ.get('DJANGO_DB_ROLE') or 'app'
+migration_database_url = os.environ.get('MIGRATION_DATABASE_URL')
 database_url = os.environ.get('DATABASE_URL')
-if database_url:
-    parsed_db = urlparse(database_url)
+
+if db_role == 'migrator' and migration_database_url:
+    effective_db_url = migration_database_url
+elif database_url:
+    effective_db_url = database_url
+else:
+    effective_db_url = None
+
+if effective_db_url:
+    parsed_db = urlparse(effective_db_url)
     db_name = parsed_db.path.lstrip('/')
     db_user = parsed_db.username or ''
     db_password = parsed_db.password or ''
@@ -113,8 +123,12 @@ if database_url:
     db_port = str(parsed_db.port or '5432')
 else:
     db_name = os.environ.get('DATABASE_NAME') or os.environ.get('DB_NAME') or 'student_erp'
-    db_user = os.environ.get('DATABASE_USER') or os.environ.get('DB_USER') or 'erp_user'
-    db_password = os.environ.get('DATABASE_PASSWORD') or os.environ.get('DB_PASSWORD') or 'erp_password'
+    if db_role == 'migrator':
+        db_user = os.environ.get('MIGRATION_DATABASE_USER') or os.environ.get('DATABASE_USER') or os.environ.get('DB_USER') or 'erp_migrator'
+        db_password = os.environ.get('MIGRATION_DATABASE_PASSWORD') or os.environ.get('DATABASE_PASSWORD') or os.environ.get('DB_PASSWORD') or 'erp_migrator_password'
+    else:
+        db_user = os.environ.get('DATABASE_USER') or os.environ.get('DB_USER') or 'erp_app'
+        db_password = os.environ.get('DATABASE_PASSWORD') or os.environ.get('DB_PASSWORD') or 'erp_app_password'
     db_host = os.environ.get('DATABASE_HOST') or os.environ.get('DB_HOST') or 'localhost'
     db_port = os.environ.get('DATABASE_PORT') or os.environ.get('DB_PORT') or '5432'
 
@@ -130,7 +144,31 @@ DATABASES = {
         'OPTIONS': {
             'connect_timeout': int(os.environ.get('DB_CONNECT_TIMEOUT', '2')),
         },
-    }
+    },
+    'migrator': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': db_name,
+        'USER': os.environ.get('MIGRATION_DATABASE_USER') or 'erp_migrator',
+        'PASSWORD': os.environ.get('MIGRATION_DATABASE_PASSWORD') or 'erp_migrator_password',
+        'HOST': db_host,
+        'PORT': db_port,
+        'CONN_MAX_AGE': 600,
+        'OPTIONS': {
+            'connect_timeout': int(os.environ.get('DB_CONNECT_TIMEOUT', '2')),
+        },
+    },
+    'runtime_app': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': db_name,
+        'USER': os.environ.get('RUNTIME_DATABASE_USER') or 'erp_app',
+        'PASSWORD': os.environ.get('RUNTIME_DATABASE_PASSWORD') or 'erp_app_password',
+        'HOST': db_host,
+        'PORT': db_port,
+        'CONN_MAX_AGE': 600,
+        'OPTIONS': {
+            'connect_timeout': int(os.environ.get('DB_CONNECT_TIMEOUT', '2')),
+        },
+    },
 }
 
 # 3. Channels & Redis Layer (Realtime)

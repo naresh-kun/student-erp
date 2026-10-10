@@ -89,13 +89,15 @@ class TestMigrationInventoryTask35:
         assert any(d[0] == 'academics' for d in marks_deps)
 
     def test_deferred_apps_have_zero_migrations(self):
-        """Deferred apps must have zero migration files."""
+        """Deferred apps must have zero migration files; audit has approved PROP_001 migration."""
         from django.db.migrations.loader import MigrationLoader
         loader = MigrationLoader(None, ignore_no_migrations=True)
-        deferred_apps = ('timetable', 'calendar', 'allocation', 'reports', 'notifications', 'audit')
+        deferred_apps = ('timetable', 'calendar', 'allocation', 'reports', 'notifications')
         for app in deferred_apps:
             keys = [k for k in loader.disk_migrations if k[0] == app]
             assert keys == [], f"Deferred app '{app}' has unexpected migrations: {keys}"
+        audit_keys = [k for k in loader.disk_migrations if k[0] == 'audit']
+        assert audit_keys == [('audit', '0001_initial')], f"Audit has unexpected migrations: {audit_keys}"
 
 
 # ============================================================================

@@ -1,25 +1,46 @@
 """
-Student ERP — Audit DRF Views (Scaffolding)
+Student ERP — Audit DRF Views
 Provides immutable audit trail inquiry endpoints.
+Strictly read-only; mutation endpoints return HTTP 405 Method Not Allowed.
 """
 
 from rest_framework.views import APIView
 from common.constants import PERM_AUDIT_VIEW
 from common.permissions import require_permission
-from common.responses import success_response
-from apps.audit.services import AuditService
+from common.pagination import StandardResultsSetPagination
+from apps.audit.models import AuditLog
+from apps.audit.serializers import AuditLogSerializer
 
 
 class AuditLogListView(APIView):
     """
     GET /api/v1/audit/
-    Lists audit events. Scaffolding returns structured empty dataset prior to Task 3.3 models.
+    Lists immutable audit events. Query filtering: resource_type, resource_id, action, actor_id.
+    Authorized for Admin and Principal with PERM_AUDIT_VIEW.
     """
     permission_classes = [require_permission(PERM_AUDIT_VIEW)]
+    pagination_class = StandardResultsSetPagination
 
     def get(self, request, *args, **kwargs):
-        service = AuditService()
-        return success_response(
-            data=[],
-            meta={"page": 1, "page_size": 20, "total_records": 0, "service": service.get_service_status()}
-        )
+        qs = AuditLog.objects.all().select_related('actor', 'actor__role')
+
+        resource_type = request.query_params.get('resource_type')
+        if resource_type:
+            qs = qs.filter(resource_type=resource_type)
+
+        resource_id = request.query_params.get('resource_id')
+        if resource_id:
+            qs = qs.filter(resource_id=resource_id)
+
+        action = request.query_params.get('action')
+        if action:
+            qs = qs.filter(action=action)
+
+        actor_id = request.query_params.get('actor_id')
+        if actor_id:
+            qs = qs.filter(actor_id=actor_id)
+
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(qs, request)
+        serializer = AuditLogSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)

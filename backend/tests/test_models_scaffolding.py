@@ -61,25 +61,27 @@ def test_task_3_4_concrete_models_registered_and_scope_boundaries_enforced():
        attendance: Attendance, LeaveApplication
        marks: ExamType, Mark
 
-    3. Later domain models remain NOT registered yet (Timetable, Calendar, Allocation, Report, Notification, AuditLog).
+    3. Later domain models remain NOT registered yet (Timetable, Calendar, Allocation, Report, Notification).
+    4. Approved PROP_001 model IS registered: audit: AuditLog.
     """
     all_model_names = {m.__name__ for m in apps.get_models()}
 
-    # --- Task 3.3 & Task 3.4 required models (must be present) ---
+    # --- Task 3.3, Task 3.4 & PROP_001 required models (must be present) ---
     required_models = {
         'Role', 'User', 'Parent', 'Faculty',   # accounts
         'Student',                              # students
         'AcademicYear', 'SchoolClass', 'Section', 'Subject', 'Enrollment',  # academics
         'Attendance', 'LeaveApplication',       # attendance (Task 3.4)
         'ExamType', 'Mark',                     # marks (Task 3.4)
+        'AuditLog',                             # audit (PROP_001)
     }
     missing = required_models - all_model_names
     assert not missing, (
-        f"Required Task 3.3/3.4 models missing from app registry: {missing}."
+        f"Required Task 3.3/3.4/PROP_001 models missing from app registry: {missing}."
     )
 
     # --- Later-domain deferred models (must NOT be present) ---
-    deferred_later = {'Timetable', 'CalendarEvent', 'Allocation', 'Report', 'Notification', 'AuditLog'}
+    deferred_later = {'Timetable', 'CalendarEvent', 'Allocation', 'Report', 'Notification'}
     leaked_later = deferred_later & all_model_names
     assert not leaked_later, (
         f"Later-domain models leaked into repository: {leaked_later}."

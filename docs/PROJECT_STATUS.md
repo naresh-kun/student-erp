@@ -1,7 +1,7 @@
 # Project Status & Milestone Ledger
 
-> **Current Phase**: **Phase 5 IN PROGRESS (Task 5.6 Reconciliation: Awaiting Decision on Auditability Limitation) | Phase 4 COMPLETE & SIGNED OFF | MOD_001 COMPLETED**  
-> **Authoritative State**: Phase 1 COMPLETE, Phase 2 COMPLETE, Phase 3 COMPLETE, Phase 4 COMPLETE & SIGNED OFF; MOD_001 COMPLETED; Phase 5 IN PROGRESS (Tasks 5.1–5.5 Complete; Task 5.6 implementation/regression PASS, overall reconciliation acceptance awaiting decision on auditability limitation; 498 backend tests passing, 265 frontend tests passing, clean build in 12.83s, 0 migration drift; Task 5.7 NOT STARTED)  
+> **Current Phase**: **Phase 5 IN PROGRESS (Task 5.6 & PROP_001 Option B IMPLEMENTED — Ready for Governance Sign-Off) | Phase 4 COMPLETE & SIGNED OFF | MOD_001 COMPLETED**  
+> **Authoritative State**: Phase 1 COMPLETE, Phase 2 COMPLETE, Phase 3 COMPLETE, Phase 4 COMPLETE & SIGNED OFF; MOD_001 COMPLETED; Phase 5 IN PROGRESS (Tasks 5.1–5.5 Complete; Task 5.6 & PROP_001 Option B durable audit trail 100% IMPLEMENTED & VERIFIED across all 14+ acceptance criteria; 520 backend tests passing, 265 frontend tests passing, clean build in 12.84s, 0 migration drift; Task 5.7 NOT STARTED)  
 > **Last Updated**: 2026-10-10
 
 ---

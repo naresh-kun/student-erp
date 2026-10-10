@@ -121,6 +121,26 @@ def run_verification():
     assert s == 200
     print(f" -> Admin exam type patch verified (weightage=10.00)")
 
+    # Verify durable audit trail persistence for the patched ExamType
+    s, res_audit = get_json(f"/api/v1/audit/?resource_type=ExamType&resource_id={cycle_test['id']}", admin_token)
+    assert s == 200, f"Expected 200 for audit query, got {s}: {res_audit}"
+    audit_records = res_audit.get("data", [])
+    assert len(audit_records) >= 1, "Expected at least 1 audit event for patched ExamType"
+    latest_event = audit_records[0]
+    assert latest_event["resource_type"] == "ExamType"
+    assert latest_event["actor_username"] == admin_user["username"]
+    print(f" -> Durable Audit Trail Verified: action={latest_event['action']}, actor={latest_event['actor_username']}, id={latest_event['id']}")
+
+    # Verify mutation to /api/v1/audit/ is strictly rejected (405 Method Not Allowed)
+    s, _ = post_json("/api/v1/audit/", {"action": "TAMPER"}, admin_token)
+    assert s == 405, f"Expected 405 for POST /api/v1/audit/, got {s}"
+    print(f" -> Immutability Route Guard Verified: POST /api/v1/audit/ returns HTTP 405 Method Not Allowed")
+
+    # Verify anonymous access to audit trail is rejected (401)
+    s, _ = get_json("/api/v1/audit/")
+    assert s == 401, f"Expected 401 for anonymous /api/v1/audit/, got {s}"
+    print(f" -> Audit RBAC Guard Verified: Anonymous GET /api/v1/audit/ returns HTTP 401 Unauthorized")
+
     # 2. FACULTY FLOW
     print("\n[2] FACULTY ROLE VERIFICATION (faculty_suresh)")
     faculty_token, faculty_role, faculty_user = login("faculty_suresh")
@@ -182,6 +202,11 @@ def run_verification():
     assert s == 403, f"Expected 403 for unassigned subject, got {s}: {res}"
     print(f" -> Faculty unassigned subject submission correctly blocked with HTTP 403 Forbidden")
 
+    # Faculty audit trail access blocked (403)
+    s, _ = get_json("/api/v1/audit/", faculty_token)
+    assert s == 403, f"Expected 403 for faculty /api/v1/audit/, got {s}"
+    print(f" -> Faculty audit trail access correctly blocked with HTTP 403 Forbidden")
+
     # 3. STUDENT FLOW
     print("\n[3] STUDENT ROLE VERIFICATION (student_arun)")
     student_token, student_role, student_user = login("student_arun")
@@ -203,6 +228,11 @@ def run_verification():
     assert s == 403, f"Expected 403 for student mark mutation, got {s}"
     print(f" -> Student marks mutation correctly blocked with HTTP 403 Forbidden")
 
+    # Student audit trail access blocked (403)
+    s, _ = get_json("/api/v1/audit/", student_token)
+    assert s == 403, f"Expected 403 for student /api/v1/audit/, got {s}"
+    print(f" -> Student audit trail access correctly blocked with HTTP 403 Forbidden")
+
     # 4. PARENT FLOW
     print("\n[4] PARENT ROLE VERIFICATION (parent_ramanathan)")
     parent_token, parent_role, parent_user = login("parent_ramanathan")
@@ -218,6 +248,11 @@ def run_verification():
     s, res = post_json("/api/v1/marks/bulk/", bulk_payload, parent_token)
     assert s == 403, f"Expected 403 for parent mark mutation, got {s}"
     print(f" -> Parent marks mutation correctly blocked with HTTP 403 Forbidden")
+
+    # Parent audit trail access blocked (403)
+    s, _ = get_json("/api/v1/audit/", parent_token)
+    assert s == 403, f"Expected 403 for parent /api/v1/audit/, got {s}"
+    print(f" -> Parent audit trail access correctly blocked with HTTP 403 Forbidden")
 
     # 5. PRINCIPAL FLOW
     print("\n[5] PRINCIPAL ROLE VERIFICATION (principal_demo)")

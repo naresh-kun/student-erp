@@ -277,7 +277,21 @@
 - `GET /api/v1/allocation/` `[IMPLEMENTED]`
   - Required Permission: `allocation.view` (Admin, Principal, Faculty)
 - `GET /api/v1/audit/` `[IMPLEMENTED]`
-  - Required Permission: `audit.view` (Admin, Principal only)
+  - Authentication: Required
+  - Required Permission: `audit.view` (Admin and Principal only; Faculty, Student, Parent denied with 403 Forbidden; Anonymous denied with 401 Unauthorized)
+  - Purpose: Read-only query access to immutable, database-backed audit log trail (PROP_001 Revision 2.2).
+  - Query Parameters:
+    - `resource_type` (string, e.g. `'ExamType'`)
+    - `resource_id` (stringified UUID of resource)
+    - `action` (string choice: `'CREATE'`, `'UPDATE'`, `'ACTIVATE'`, `'DEACTIVATE'`, `'DELETE'`)
+    - `actor_id` (UUID of acting user)
+    - `page` (integer, default 1)
+    - `page_size` (integer, default 20, max 100)
+  - Envelope Response: Standard pagination envelope (`success`, `data`, `meta` with `total_records`, `total_pages`, `page`, `page_size`).
+  - Item Schema: `id`, `actor` (object with `id`, `username`, `role`), `actor_username`, `actor_role`, `action`, `resource_type`, `resource_id`, `old_values`, `new_values`, `ip_address`, `user_agent`, `reason`, `created_at`.
+  - Immutability Guards:
+    - POST, PUT, PATCH, DELETE to `/api/v1/audit/` return `405 Method Not Allowed` for authorized Admin/Principal (401/403 for unauthorized).
+    - Database-level PostgreSQL trigger `trg_audit_logs_immutable` and Option B restricted role `erp_app` prevent SQL modification or deletion.
 - `GET /api/v1/calendar/events/` `[IMPLEMENTED]`
   - Required Permission: `calendar.view` (All authenticated roles)
 - `GET /api/v1/timetable/` `[IMPLEMENTED]`

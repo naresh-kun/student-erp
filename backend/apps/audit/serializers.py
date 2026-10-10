@@ -1,18 +1,40 @@
 """
-Student ERP — Audit DRF Serializers (Scaffolding)
+Student ERP — Audit DRF Serializers
 Serializer-layer contract for audit and security telemetry logs.
 """
 
 from rest_framework import serializers
+from apps.audit.models import AuditLog
 
 
-class AuditLogSerializer(serializers.Serializer):
-    id = serializers.UUIDField(read_only=True)
-    user_id = serializers.UUIDField(required=False, allow_null=True)
-    action = serializers.CharField()
-    target_table = serializers.CharField()
-    target_id = serializers.CharField()
-    old_values = serializers.DictField(required=False, allow_null=True)
-    new_values = serializers.DictField(required=False, allow_null=True)
-    ip_address = serializers.IPAddressField(required=False, allow_null=True)
-    timestamp = serializers.DateTimeField(read_only=True)
+class AuditLogSerializer(serializers.ModelSerializer):
+    actor = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AuditLog
+        fields = [
+            'id',
+            'actor',
+            'actor_username',
+            'actor_role',
+            'action',
+            'resource_type',
+            'resource_id',
+            'old_values',
+            'new_values',
+            'ip_address',
+            'user_agent',
+            'reason',
+            'created_at',
+        ]
+        read_only_fields = fields
+
+    def get_actor(self, obj):
+        if obj.actor:
+            role_name = obj.actor_role or (obj.actor.role.name if getattr(obj.actor, 'role', None) else '')
+            return {
+                'id': str(obj.actor.id),
+                'username': obj.actor.username,
+                'role': role_name,
+            }
+        return None

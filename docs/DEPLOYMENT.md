@@ -61,9 +61,27 @@ All configuration is supplied via environment variables adhering to Twelve-Facto
 - `DEBUG`: Must be `False` in production.
 - `SECRET_KEY`: High-entropy cryptographic key.
 - `ALLOWED_HOSTS`: Explicit domain whitelist (e.g. `erp.institution.edu`).
-- `DATABASE_URL`: `postgres://<user>:<password>@postgres:5432/<dbname>`
+- `DATABASE_URL`: `postgres://erp_app:<password>@postgres:5432/<dbname>` (Runtime application connection string; restricted role without DDL or audit table mutation privileges).
+- `MIGRATOR_DATABASE_URL`: `postgres://erp_migrator:<password>@postgres:5432/<dbname>` (Explicit migration role connection string; used solely during pre-deployment migration step).
+- `DB_ROLE`: Set to `migrator` during schema migration jobs (`python manage.py migrate`); unset or `app` for runtime application workers.
 - `REDIS_URL`: `redis://redis:6379/1`
 - `CORS_ALLOWED_ORIGINS`: Restricted domain origin list.
+
+### 3.1 Dual-Role Database Deployment Architecture (PROP_001 Option B)
+To ensure durable auditability and least privilege, database access is segregated into two identities:
+1. **Migration Role (`erp_migrator`)**:
+   - Schema and table owner for Django models.
+   - Executes DDL, schema migrations, and PL/pgSQL triggers (`trg_audit_logs_immutable`).
+   - Run as an explicit pre-deployment job: `DB_ROLE=migrator python manage.py migrate --noinput`.
+   - Migration credentials are kept in a separate deployment secret and never provided to application server pods.
+2. **Runtime Application Role (`erp_app`)**:
+   - Restricted role used by application workers (Uvicorn / Gunicorn).
+   - Granted standard CRUD and sequence privileges across normal ERP tables.
+   - On the audit trail (`audit_logs`), granted only `SELECT` and `INSERT`.
+   - Explicitly revoked: `UPDATE`, `DELETE`, `TRUNCATE`, and `ALTER` on `audit_logs`.
+   - Cannot disable triggers or alter schema objects.
+
+Provisioning existing or fresh databases is idempotent via `python database/provision_roles.py` or `database/schema/00_init_roles.sql`.
 
 ### Critical Frontend Variables:
 - `VITE_API_BASE_URL`: Base path for the backend REST API (e.g. `/api/v1`).

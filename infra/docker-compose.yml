@@ -41,7 +41,12 @@ services:
     environment:
       - DEBUG=False
       - SECRET_KEY=${SECRET_KEY:-insecure_dev_key_for_phase1_blueprint}
-      - DATABASE_URL=postgres://erp_user:erp_password@postgres:5432/student_erp
+      - DATABASE_URL=postgres://erp_app:erp_app_password@postgres:5432/student_erp
+      - DB_ROLE=app
+      - RUNTIME_DATABASE_USER=erp_app
+      - RUNTIME_DATABASE_PASSWORD=${RUNTIME_DB_PASSWORD:-erp_app_password}
+      - MIGRATION_DATABASE_USER=erp_migrator
+      - MIGRATION_DATABASE_PASSWORD=${MIGRATION_DB_PASSWORD:-erp_migrator_password}
       - REDIS_URL=redis://redis:6379/1
       - ALLOWED_HOSTS=*
     depends_on:
@@ -62,6 +67,7 @@ services:
       POSTGRES_PASSWORD: erp_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ../database/schema/00_init_roles.sql:/docker-entrypoint-initdb.d/00_init_roles.sql:ro
       - ../database/schema/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U erp_user -d student_erp"]

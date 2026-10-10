@@ -101,14 +101,22 @@ class TestMigrationGraph:
     def test_later_domain_apps_have_no_migrations(self):
         """
         Scope boundary: later domain apps must have zero migrations.
+        (Note: 'audit' is authorized under PROP_001 Revision 2.2).
         """
         from django.db.migrations.loader import MigrationLoader
         loader = MigrationLoader(None, ignore_no_migrations=True)
-        for deferred_app in ('timetable', 'calendar', 'allocation', 'reports', 'notifications', 'audit'):
+        for deferred_app in ('timetable', 'calendar', 'allocation', 'reports', 'notifications'):
             mig_keys = [k for k in loader.disk_migrations if k[0] == deferred_app]
             assert mig_keys == [], (
                 f"Scope violation: '{deferred_app}' app has premature migration files {mig_keys}."
             )
+
+    def test_prop_001_audit_migration_exists(self):
+        """Approved audit migration 0001_initial exists in disk migrations."""
+        from django.db.migrations.loader import MigrationLoader
+        loader = MigrationLoader(None, ignore_no_migrations=True)
+        audit_keys = [k for k in loader.disk_migrations if k[0] == 'audit']
+        assert ('audit', '0001_initial') in audit_keys, "audit 0001_initial migration must exist"
 
 
 class TestModelStructure:
@@ -130,10 +138,15 @@ class TestModelStructure:
         """Later domain models (Timetable, CalendarEvent, etc.) must not be registered."""
         all_names = {m.__name__ for m in django_apps.get_models()}
         forbidden = {
-            'Timetable', 'CalendarEvent', 'Allocation', 'Report', 'Notification', 'AuditLog',
+            'Timetable', 'CalendarEvent', 'Allocation', 'Report', 'Notification',
         }
         leaked = forbidden & all_names
         assert not leaked, f"Deferred models leaked into repository: {leaked}"
+
+    def test_prop_001_audit_log_model_registered(self):
+        """AuditLog approved by PROP_001 is registered in app registry."""
+        all_names = {m.__name__ for m in django_apps.get_models()}
+        assert 'AuditLog' in all_names, "AuditLog model must be registered under PROP_001."
 
     def test_abstract_base_models_not_registered_as_concrete(self):
         """Abstract base models in common must remain abstract."""

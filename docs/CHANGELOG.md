@@ -2,6 +2,36 @@
 
 All notable changes to the Student ERP project will be documented in this file.
 
+## [Phase 5: Task 5.6 Reconciliation & PROP_001 Revision 2.2 — Durable Audit Trail] - 2026-10-10
+
+### Summary
+Implemented approved `PROP_001_Durable_Audit_Trail.md` Revision 2.2 using Option B (dual-role database architecture with table/migration owner `erp_migrator` and restricted runtime application role `erp_app`). Implemented immutable, database-backed `AuditLog` model in `apps.audit` with instance-level and bulk ORM mutation guards (`ImmutableQuerySet`, `ImmutableManager`), PostgreSQL row-level trigger `trg_audit_logs_immutable` prohibiting raw SQL `UPDATE` and `DELETE`, and PostgreSQL role-level privilege separation (`REVOKE UPDATE, DELETE, TRUNCATE ON audit_logs FROM erp_app`). Integrated durable audit logging inside `transaction.atomic()` blocks for `ExamType` creation, update, activation, and deactivation with automatic transaction rollback upon audit failure, returning a sanitized 500 error response without exposing internal database details or credentials. Preserved 100% of historical data (`Half-Yearly Examination 2026` and its 5 marks records). Added 20 acceptance tests in `backend/tests/test_phase5_marks_examtype_audit.py` covering all 14+ criteria, role permission verification script `database/test_role_permissions.py`, and idempotent role provisioning script `database/provision_roles.py`. 100% test pass rate achieved across backend pytest (520/520 tests) and frontend Vitest (265/265 tests).
+
+### Added / Modified
+- **Database Identity & Hardening (Option B)**:
+  - `database/provision_roles.py`: Idempotent PostgreSQL script creating `erp_migrator` (schema/table owner) and `erp_app` (restricted runtime role).
+  - `database/test_role_permissions.py`: Automated test script validating SELECT, INSERT, UPDATE, DELETE, TRUNCATE, and ALTER permissions for `erp_app` and `erp_migrator`.
+  - `database/schema/00_init_roles.sql`: Container initialization script for Docker Compose.
+  - `backend/config/settings.py`: Dual-role connection routing with `db_role = os.environ.get('DB_ROLE')` ('migrator' / 'app') and explicit connection aliases `migrator` and `runtime_app`.
+- **Backend Audit Domain (`backend/apps/audit/`)**:
+  - `apps/audit/models.py`: Authored `AuditLog(UUIDModel)` with `actor` foreign key (`on_delete=models.PROTECT`), `actor_username`, `actor_role`, `action`, `resource_type`, `resource_id`, `old_values`, `new_values`, `ip_address`, `user_agent`, `reason`, `created_at`. Enforced `ImmutableQuerySet`, `ImmutableManager`, and instance-level `.save()` / `.delete()` guards.
+  - `apps/audit/migrations/0001_initial.py`: Applied schema, PL/pgSQL function `prevent_audit_log_mutation()`, database trigger `trg_audit_logs_immutable`, table ownership transfer to `erp_migrator`, and restricted grant/revokes for `erp_app`.
+  - `apps/audit/services.py`: Implemented `AuditService.record_event()` with recursive payload secret sanitization (`SENSITIVE_KEYS`), field delta minimization, actor identity snapshots, and client request metadata extraction.
+  - `apps/audit/serializers.py`: Serializer contract for `AuditLog` with nested actor dictionary.
+  - `apps/audit/views.py`: `AuditLogListView` with `StandardResultsSetPagination`, query filtering (`resource_type`, `resource_id`, `action`, `actor_id`), restricted to `PERM_AUDIT_VIEW`. Mutation methods return HTTP 405 Method Not Allowed.
+- **Transactional ExamType Integration (`backend/apps/marks/`)**:
+  - `apps/marks/views.py`: Wrapped `ExamTypeListView.post` and `ExamTypeDetailView.patch`/`put` in `with transaction.atomic():`, recording minimal field deltas (`name`, `weightage`, `is_active`) and atomic rollback with sanitized error responses.
+- **Testing & Verification**:
+  - `backend/tests/test_phase5_marks_examtype_audit.py`: 20 comprehensive acceptance tests.
+  - `backend/tests/test_models_scaffolding.py`: Updated registry assertions for approved `AuditLog`.
+  - `backend/tests/test_models_task33.py`: Updated migration graph assertions for approved `AuditLog`.
+- **Documentation & Governance**:
+  - Updated `docs/proposals/PROP_001_Durable_Audit_Trail.md` governance status to `APPROVED & FULLY IMPLEMENTED (OPTION B)`.
+  - Updated `docs/API_CONTRACT.md` with `/api/v1/audit/` specifications.
+  - Updated `backend/.env.example` with dual-role environment variables.
+
+---
+
 ## [Phase 5: Task 5.6 — Marks API Integration + Oversight] - 2026-10-09
 
 ### Summary

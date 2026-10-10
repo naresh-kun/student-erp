@@ -10,7 +10,10 @@ from rest_framework.views import APIView
 from rest_framework.exceptions import PermissionDenied
 from rest_framework import status
 from django.shortcuts import get_object_or_404
+from django.db import transaction
 from django.db.models import Q
+from apps.audit.models import AuditLog
+from apps.audit.services import AuditService
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +30,7 @@ from common.constants import (
 )
 from common.authorization import AuthorizationService
 from common.permissions import HasRequiredPermission, IsOwnerOrScopedAccess, require_permission
-from common.responses import success_response
+from common.responses import success_response, error_response
 from common.pagination import StandardResultsSetPagination
 from apps.marks.models import Mark, ExamType
 from apps.marks.services import MarksService
@@ -222,14 +225,36 @@ class ExamTypeListView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = ExamTypeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        exam_type = serializer.save()
-        logger.info(
-            "ExamType created: id=%s name='%s' by user_id=%s (%s)",
-            exam_type.id,
-            exam_type.name,
-            request.user.id,
-            getattr(request.user, 'email', ''),
-        )
+        try:
+            with transaction.atomic():
+                exam_type = serializer.save()
+                new_payload = {
+                    'name': exam_type.name,
+                    'weightage': str(exam_type.weightage),
+                    'is_active': exam_type.is_active,
+                }
+                AuditService.record_event(
+                    actor=request.user,
+                    action=AuditLog.ACTION_CREATE,
+                    resource_type='ExamType',
+                    resource_id=str(exam_type.id),
+                    old_data={},
+                    new_data=new_payload,
+                    request=request,
+                )
+                logger.info(
+                    "ExamType created: id=%s name='%s' by user_id=%s (%s)",
+                    exam_type.id,
+                    exam_type.name,
+                    request.user.id,
+                    getattr(request.user, 'email', ''),
+                )
+        except Exception as exc:
+            logger.error("ExamType creation aborted due to audit persistence failure: %s", exc)
+            return error_response(
+                message="Failed to create examination type due to audit recording failure.",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         return success_response(
             data=ExamTypeSerializer(exam_type).data,
             status_code=status.HTTP_201_CREATED,
@@ -259,18 +284,50 @@ class ExamTypeDetailView(APIView):
 
     def patch(self, request, pk, *args, **kwargs):
         exam_type = get_object_or_404(ExamType, pk=pk)
+        old_payload = {
+            'name': exam_type.name,
+            'weightage': str(exam_type.weightage),
+            'is_active': exam_type.is_active,
+        }
         serializer = ExamTypeSerializer(exam_type, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        updated = serializer.save()
-        logger.info(
-            "ExamType updated: id=%s name='%s' is_active=%s weightage=%s by user_id=%s (%s)",
-            updated.id,
-            updated.name,
-            updated.is_active,
-            updated.weightage,
-            request.user.id,
-            getattr(request.user, 'email', ''),
-        )
+        try:
+            with transaction.atomic():
+                updated = serializer.save()
+                new_payload = {
+                    'name': updated.name,
+                    'weightage': str(updated.weightage),
+                    'is_active': updated.is_active,
+                }
+                if old_payload['is_active'] != new_payload['is_active'] and len(serializer.validated_data) == 1:
+                    action = AuditLog.ACTION_ACTIVATE if new_payload['is_active'] else AuditLog.ACTION_DEACTIVATE
+                else:
+                    action = AuditLog.ACTION_UPDATE
+
+                AuditService.record_event(
+                    actor=request.user,
+                    action=action,
+                    resource_type='ExamType',
+                    resource_id=str(updated.id),
+                    old_data=old_payload,
+                    new_data=new_payload,
+                    request=request,
+                )
+                logger.info(
+                    "ExamType updated: id=%s name='%s' is_active=%s weightage=%s by user_id=%s (%s)",
+                    updated.id,
+                    updated.name,
+                    updated.is_active,
+                    updated.weightage,
+                    request.user.id,
+                    getattr(request.user, 'email', ''),
+                )
+        except Exception as exc:
+            logger.error("ExamType update aborted due to audit persistence failure: %s", exc)
+            return error_response(
+                message="Failed to update examination type due to audit recording failure.",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         return success_response(data=ExamTypeSerializer(updated).data)
 
     def put(self, request, pk, *args, **kwargs):

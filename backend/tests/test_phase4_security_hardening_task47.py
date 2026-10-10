@@ -563,6 +563,7 @@ class TestHTTPSemantics:
             'academic_year': str(t47_data['ay'].id),
             'title': 'Valid HW',
             'description': 'Test',
+            'assigned_date': str(t47_data['today']),
             'due_date': str(t47_data['today'] + timedelta(days=2)),
             'status': 'PUBLISHED',
         }
