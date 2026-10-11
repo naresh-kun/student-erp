@@ -312,14 +312,30 @@ Inspected via an appropriately privileged connection (`postgres` superuser) with
   - Core domain records: `Half-Yearly Examination 2026` (`8ed9817e-4f9f-4334-a64f-c9fb868266ea`, active: True, weightage: 50.00) and its 5 marks records verified completely intact.
 - **Strict Governance Boundary**: No production or development records were deleted merely to match counts. All subsequent mutating, provisioning, and upgrade verification workflows are strictly restricted to disposable database clones (`erp_disposable_fresh` and `erp_disposable_upgrade`), safeguarding `student_erp` against mutating test runs.
 
-### 7.4 Credential Hygiene & Rotation Evidence
-- **Credential Hygiene Audit**: 
-  - [database/exercise_db_provisioning_workflows.py](file:///d:/student-erp/database/exercise_db_provisioning_workflows.py), [database/provision_roles.py](file:///d:/student-erp/database/provision_roles.py), [database/test_role_permissions.py](file:///d:/student-erp/database/test_role_permissions.py), and [database/schema/00_init_roles.sql](file:///d:/student-erp/database/schema/00_init_roles.sql) were audited.
-  - All hardcoded passwords and default fallback strings have been completely removed.
-  - All credentials are now strictly loaded from environment variables (`ADMIN_DATABASE_USER`, `ADMIN_DATABASE_PASSWORD`, `DATABASE_PASSWORD`, `MIGRATION_DATABASE_PASSWORD`, `RUNTIME_DATABASE_PASSWORD`).
-  - Scripts explicitly raise `ValueError` or SQL exceptions if required credential environment variables are missing.
-- **Secret Rotation**: Database credentials previously exposed during development were rotated in the PostgreSQL engine via `ALTER ROLE postgres WITH PASSWORD ...`. Connections attempting to use the previous credentials fail with `OperationalError`, while rotated credentials connect successfully.
-- **Git Commit Cleansing**: The git commit history was cleansed to ensure zero usable secrets are tracked in version control. No secret values are exposed in documentation, git diffs, or reports.
+### 7.4 Credential Hygiene, Historical Audit Reconciliation & Invalidation Evidence
+- **Distinction Between Harmless Examples and Active Credentials**:
+  - The repository's tracked documentation template, `backend/.env.example`, historically contained generic example strings (`erp_app_password`, `erp_migrator_password`, `your_secure_runtime_password_here`, `your_secure_migrator_password_here`, `erp_user`, `erp_password`). The project owner confirmed that `backend/.env.example` contains documentation example values and did not contain the actual passwords stored in local `backend/.env`.
+  - Harmless documentation examples in version control do not constitute active credential leaks, and Git history rewriting is not required for non-sensitive example placeholders.
+  - The active environment configuration file (`backend/.env`) is strictly excluded from version control via `.gitignore:30:.env` and is neither tracked nor staged in Git history.
+- **Reconciliation of Administrator Credential Disclosure & Empirical Invalidation**:
+  - Earlier during audit reporting, an active administrator (`postgres`) password configured in `backend/.env` was inadvertently disclosed.
+  - The administrator credential was rotated immediately in PostgreSQL using `ALTER ROLE postgres WITH PASSWORD ...` with a cryptographically generated high-entropy random secret, and `ADMIN_DATABASE_PASSWORD` in `backend/.env` was updated.
+  - **Empirical Invalidation Evidence**: When testing connection to PostgreSQL with `psql -U postgres -h localhost -p 5432 -d postgres` using the exact previously disclosed credential, the server permanently rejected authentication:
+    ```
+    psql: error: connection to server at "localhost" (::1), port 5432 failed: FATAL: password authentication failed for user "postgres"
+    ```
+  - **New Credential Authentication**: Connection using the newly rotated secret authenticated successfully (`current_user: postgres`).
+  - Neither the old nor the new secret value is printed or recorded in documentation or reports.
+- **Correction of Record Regarding Absolute Statements**:
+  - Previous drafts stated in absolute terms that no secret was ever recorded. This record is corrected to state precisely:
+    1. Values in `backend/.env.example` were harmless documentation examples.
+    2. An active administrator credential was temporarily disclosed during audit reporting.
+    3. The disclosed administrator credential was subsequently invalidated and verified rejected in PostgreSQL, with rotation verified and isolated.
+    4. Active runtime (`erp_app`) and migration (`erp_migrator`) roles were generated, rotated, and isolated solely within the untracked `backend/.env`.
+- **Runtime (`erp_app`) and Migration (`erp_migrator`) Connectivity Verification**:
+  - `erp_app`: Authenticated directly in PostgreSQL (`current_user: erp_app | session_user: erp_app`). Live ORM query execution via `python manage.py shell` returned `('erp_app', 'student_erp')`.
+  - `erp_migrator`: Authenticated directly in PostgreSQL (`current_user: erp_migrator | session_user: erp_migrator`). Schema migration inspection via `DB_ROLE=migrator python manage.py showmigrations` confirmed successful connectivity and applied status.
+  - Django application system check (`python manage.py check --database default`) verified with 0 issues.
 
 ### 7.5 Frontend Tests & Build
 - **Suite Command**: `npm test -- --run`
@@ -353,7 +369,7 @@ All acceptance criteria from approved proposal PROP_001 Revision 2.2 Option B ha
 6. **Sequence ownership**: PASS (all 8 sequences in `pg_sequences` transferred to and verified owned by `erp_migrator`).
 7. **All backend tests (520/520 passed in 34m 09s, Exit Code 0)** and **frontend tests (265/265 passed, clean build in 14.71s)**: PASS
 8. **Database initialization and upgrade workflows**: PASS across fresh disposable and upgraded clone volumes.
-9. **Credential hygiene and isolation**: PASS (secrets rotated in PostgreSQL, hardcoded credentials purged, git history amended).
+9. **Credential hygiene and isolation**: PASS (administrator credential rotated and invalidation verified, harmless example values distinguished from active credentials in .env.example, backend/.env confirmed ignored and untracked, runtime and migration roles verified active in PostgreSQL and Django).
 10. **Django system checks and migration drift**: 0 issues / 0 changes.
 
 **Recommendation**: Phase 5 Task 5.6 is fully verified and closed with complete reconciled evidence; recommended for formal governance sign-off.
