@@ -7,8 +7,8 @@
 > **Date**: 2026-10-11  
 > **Preceding Task (Task 5.6)**: **ACCEPTED** (Security closure, durable audit trail, and credential hygiene reconciled)  
 > **Subsequent Task (Task 5.8)**: **NOT STARTED** (Strictly blocked pending explicit authorization)  
-> **Frontend Vitest Suite**: **278 / 278 passing across all 17 test files** (+13 dedicated tests in `dashboard_integration.test.ts`)  
-> **Production Bundle**: `npm run build` → **Clean build in 7.97s**, 0 TypeScript errors  
+> **Frontend Vitest Suite**: **283 / 283 passing across all 17 test files** (+18 dedicated tests in `dashboard_integration.test.ts`)  
+> **Production Bundle**: `npm run build` → **Clean build in 8.66s**, 0 TypeScript errors  
 > **Django System Check**: `manage.py check` → **0 issues**  
 > **Migration Drift**: `manage.py makemigrations --check` → **No changes detected**  
 > **Multi-Role Live Browser QA**: **All 5 roles verified** (`student_arun`, `parent_ramanathan`, `faculty_suresh`, `admin_demo`, `principal_demo`) against live backend & frontend dev servers  
@@ -22,9 +22,10 @@ Task 5.7 systematically connects all five user role dashboards (**Student, Paren
 All dashboard experiences now consume backend-authoritative data while strictly honoring institutional governance constraints:
 1. **Preserved Enterprise School Portal Aesthetics**: The traditional, high-density, accessible UI layout is maintained without disruptive overhauls.
 2. **Non-Evaluative Faculty Policy**: Zero teacher rankings, performance appraisals, or evaluative scorecards are introduced anywhere in the application.
-3. **Principal Read-Only Oversight**: Head of Institution dashboards provide macro academic and attendance telemetry without mutating operational data.
-4. **Deterministic & Explainable Advisories**: Hardcoded mock parent strings are replaced with dynamic rules derived strictly from real attendance records and exam scores.
-5. **Architectural Purity**: Follows the strict layering `React UI → Domain Service → API Service → ApiClient → Django REST Framework → PostgreSQL`.
+3. **Faithful Differentiation of Genuine Zero vs Missing/Loading/Error**: Numeric zeros confirmed by the API (e.g. 0 classes, 0 students, 0 periods) are faithfully rendered as genuine zero metrics, while missing data, in-flight loading, or API errors render clear unavailable indicators (`—`) or loading skeletons, preventing silent fabrication of zero metrics.
+4. **Principal Read-Only Oversight**: Head of Institution dashboards provide macro academic and attendance telemetry without mutating operational data.
+5. **Deterministic & Explainable Advisories**: Hardcoded mock parent strings are replaced with dynamic rules derived strictly from real attendance records and exam scores.
+6. **Architectural Purity**: Follows the strict layering `React UI → Domain Service → API Service → ApiClient → Django REST Framework → PostgreSQL`.
 
 ---
 
@@ -59,9 +60,11 @@ All dashboard experiences now consume backend-authoritative data while strictly 
 ### 2.3 Faculty Dashboard (`/faculty/dashboard`)
 - **Assigned Classes & Workload Table**:
   - Removed hardcoded `avg_score` badges (`'87.0%'`, `'89.2%'`, `'83.4%'`) from `DEFAULT_ASSIGNED_CLASSES`.
-- **KPI Overview Calculations**:
-  - Updated `FacultyKPIOverview` default prop values from fake numbers (`91`, `24`, `3`, `1`, `2`) to `0`.
-  - Derived `enrolledStudentsCount` and `weeklyWorkload` in `FacultyDashboardPage` dynamically by summing enrolled counts and periods from active `assignedClasses`.
+- **KPI Overview Calculations & Genuine Zero Preservation**:
+  - Omitted fabricated `= 0` parameter defaults in `FacultyKPIOverview`; unprovided, failed, or missing API queries render explicit `—` unavailable indicators (`— Classes`, `— Periods`, `Schedule Unavailable`) preventing silent fabrication of zero metrics.
+  - Faithfully preserves confirmed numeric zero metrics when verified by API (e.g. `0 Classes`, `0 Enrolled Students`, `0 Periods`, `0 Logged • 0 Pending`, `0 Pending`, `0 Periods`).
+  - Explicitly handles API errors versus confirmed empty datasets in `FacultyDashboardPage`: API failures pass `undefined` resulting in unavailable indicators, whereas confirmed empty datasets evaluate to genuine numeric `0`.
+  - Renders pulse loading skeletons (`animate-pulse`) when metrics are in flight, ensuring loading never flashes fabricated zeros.
   - Strictly preserves zero teacher appraisals, rankings, or performance scoring.
 
 ### 2.4 Admin Dashboard (`/admin/dashboard`)
@@ -93,8 +96,8 @@ All dashboard experiences now consume backend-authoritative data while strictly 
 | **Parent** | `parentService.ts` | Static mock advisory text & fake teacher notes | Dynamic rules based on `attendance`, `leaveCount`, and `marks` |
 | **Parent** | `parentService.ts` | `classAverage: 78.4` in subject marks | Removed synthetic class average comparison |
 | **Faculty** | `facultyService.ts` | Hardcoded `avg_score` (`87.0%`, `89.2%`, `83.4%`) | Removed; assigned classes contain only schedule and workload |
-| **Faculty** | `FacultyDashboardPage.tsx` | Fallback `|| 91` and `|| 24` | Aggregated dynamically from `assignedClasses` |
-| **Faculty** | `FacultyKPIOverview.tsx` | Fallback prop defaults `91`, `24`, `3`, etc. | Defaulted to 0 |
+| **Faculty** | `FacultyDashboardPage.tsx` | Fallback `|| 91` and `|| 24` | Calculated from active `assignedClasses`; errors pass `undefined` |
+| **Faculty** | `FacultyKPIOverview.tsx` | Fallback prop defaults `91`, `24`, `3`, etc. | Removed `= 0` parameter defaults; renders `—` when unverified, preserving genuine `0` |
 | **Admin** | `adminApiService.ts` | Static `active_examinations: 1`, pending `0` | Live queries to `exam-types`, `leaves`, and `attendance-analytics` |
 | **Principal** | `principalService.ts` | Static summary mock fallback | Live queries to `MarksApiService` and `AttendanceApiService` |
 
@@ -103,8 +106,8 @@ All dashboard experiences now consume backend-authoritative data while strictly 
 ## 4. Verification Evidence & Quality Metrics
 
 ### 4.1 Automated Test Suite
-- **Frontend Vitest Suite**: **278 / 278 passed across all 17 test files** (100% pass rate).
-  - Added dedicated integration suite: `frontend/tests/dashboard_integration.test.ts` (13 tests):
+- **Frontend Vitest Suite**: **283 / 283 passed across all 17 test files** (100% pass rate).
+  - Added dedicated integration suite: `frontend/tests/dashboard_integration.test.ts` (18 tests):
     1. Student Dashboard live attendance trend aggregation
     2. Student Dashboard report card summary prioritization
     3. Student marks comparison without synthetic benchmark
@@ -113,15 +116,20 @@ All dashboard experiences now consume backend-authoritative data while strictly 
     6. Parent Dashboard deterministic advisories derivation
     7. Parent Dashboard handling of empty marks
     8. Faculty assigned classes without evaluative average score
-    9. Faculty KPI fallbacks defaulted to zero
-    10. Admin Dashboard summary aggregation from live services
-    11. Principal Dashboard summary aggregation with CBSE 8-tier distribution
-    12. Principal oversight non-evaluative compliance (zero faculty scorecards)
-    13. Parent & Student multi-tenant isolation
+    9. Faculty strictly returns zero teacher performance ratings or scorecards
+    10. Faculty KPI overview faithfully preserves genuine zero values (`0 Classes`, `0 Students`, `0 Periods`, `0 Pending`)
+    11. Faculty KPI overview displays explicit unavailable indicators (`—`) for missing data without silent zero fabrication
+    12. Faculty KPI overview renders loading skeletons without displaying fabricated zeroes
+    13. Faculty KPI overview renders active metrics accurately with positive workloads
+    14. Faculty KPI overview distinguishes API errors from genuine empty datasets in dashboard calculations
+    15. Admin Dashboard summary aggregation from live services
+    16. Principal Dashboard summary aggregation with CBSE 8-tier distribution
+    17. Principal oversight non-evaluative compliance (zero faculty scorecards)
+    18. Parent & Student multi-tenant isolation
 
 ### 4.2 Production Build Verification
 - Executed `npm --prefix frontend run build` (`tsc && vite build`):
-  - **Result**: Clean build in 7.97s.
+  - **Result**: Clean build in 8.66s.
   - Modules transformed: 2,556.
   - Zero TypeScript compilation errors.
 

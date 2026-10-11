@@ -30,14 +30,15 @@ import {
 
 export const FacultyDashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { data: profile, isLoading: profileLoading } = useFacultyProfile();
-  const { data: assignedClasses = [], isLoading: classesLoading } = useAssignedClasses();
-  const { todayPeriods = [], isLoading: timetableLoading } = useFacultyTimetable();
+  const { data: profile, isLoading: profileLoading, error: profileError } = useFacultyProfile();
+  const { data: assignedClasses, isLoading: classesLoading, error: classesError } = useAssignedClasses();
+  const { todayPeriods, isLoading: timetableLoading, error: timetableError } = useFacultyTimetable();
   const {
     notices = [],
     pendingCount,
     reviewNotice,
     isLoading: leavesLoading,
+    error: leavesError,
   } = usePendingLeaveReviews();
 
   if (profileLoading || classesLoading || timetableLoading || leavesLoading) {
@@ -48,15 +49,68 @@ export const FacultyDashboardPage: React.FC = () => {
     );
   }
 
-  const periodsLoggedCount = todayPeriods.filter((p) => p.attendance_done).length;
+  const hasAnySyncError = Boolean(profileError || classesError || timetableError || leavesError);
+
+  // Compute metrics distinguishing confirmed zero from missing/error state
+  const assignedClassesCount = classesError
+    ? undefined
+    : typeof profile?.assigned_classes_count === 'number'
+    ? profile.assigned_classes_count
+    : Array.isArray(assignedClasses)
+    ? assignedClasses.length
+    : undefined;
+
+  const enrolledStudentsCount = classesError
+    ? undefined
+    : typeof profile?.assigned_students_count === 'number'
+    ? profile.assigned_students_count
+    : Array.isArray(assignedClasses)
+    ? (assignedClasses.length === 0 ? 0 : assignedClasses.reduce((acc, c) => acc + (c.student_count || 0), 0))
+    : undefined;
+
+  const todayPeriodsCount = timetableError
+    ? undefined
+    : Array.isArray(todayPeriods)
+    ? todayPeriods.length
+    : undefined;
+
+  const periodsLoggedCount = timetableError
+    ? undefined
+    : Array.isArray(todayPeriods)
+    ? todayPeriods.filter((p) => p.attendance_done).length
+    : undefined;
+
+  const pendingLeavesCount = leavesError
+    ? undefined
+    : typeof pendingCount === 'number'
+    ? pendingCount
+    : undefined;
+
+  const weeklyWorkload = classesError
+    ? undefined
+    : typeof profile?.weekly_periods === 'number'
+    ? profile.weekly_periods
+    : Array.isArray(assignedClasses)
+    ? (assignedClasses.length === 0 ? 0 : assignedClasses.reduce((acc, c) => acc + (c.periods_per_week || 0), 0))
+    : undefined;
+
+  const safeClasses = Array.isArray(assignedClasses) ? assignedClasses : [];
+  const safeTodayPeriods = Array.isArray(todayPeriods) ? todayPeriods : [];
 
   return (
     <PageContainer>
       <div className="space-y-6">
+        {/* Error / Offline Synchronization Banner */}
+        {hasAnySyncError && (
+          <div className="p-3.5 rounded-lg border border-amber-200 dark:border-amber-800/80 bg-amber-50/70 dark:bg-amber-950/20 text-amber-800 dark:text-amber-200 text-xs flex items-center justify-between">
+            <span>Some academic registers could not be synchronized with the server. Verified local records are displayed; unverified metrics are indicated as unavailable.</span>
+          </div>
+        )}
+
         {/* 1. Faculty Profile Hero Banner */}
         <FacultyHeroBanner
           profile={profile}
-          pendingLeavesCount={pendingCount}
+          pendingLeavesCount={pendingLeavesCount ?? 0}
           onNavigateAttendance={() => navigate('/faculty/attendance')}
           onNavigateMarks={() => navigate('/faculty/marks')}
           onNavigateClasses={() => navigate('/faculty/classes')}
@@ -64,12 +118,12 @@ export const FacultyDashboardPage: React.FC = () => {
 
         {/* 2. Key Performance Indicators (Non-Evaluative) */}
         <FacultyKPIOverview
-          assignedClassesCount={profile?.assigned_classes_count ?? assignedClasses.length}
-          enrolledStudentsCount={profile?.assigned_students_count ?? (assignedClasses.length > 0 ? assignedClasses.reduce((acc, c) => acc + (c.student_count || 0), 0) : 0)}
-          todayPeriodsCount={todayPeriods.length}
+          assignedClassesCount={assignedClassesCount}
+          enrolledStudentsCount={enrolledStudentsCount}
+          todayPeriodsCount={todayPeriodsCount}
           periodsLoggedCount={periodsLoggedCount}
-          pendingLeavesCount={pendingCount}
-          weeklyWorkload={profile?.weekly_periods ?? (assignedClasses.length > 0 ? assignedClasses.reduce((acc, c) => acc + (c.periods_per_week || 0), 0) : 0)}
+          pendingLeavesCount={pendingLeavesCount}
+          weeklyWorkload={weeklyWorkload}
         />
 
         {/* 3. Main Operational Grid: Today's Routine & Class Teacher Leave Approval */}
@@ -77,7 +131,7 @@ export const FacultyDashboardPage: React.FC = () => {
           <div className="lg:col-span-2 space-y-6">
             {/* Today's Period Routine */}
             <FacultyTodayScheduleCard
-              periods={todayPeriods}
+              periods={safeTodayPeriods}
               onMarkAttendance={(_period) => navigate('/faculty/attendance')}
             />
 
@@ -107,28 +161,31 @@ export const FacultyDashboardPage: React.FC = () => {
               </div>
 
               <div className="space-y-3 text-xs">
-                {assignedClasses.map((cls) => (
-                  <div
-                    key={cls.id}
-                    onClick={() => navigate('/faculty/classes')}
-                    className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-100/60 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
-                  >
-                    <div className="flex justify-between font-bold text-slate-900 dark:text-slate-100">
-                      <span>{cls.class_name} — {cls.section_name}</span>
-                      {cls.avg_score && (
-                        <span className="text-blue-700 dark:text-blue-400">Avg: {cls.avg_score}</span>
+                {classesError ? (
+                  <p className="text-xs text-rose-500 py-2">Unable to load assigned sections from server.</p>
+                ) : safeClasses.length === 0 ? (
+                  <p className="text-xs text-slate-500 py-2">No assigned sections registered for this academic term.</p>
+                ) : (
+                  safeClasses.map((cls) => (
+                    <div
+                      key={cls.id}
+                      onClick={() => navigate('/faculty/classes')}
+                      className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-100/60 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
+                    >
+                      <div className="flex justify-between font-bold text-slate-900 dark:text-slate-100">
+                        <span>{cls.class_name} — {cls.section_name}</span>
+                      </div>
+                      {cls.stream && (
+                        <p className="text-[11px] text-blue-800 dark:text-blue-300 font-medium mt-0.5">
+                          Stream: {cls.stream}
+                        </p>
                       )}
-                    </div>
-                    {cls.stream && (
-                      <p className="text-[11px] text-blue-800 dark:text-blue-300 font-medium mt-0.5">
-                        Stream: {cls.stream}
+                      <p className="text-slate-500 mt-1">
+                        {cls.student_count} Enrolled • {cls.periods_per_week} Periods / Week • Room: {cls.room}
                       </p>
-                    )}
-                    <p className="text-slate-500 mt-1">
-                      {cls.student_count} Enrolled • {cls.periods_per_week} Periods / Week • Room: {cls.room}
-                    </p>
-                  </div>
-                ))}
+                    </div>
+                  ))
+                )}
               </div>
             </Card>
 

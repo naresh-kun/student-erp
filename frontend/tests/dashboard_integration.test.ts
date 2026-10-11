@@ -8,12 +8,15 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import React from 'react';
+import { renderToString } from 'react-dom/server';
 import { StudentService } from '../src/features/students/services/studentService';
 import { StudentApiService } from '../src/features/students/services/studentApiService';
 import { ParentService } from '../src/features/parents/services/parentService';
 import { ParentApiService } from '../src/features/parents/services/parentApiService';
 import { FacultyService } from '../src/features/faculty/services/facultyService';
 import { FacultyApiService } from '../src/features/faculty/services/facultyApiService';
+import { FacultyKPIOverview } from '../src/features/faculty';
 import { AdminService } from '../src/features/admin/services/adminService';
 import { AdminApiService } from '../src/features/admin/services/adminApiService';
 import { PrincipalService } from '../src/features/principal/services/principalService';
@@ -268,6 +271,134 @@ describe('Phase 5 Task 5.7 — Dashboard & Cross-Module Integration Suite', () =
       expect((profile as any).scorecard).toBeUndefined();
       expect((profile as any).rank).toBeUndefined();
       expect((profile as any).evaluation_score).toBeUndefined();
+    });
+
+    it('faithfully preserves genuine zero values when API confirms zero metrics', () => {
+      const html = renderToString(
+        React.createElement(FacultyKPIOverview, {
+          assignedClassesCount: 0,
+          enrolledStudentsCount: 0,
+          todayPeriodsCount: 0,
+          periodsLoggedCount: 0,
+          pendingLeavesCount: 0,
+          weeklyWorkload: 0,
+        })
+      );
+
+      // Asserts that genuine zeroes are faithfully rendered
+      expect(html).toContain('0 Classes');
+      expect(html).toContain('0 Enrolled Students');
+      expect(html).toContain('0 Periods');
+      expect(html).toContain('0 Logged • 0 Pending');
+      expect(html).toContain('0 Pending');
+      expect(html).toContain('No pending leave actions');
+    });
+
+    it('displays unavailable indicators ("—") for missing data and does NOT fabricate zero metrics', () => {
+      const html = renderToString(
+        React.createElement(FacultyKPIOverview, {})
+      );
+
+      // Asserts that missing data produces explicit unavailable indicators
+      expect(html).toContain('— Classes');
+      expect(html).toContain('— Enrolled Students');
+      expect(html).toContain('— Periods');
+      expect(html).toContain('Schedule Unavailable');
+      expect(html).toContain('— Pending');
+      expect(html).toContain('Review status unavailable');
+      expect(html).toContain('Workload unavailable');
+
+      // Crucial: Asserts that missing data does NOT silently fabricate 0
+      expect(html).not.toContain('0 Classes');
+      expect(html).not.toContain('0 Enrolled Students');
+      expect(html).not.toContain('0 Periods');
+      expect(html).not.toContain('0 Pending');
+    });
+
+    it('renders loading skeleton and does NOT display fabricated zeroes during loading state', () => {
+      const html = renderToString(
+        React.createElement(FacultyKPIOverview, {
+          isLoading: true,
+        })
+      );
+
+      // Asserts presence of pulse loading skeletons
+      expect(html).toContain('animate-pulse');
+
+      // Asserts no fabricated zeros appear during loading
+      expect(html).not.toContain('0 Classes');
+      expect(html).not.toContain('0 Enrolled Students');
+      expect(html).not.toContain('0 Periods');
+      expect(html).not.toContain('— Classes');
+    });
+
+    it('renders active metrics accurately when live API provides positive workloads', () => {
+      const html = renderToString(
+        React.createElement(FacultyKPIOverview, {
+          assignedClassesCount: 3,
+          enrolledStudentsCount: 91,
+          todayPeriodsCount: 3,
+          periodsLoggedCount: 1,
+          pendingLeavesCount: 2,
+          weeklyWorkload: 24,
+        })
+      );
+
+      expect(html).toContain('3 Classes');
+      expect(html).toContain('91 Enrolled Students');
+      expect(html).toContain('3 Periods');
+      expect(html).toContain('1 Logged • 2 Pending');
+      expect(html).toContain('2 Pending');
+      expect(html).toContain('Class Teacher Action Required');
+      expect(html).toContain('24 Periods');
+      expect(html).toContain('CBSE Senior Secondary Standard');
+    });
+
+    it('distinguishes API error states from genuine empty datasets in dashboard calculations', () => {
+      // Helper simulating the exact calculation logic from FacultyDashboardPage
+      const deriveMetrics = (classesError: Error | null, assignedClasses: any[] | undefined) => {
+        const assignedClassesCount = classesError
+          ? undefined
+          : Array.isArray(assignedClasses)
+          ? assignedClasses.length
+          : undefined;
+
+        const enrolledStudentsCount = classesError
+          ? undefined
+          : Array.isArray(assignedClasses)
+          ? (assignedClasses.length === 0 ? 0 : assignedClasses.reduce((acc, c) => acc + (c.student_count || 0), 0))
+          : undefined;
+
+        const weeklyWorkload = classesError
+          ? undefined
+          : Array.isArray(assignedClasses)
+          ? (assignedClasses.length === 0 ? 0 : assignedClasses.reduce((acc, c) => acc + (c.periods_per_week || 0), 0))
+          : undefined;
+
+        return { assignedClassesCount, enrolledStudentsCount, weeklyWorkload };
+      };
+
+      // Case A: API Error -> metrics must be undefined, component renders '—' (never fabricated 0)
+      const errorMetrics = deriveMetrics(new Error('Network Failure'), undefined);
+      expect(errorMetrics.assignedClassesCount).toBeUndefined();
+      expect(errorMetrics.enrolledStudentsCount).toBeUndefined();
+      expect(errorMetrics.weeklyWorkload).toBeUndefined();
+
+      const errorHtml = renderToString(React.createElement(FacultyKPIOverview, errorMetrics));
+      expect(errorHtml).toContain('— Classes');
+      expect(errorHtml).toContain('— Enrolled Students');
+      expect(errorHtml).not.toContain('0 Classes');
+
+      // Case B: Confirmed Empty Dataset -> metrics evaluate to genuine 0, component renders '0'
+      const emptyMetrics = deriveMetrics(null, []);
+      expect(emptyMetrics.assignedClassesCount).toBe(0);
+      expect(emptyMetrics.enrolledStudentsCount).toBe(0);
+      expect(emptyMetrics.weeklyWorkload).toBe(0);
+
+      const emptyHtml = renderToString(React.createElement(FacultyKPIOverview, emptyMetrics));
+      expect(emptyHtml).toContain('0 Classes');
+      expect(emptyHtml).toContain('0 Enrolled Students');
+      expect(emptyHtml).toContain('0 Periods');
     });
   });
 

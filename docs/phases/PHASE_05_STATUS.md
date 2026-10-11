@@ -41,7 +41,7 @@ Per authoritative project governance:
 | **Task 5.4** | **Academic Structure + Administrative Integration** | Wire Academic Years, Classes, Sections, Subjects, Enrollments, Admin directories (Students, Parents, Faculty), and Operational Allocations (Student Section & Class Teacher) to live `/api/v1/` endpoints | **COMPLETE** | 458 backend tests passing (+22 new in `test_phase5_admin_allocation_task54.py`, 33 in `test_endpoint_rbac_task44.py`); 229 frontend tests passing (+16 new in `admin_allocation_api_integration.test.ts`); clean build (9.09s); live browser verification completed for Admin, Principal, and Faculty |
 | **Task 5.5** | **Attendance API Integration + Oversight** | Wire Admin attendance oversight, Principal attendance analytics, Student Absentees register, Attendance Not Entered sessions, and preserve Student/Parent/Faculty live attendance integrations | **COMPLETE** | 475 backend tests passing (+17 new in `test_phase5_attendance_integration_task55.py`); 245 frontend tests passing (+16 new in `attendance_api_integration.test.ts`); clean build (6.75s); live browser verification completed for Admin, Principal, and Faculty (`task55_browser_qa_1791444398880.webp`) |
 | **Task 5.6** | **Marks API Integration + Oversight & Durable Audit Trail** | Wire Admin marks oversight, Principal academic analytics, Faculty bulk marks entry with 'AB' absent support, server-authoritative Student/Parent report cards, and durable audit trail (PROP_001 Option B) | **COMPLETE** | Implementation & regression: **PASS** (520/520 backend tests passing, 265/265 frontend tests passing, clean build 12.84s, 0 migration drift); Durable audit trail: **100% IMPLEMENTED & ACCEPTED** (Option B dual-role PostgreSQL, ORM immutability, DB trigger enforcement, atomic rollback, RBAC guards, credential hygiene reconciled) |
-| **Task 5.7** | **Dashboard & Cross-Module Integration** | Connect all 5 role dashboards (Student, Parent, Faculty, Admin, Principal) to live DRF APIs and typed services; eliminate mock values (`Arun`, `82.5`, `79.40%`, `4th`, `91`, `24`, `avg_score`), preserve non-evaluative faculty policy, retain school enterprise UI | **COMPLETE** | 278/278 Vitest passed across 17 test files (+13 new in `dashboard_integration.test.ts`); clean build (7.97s, 0 TS errors); 0 migration drift; live multi-role browser QA verified across all 5 roles (`student_arun`, `parent_ramanathan`, `faculty_suresh`, `admin_demo`, `principal_demo`) |
+| **Task 5.7** | **Dashboard & Cross-Module Integration** | Connect all 5 role dashboards (Student, Parent, Faculty, Admin, Principal) to live DRF APIs and typed services; eliminate mock values (`Arun`, `82.5`, `79.40%`, `4th`, `91`, `24`, `avg_score`), faithfully distinguish genuine 0 from missing/loading/error states, preserve non-evaluative faculty policy, retain school enterprise UI | **COMPLETE** | 283/283 Vitest passed across 17 test files (+18 new in `dashboard_integration.test.ts`); clean build (8.66s, 0 TS errors); 0 migration drift; live multi-role browser QA verified across all 5 roles (`student_arun`, `parent_ramanathan`, `faculty_suresh`, `admin_demo`, `principal_demo`) |
 | **Task 5.8** | **Phase 5 Full System Verification & Release Gate** | End-to-end integration tests, regression test suites, performance audit | **NOT STARTED** | Strictly blocked pending explicit authorization |
 
 ---
@@ -236,8 +236,10 @@ Task 5.7 connected all five user role dashboards (**Student, Parent, Faculty, Ad
    - Wired live attendance trend into `<ParentAttendanceTrendChart>` with dynamic rate badge (`${latestRate}% Current`) and clean empty-state fallback.
 3. **Faculty Dashboard (`/faculty/dashboard`)**:
    - Removed hardcoded `avg_score` (`'87.0%'`, `'89.2%'`, `'83.4%'`) from assigned classes.
-   - Replaced synthetic fallback numbers (`|| 91`, `|| 24`, `|| 3`) in `FacultyDashboardPage` with live aggregated values derived from assigned classes and schedules.
-   - Defaulted `FacultyKPIOverview` metric fallbacks to `0` rather than synthetic metrics.
+   - Replaced synthetic fallback numbers (`|| 91`, `|| 24`, `|| 3`) with live calculated values.
+   - Implemented explicit differentiation between genuine zero metrics (`0 Classes`, `0 Enrolled Students`, `0 Periods`, `0 Pending`, `0 Workload`) and missing/loading/error states.
+   - Omitted `= 0` parameter defaults in `FacultyKPIOverview`; unprovided, failed, or missing API queries render explicit `—` unavailable indicators (`— Classes`, `— Periods`, `Schedule Unavailable`) preventing silent fabrication of zero metrics.
+   - Preserves non-evaluative faculty governance: strictly zero rankings, ratings, or teacher appraisals.
 4. **Admin Dashboard (`/admin/dashboard`)**:
    - Updated `adminApiService.getDashboardSummary()` to fetch live statistics from `AttendanceApiService.getAttendanceAnalytics()`, `MarksApiService.getExamTypes({ is_active: true })`, `AttendanceApiService.getAttendanceNotEntered()`, and pending leave requests from `/api/v1/attendance/leaves/?status=PENDING`.
    - Populated monthly attendance trend and real counts for active exams and operational actions.
@@ -247,8 +249,8 @@ Task 5.7 connected all five user role dashboards (**Student, Parent, Faculty, Ad
    - Preserves strictly read-only oversight without teacher appraisals or ranking scorecards.
 
 ### 9.3 Test & Quality Metrics
-- **Frontend Test Suite**: **278 / 278 passed across all 17 test files** (+13 dedicated tests in `dashboard_integration.test.ts`).
-- **Production Bundle Build**: Clean build in 7.97s (`tsc && vite build`) with zero TypeScript errors.
+- **Frontend Test Suite**: **283 / 283 passed across all 17 test files** (+18 dedicated tests in `dashboard_integration.test.ts`).
+- **Production Bundle Build**: Clean build in 8.66s (`tsc && vite build`) with zero TypeScript errors.
 - **Django Checks**: 0 issues (`manage.py check`).
 - **Migration Drift**: 0 changes detected (`manage.py makemigrations --check`).
 - **Multi-Role Live Browser QA**: Full live browser verification executed across all 5 roles (`student_arun`, `parent_ramanathan`, `faculty_suresh`, `admin_demo`, `principal_demo`) against running dev servers; visual inspection and screenshots captured confirming complete elimination of mock metrics.
