@@ -44,8 +44,8 @@ import { Link } from 'react-router-dom';
 
 export const StudentDashboardPage: React.FC = () => {
   const { profile, loading: profileLoading } = useStudentProfile();
-  const { stats, trend, loading: attendanceLoading } = useStudentAttendance();
-  const { summary, comparison, loading: marksLoading } = useStudentMarks();
+  const { stats, trend, loading: attendanceLoading } = useStudentAttendance(profile?.student_id);
+  const { summary, comparison, loading: marksLoading } = useStudentMarks(profile?.student_id);
   const { todaySchedule, loading: timetableLoading } = useStudentTimetable();
   const { events: calendarEvents, loading: calendarLoading } = useStudentCalendar();
   const { submitLeave } = useStudentLeaveRequests();
@@ -219,7 +219,7 @@ export const StudentDashboardPage: React.FC = () => {
                   Half-Yearly Examination Marks
                 </CardTitle>
                 <CardDescription>
-                  Arun&apos;s marks (out of 100) compared against Grade 11-A2 section average
+                  {profile.first_name}&apos;s subject marks (out of 100) across evaluated subjects
                 </CardDescription>
               </div>
               <Link to="/student/marks">
@@ -237,8 +237,7 @@ export const StudentDashboardPage: React.FC = () => {
                     <YAxis domain={[0, 100]} stroke="#94a3b8" fontSize={11} />
                     <Tooltip formatter={(val: any) => [`${val} / 100`, 'Marks']} />
                     <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
-                    <Bar dataKey="studentScore" name="Arun's Marks" fill="#1e3a8a" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="classAverage" name="Section Average" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="studentScore" name={`${profile.first_name}'s Marks`} fill="#1e3a8a" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

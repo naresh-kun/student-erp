@@ -147,12 +147,16 @@ export class AdminApiService {
     kpis: AdminDashboardKPIs;
     attendanceTrend: { month: string; attendance: number }[];
   }> {
-    const [students, parents, faculty, classes, years] = await Promise.all([
+    const [students, parents, faculty, classes, years, attendanceAnalytics, examTypes, notEntered, pendingLeavesRes] = await Promise.all([
       this.getStudents().catch(() => []),
       this.getParents().catch(() => []),
       this.getFaculty().catch(() => []),
       this.getClassesAndSections().catch(() => []),
       this.getAcademicYears().catch(() => []),
+      AttendanceApiService.getAttendanceAnalytics().catch(() => null),
+      MarksApiService.getExamTypes({ is_active: true }).catch(() => []),
+      AttendanceApiService.getAttendanceNotEntered().catch(() => []),
+      ApiClient.get<any[]>('/api/v1/attendance/leaves/', { status: 'PENDING' }).catch(() => ({ data: [] })),
     ]);
 
     const activeYear = years.find((y: any) => y.is_active)?.name || '2026–27';
@@ -166,11 +170,25 @@ export class AdminApiService {
         validAttCount += 1;
       }
     });
-    const avgAttendance = validAttCount > 0 ? Number((totalAtt / validAttCount).toFixed(1)) : 94.2;
+
+    const avgAttendance = attendanceAnalytics?.overallPresenceRate ?? (validAttCount > 0 ? Number((totalAtt / validAttCount).toFixed(1)) : 0);
 
     const studentCount = students.length;
     const facultyCount = faculty.length;
     const ratio = facultyCount > 0 ? `${Math.round(studentCount / facultyCount)}:1` : '25:1';
+
+    const pendingLeaves = Array.isArray(pendingLeavesRes.data) ? pendingLeavesRes.data : [];
+    const pendingActionsCount = (Array.isArray(notEntered) ? notEntered.length : 0) + pendingLeaves.length;
+
+    let calendarEventsCount = 0;
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('student_erp_admin_calendar_events') : null;
+      if (saved) {
+        calendarEventsCount = JSON.parse(saved).length;
+      }
+    } catch {
+      calendarEventsCount = 0;
+    }
 
     const kpis: AdminDashboardKPIs = {
       total_students: studentCount,
@@ -181,18 +199,15 @@ export class AdminApiService {
       academic_year: activeYear,
       overall_attendance_rate: avgAttendance,
       student_teacher_ratio: ratio,
-      active_examinations: 1,
-      upcoming_events_count: 2,
-      pending_operational_actions: 0,
+      active_examinations: Array.isArray(examTypes) ? examTypes.length : 0,
+      upcoming_events_count: calendarEventsCount > 0 ? calendarEventsCount : 2,
+      pending_operational_actions: pendingActionsCount,
     };
 
-    const attendanceTrend = [
-      { month: 'Jun', attendance: 96.2 },
-      { month: 'Jul', attendance: 95.8 },
-      { month: 'Aug', attendance: 94.5 },
-      { month: 'Sep', attendance: 95.1 },
-      { month: 'Oct', attendance: avgAttendance },
-    ];
+    const attendanceTrend = (attendanceAnalytics?.cohortMonthlyTrends || []).map((t: any) => ({
+      month: t.month,
+      attendance: typeof t.rate === 'number' ? t.rate : Number((((t.gr9 || 0) + (t.gr10 || 0) + (t.gr11 || 0) + (t.gr12 || 0)) / 4).toFixed(1)),
+    }));
 
     return { kpis, attendanceTrend };
   }

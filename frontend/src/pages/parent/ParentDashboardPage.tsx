@@ -37,7 +37,7 @@ export const ParentDashboardPage: React.FC = () => {
   );
   const { activeChild, activeChildId, selectChild } = useActiveChild(linkedChildren);
 
-  const { summary: attSummary, isLoading: attLoading } = useChildAttendance(activeChildId);
+  const { summary: attSummary, trend: attTrend, isLoading: attLoading } = useChildAttendance(activeChildId);
   const { academicSummary: marksSummary, isLoading: marksLoading } = useChildMarks(activeChildId);
   const { data: advisories = [], isLoading: advLoading } = useChildAdvisories(activeChildId);
   const { data: calendarEvents = [] } = useParentCalendar();
@@ -82,6 +82,7 @@ export const ParentDashboardPage: React.FC = () => {
           <div className="lg:col-span-2 space-y-6">
             {/* Monthly Trend Area Chart */}
             <ParentAttendanceTrendChart
+              data={attTrend}
               childName={activeChild?.first_name || 'Ward'}
             />
 

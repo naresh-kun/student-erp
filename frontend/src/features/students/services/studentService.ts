@@ -394,6 +394,62 @@ export class StudentService {
   }
 
   /**
+   * Retrieves monthly attendance trend calculated from verified session logs.
+   * Backed by /api/v1/attendance/?student_id={studentId}.
+   */
+  static async getMonthlyAttendanceTrend(studentId = 'STU202600001'): Promise<{ month: string; attendance: number; target: number }[]> {
+    try {
+      const { records } = await StudentApiService.getAttendance({ student_id: studentId });
+      if (Array.isArray(records) && records.length > 0) {
+        const monthMap = new Map<string, { presentOrOD: number; total: number; label: string }>();
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        for (const r of records) {
+          if (!r.date) continue;
+          const d = new Date(r.date);
+          if (isNaN(d.getTime())) continue;
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          const label = monthNames[d.getMonth()];
+
+          if (!monthMap.has(key)) {
+            monthMap.set(key, { presentOrOD: 0, total: 0, label });
+          }
+          const item = monthMap.get(key)!;
+          item.total += 1;
+          if (r.status === 'PRESENT' || r.status === 'ON_DUTY') {
+            item.presentOrOD += 1;
+          }
+        }
+
+        const sortedKeys = Array.from(monthMap.keys()).sort();
+        if (sortedKeys.length > 0) {
+          return sortedKeys.map((key) => {
+            const data = monthMap.get(key)!;
+            const rate = data.total > 0 ? Number(((data.presentOrOD / data.total) * 100).toFixed(1)) : 0;
+            return {
+              month: data.label,
+              attendance: rate,
+              target: 85,
+            };
+          });
+        }
+      }
+    } catch {
+      // Fallback to MockDataService
+    }
+
+    return MockDataService.getMonthlyAttendanceTrend();
+  }
+
+  /**
+   * Retrieves official report card containing backend-authoritative cumulative totals and marks.
+   * Backed by Django REST Framework /api/v1/marks/report-card/{student_id}/.
+   */
+  static async getReportCard(studentId = 'STU202600001') {
+    return StudentApiService.getReportCard(studentId);
+  }
+
+  /**
    * Retrieves examination marks records.
    * Backed by Django REST Framework /api/v1/marks/report-card/{student_id}/.
    */
@@ -426,7 +482,9 @@ export class StudentService {
         return reportCard.marks.map((m) => ({
           subject: m.subject_name,
           studentScore: m.marks_obtained,
-          classAverage: 82.5, // Section benchmark average
+          maxMarks: m.max_marks,
+          percentage: m.percentage,
+          grade: m.grade,
         }));
       }
     } catch {

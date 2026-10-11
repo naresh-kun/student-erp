@@ -13,7 +13,9 @@
 import { MockDataService } from '@/services/mockService';
 import { AttendanceApiService } from '@/services/attendanceApiService';
 import { MarksApiService } from '@/services/marksApiService';
+import { AdminApiService } from '@/features/admin/services/adminApiService';
 import { SCHOOL_CONFIG } from '@/config/schoolConfig';
+import type { LetterGrade } from '@/utils/grading';
 import type {
   PrincipalDashboardSummary,
   GradeAcademicPerformance,
@@ -59,6 +61,66 @@ export class PrincipalService {
   // 1. EXECUTIVE DASHBOARD & SUMMARY
   // ==========================================
   static async getDashboardSummary(): Promise<PrincipalDashboardSummary> {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      if (token) {
+        const [students, faculty, classes, years, attendanceAnalytics, marksSummary, reports] = await Promise.all([
+          AdminApiService.getStudents().catch(() => []),
+          AdminApiService.getFaculty().catch(() => []),
+          AdminApiService.getClassesAndSections().catch(() => []),
+          AdminApiService.getAcademicYears().catch(() => []),
+          AttendanceApiService.getAttendanceAnalytics().catch(() => null),
+          MarksApiService.getMarksSummary().catch(() => null),
+          this.getReports().catch(() => []),
+        ]);
+
+        const activeYear = years.find((y: any) => y.is_active)?.name || SCHOOL_CONFIG.academicYear;
+        const totalSections = classes.reduce((sum, c) => sum + (c.sections?.length || 0), 0);
+        const studentCount = students.length;
+        const facultyCount = faculty.length;
+        const ratio = facultyCount > 0 ? `${Math.round(studentCount / facultyCount)}:1` : '15:1';
+        const pendingReports = reports.filter((r) => r.status === 'Review' || r.status === 'Draft').length;
+
+        const gradeDist: Record<LetterGrade, number> = { A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0, D: 0, E: 0 };
+        if (marksSummary?.grade_distribution && Array.isArray(marksSummary.grade_distribution)) {
+          marksSummary.grade_distribution.forEach((item) => {
+            if (item.grade in gradeDist) {
+              gradeDist[item.grade as LetterGrade] = item.count;
+            }
+          });
+        }
+
+        const attendanceTrend = (attendanceAnalytics?.cohortMonthlyTrends || []).map((t: any) => ({
+          month: t.month,
+          attendance: typeof t.rate === 'number' ? t.rate : Number((((t.gr9 || 0) + (t.gr10 || 0) + (t.gr11 || 0) + (t.gr12 || 0)) / 4).toFixed(1)),
+        }));
+
+        return {
+          kpis: {
+            total_students: studentCount,
+            total_faculty: facultyCount,
+            total_classes: classes.length,
+            total_sections: totalSections,
+            school_attendance_rate: attendanceAnalytics?.overallPresenceRate ?? 0,
+            school_academic_average: marksSummary?.school_average ?? 0,
+            academic_year: activeYear,
+            student_teacher_ratio: ratio,
+            pending_reports_count: pendingReports,
+            upcoming_events_count: 3,
+          },
+          gradeDistribution: gradeDist,
+          attendanceTrend,
+          recentEvents: [
+            { title: 'Half-Yearly Examination 2026', category: 'Examination', date: '2026-10-12 to 2026-10-22', location: 'Examination Halls' },
+            { title: 'Annual Science & Technology Exhibition', category: 'Academic', date: '2026-10-28', location: 'School Auditorium' },
+            { title: 'Parent-Teacher Meeting (Term 1 Review)', category: 'PTM', date: '2026-11-14', location: 'Assigned Classrooms' },
+          ],
+        };
+      }
+    } catch (err) {
+      console.warn('[PrincipalService] Live dashboard summary fetch failed, using fallback:', err);
+    }
+
     await delay();
     const rawKpis = await MockDataService.getSchoolKPIs();
     const attendanceTrend = await MockDataService.getMonthlyAttendanceTrend();

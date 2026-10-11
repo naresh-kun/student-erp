@@ -325,6 +325,59 @@ export class ParentService {
   }
 
   /**
+   * Retrieves monthly verified attendance trend for a linked child.
+   * Backed by /api/v1/attendance/?student_id={studentId}.
+   */
+  static async getChildMonthlyAttendanceTrend(studentId = 'STU202600001'): Promise<{ month: string; attendance: number }[]> {
+    try {
+      const liveData = await ParentApiService.getChildAttendance(studentId);
+      if (liveData && Array.isArray(liveData.records) && liveData.records.length > 0) {
+        const monthMap = new Map<string, { presentOrOD: number; total: number; label: string }>();
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        for (const r of liveData.records) {
+          if (!r.date) continue;
+          const d = new Date(r.date);
+          if (isNaN(d.getTime())) continue;
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          const label = monthNames[d.getMonth()];
+
+          if (!monthMap.has(key)) {
+            monthMap.set(key, { presentOrOD: 0, total: 0, label });
+          }
+          const item = monthMap.get(key)!;
+          item.total += 1;
+          if (r.status === 'PRESENT' || r.status === 'ON_DUTY') {
+            item.presentOrOD += 1;
+          }
+        }
+
+        const sortedKeys = Array.from(monthMap.keys()).sort();
+        if (sortedKeys.length > 0) {
+          return sortedKeys.map((key) => {
+            const data = monthMap.get(key)!;
+            const rate = data.total > 0 ? Number(((data.presentOrOD / data.total) * 100).toFixed(1)) : 0;
+            return {
+              month: data.label,
+              attendance: rate,
+            };
+          });
+        }
+      }
+    } catch {
+      // Fallback
+    }
+
+    return [
+      { month: 'Jun', attendance: 96.5 },
+      { month: 'Jul', attendance: 95.0 },
+      { month: 'Aug', attendance: 93.8 },
+      { month: 'Sep', attendance: 94.3 },
+      { month: 'Oct', attendance: 94.0 },
+    ];
+  }
+
+  /**
    * Returns subject-wise attendance breakdown adhering to 4-status calculations
    */
   static async getChildSubjectAttendance(studentId = 'STU202600001'): Promise<ParentSubjectAttendance[]> {
@@ -476,8 +529,7 @@ export class ParentService {
           overallPercentage: rc.overall_percentage,
           overallGrade: rc.overall_grade,
           gradeDescription: rc.overall_percentage >= 91 ? 'Outstanding (91–100%)' : (rc.overall_percentage >= 81 ? 'Very Good (81–90%)' : 'Good (71–80%)'),
-          sectionRank: '4th',
-          totalStudentsInSection: 32,
+          subjectCount: rc.subject_count ?? (Array.isArray(rc.marks) ? rc.marks.length : 0),
         };
       }
     } catch {
@@ -498,6 +550,7 @@ export class ParentService {
       gradeDescription: 'Very Good (81–90%)',
       sectionRank: '4th',
       totalStudentsInSection: 32,
+      subjectCount: 5,
     };
   }
 
@@ -516,7 +569,7 @@ export class ParentService {
           percentage: m.percentage,
           grade: m.grade,
           remarks: m.remarks || 'Term evaluation',
-          classAverage: 78.4,
+          classAverage: 0,
         }));
       }
     } catch {
@@ -694,35 +747,38 @@ export class ParentService {
   static async getChildAdvisories(studentId = 'STU202600001'): Promise<ParentAdvisory[]> {
     const attendance = await this.getChildAttendanceSummary(studentId);
     const marks = await this.getChildAcademicSummary(studentId);
+    const subjectMarks = await this.getChildSubjectMarks(studentId);
 
     const advisories: ParentAdvisory[] = [];
 
     // 1. Attendance Standing Advisory
-    if (attendance.overallPercentage >= 90) {
-      advisories.push({
-        id: 'adv_att_good',
-        type: 'attendance',
-        severity: 'success',
-        title: 'Excellent Classroom Attendance Standing',
-        message: `Attendance is verified at ${attendance.overallPercentage.toFixed(2)}% (82 sessions), comfortably clearing the CBSE 85% board examination clearance benchmark.`,
-      });
-    } else if (attendance.overallPercentage >= 85) {
-      advisories.push({
-        id: 'adv_att_warn',
-        type: 'attendance',
-        severity: 'info',
-        title: 'Attendance Within Board Clearable Range',
-        message: `Attendance stands at ${attendance.overallPercentage.toFixed(2)}%. Maintain regular attendance to stay safely above the 85% minimum clearance threshold.`,
-      });
-    } else {
-      advisories.push({
-        id: 'adv_att_crit',
-        type: 'attendance',
-        severity: 'warning',
-        title: 'Attendance Advisory Notice',
-        message: `Current attendance (${attendance.overallPercentage.toFixed(2)}%) is below the school's 85% requirement. Please submit medical/sanction notes promptly.`,
-        actionRequired: true,
-      });
+    if (attendance.totalSessions > 0) {
+      if (attendance.overallPercentage >= 90) {
+        advisories.push({
+          id: 'adv_att_good',
+          type: 'attendance',
+          severity: 'success',
+          title: 'Excellent Classroom Attendance Standing',
+          message: `Attendance is verified at ${attendance.overallPercentage.toFixed(1)}% (${attendance.totalSessions} sessions), comfortably clearing the CBSE 85% board examination clearance benchmark.`,
+        });
+      } else if (attendance.overallPercentage >= 85) {
+        advisories.push({
+          id: 'adv_att_warn',
+          type: 'attendance',
+          severity: 'info',
+          title: 'Attendance Within Board Clearable Range',
+          message: `Attendance stands at ${attendance.overallPercentage.toFixed(1)}% (${attendance.totalSessions} sessions). Maintain regular attendance to stay safely above the 85% minimum clearance threshold.`,
+        });
+      } else {
+        advisories.push({
+          id: 'adv_att_crit',
+          type: 'attendance',
+          severity: 'warning',
+          title: 'Attendance Advisory Notice',
+          message: `Current attendance (${attendance.overallPercentage.toFixed(1)}%) across ${attendance.totalSessions} sessions is below the school's 85% requirement. Regular attendance and documentation of absences are required.`,
+          actionRequired: true,
+        });
+      }
     }
 
     // 2. Sanctioned Leave Note
@@ -732,18 +788,31 @@ export class ParentService {
         type: 'attendance',
         severity: 'info',
         title: 'Approved Leave Records',
-        message: `${attendance.leaveCount} absence sessions have been reviewed and approved as sanctioned Leave by Class Teacher R. Suresh.`,
+        message: `${attendance.leaveCount} absence session(s) have been reviewed and approved as sanctioned Leave.`,
       });
     }
 
-    // 3. Academic Achievement & Focus Subject Advisory
-    advisories.push({
-      id: 'adv_acad_standing',
-      type: 'academic',
-      severity: 'info',
-      title: `Academic Performance: Grade ${marks.overallGrade} (${marks.overallPercentage.toFixed(2)}%)`,
-      message: `Rank ${marks.sectionRank} in Section XI-A2 with 435 / 500 marks. Outstanding aptitude in Computer Science (96%) and Mathematics (92%). Dedicated practice recommended for Chemistry organic mechanisms (75%).`,
-    });
+    // 3. Academic Achievement & Subject Performance Advisory
+    if (marks.totalMaxMarks > 0) {
+      const validSubjects = subjectMarks.filter((s) => typeof s.marksObtained === 'number') as Array<ParentSubjectMarkRecord & { marksObtained: number }>;
+      const topSubject = validSubjects.length > 0 ? validSubjects.reduce((max, s) => s.marksObtained > max.marksObtained ? s : max, validSubjects[0]) : null;
+      const lowestSubject = validSubjects.length > 1 ? validSubjects.reduce((min, s) => s.marksObtained < min.marksObtained ? s : min, validSubjects[0]) : null;
+
+      let acadMsg = `Cumulative score: ${marks.cumulativeMarks} / ${marks.totalMaxMarks} marks (${marks.overallPercentage.toFixed(1)}%).`;
+      if (topSubject && lowestSubject && topSubject.subject !== lowestSubject.subject) {
+        acadMsg += ` Outstanding aptitude in ${topSubject.subject} (${topSubject.marksObtained}%). Dedicated practice recommended for ${lowestSubject.subject} (${lowestSubject.marksObtained}%).`;
+      } else if (topSubject) {
+        acadMsg += ` Consistent academic progress in evaluated subjects including ${topSubject.subject}.`;
+      }
+
+      advisories.push({
+        id: 'adv_acad_standing',
+        type: 'academic',
+        severity: 'info',
+        title: `Academic Performance: Grade ${marks.overallGrade} (${marks.overallPercentage.toFixed(2)}%)`,
+        message: acadMsg,
+      });
+    }
 
     // 4. Upcoming PTM Reminder
     advisories.push({
@@ -751,7 +820,7 @@ export class ParentService {
       type: 'general',
       severity: 'info',
       title: 'Upcoming Parent-Teacher Meeting (PTM)',
-      message: 'Classroom consultation scheduled for November 14, 2026. Class Teacher R. Suresh will discuss term progress and answer questions.',
+      message: 'Classroom consultation scheduled for November 14, 2026. Consultations will review term progress and answer academic questions.',
     });
 
     return advisories;

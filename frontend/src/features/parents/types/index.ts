@@ -55,8 +55,9 @@ export interface ParentAcademicSummary {
   overallPercentage: number; // e.g. 87.00
   overallGrade: string; // e.g. 'A2'
   gradeDescription: string; // 'Very Good (81–90%)'
-  sectionRank: string; // '4th'
-  totalStudentsInSection: number; // 32
+  sectionRank?: string; // Optional legacy or verified rank
+  totalStudentsInSection?: number;
+  subjectCount?: number;
 }
 
 export interface ParentSubjectMarkRecord {

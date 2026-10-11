@@ -27,12 +27,12 @@ interface FacultyKPIOverviewProps {
 }
 
 export const FacultyKPIOverview: React.FC<FacultyKPIOverviewProps> = ({
-  assignedClassesCount = 3,
-  enrolledStudentsCount = 91,
-  todayPeriodsCount = 3,
-  periodsLoggedCount = 1,
-  pendingLeavesCount = 2,
-  weeklyWorkload = 24,
+  assignedClassesCount = 0,
+  enrolledStudentsCount = 0,
+  todayPeriodsCount = 0,
+  periodsLoggedCount = 0,
+  pendingLeavesCount = 0,
+  weeklyWorkload = 0,
   onViewLeaves,
 }) => {
   const pendingPeriods = Math.max(0, todayPeriodsCount - periodsLoggedCount);

@@ -64,12 +64,12 @@ export const FacultyDashboardPage: React.FC = () => {
 
         {/* 2. Key Performance Indicators (Non-Evaluative) */}
         <FacultyKPIOverview
-          assignedClassesCount={profile?.assigned_classes_count || assignedClasses.length}
-          enrolledStudentsCount={profile?.assigned_students_count || 91}
+          assignedClassesCount={profile?.assigned_classes_count ?? assignedClasses.length}
+          enrolledStudentsCount={profile?.assigned_students_count ?? (assignedClasses.length > 0 ? assignedClasses.reduce((acc, c) => acc + (c.student_count || 0), 0) : 0)}
           todayPeriodsCount={todayPeriods.length}
           periodsLoggedCount={periodsLoggedCount}
           pendingLeavesCount={pendingCount}
-          weeklyWorkload={profile?.weekly_periods || 24}
+          weeklyWorkload={profile?.weekly_periods ?? (assignedClasses.length > 0 ? assignedClasses.reduce((acc, c) => acc + (c.periods_per_week || 0), 0) : 0)}
         />
 
         {/* 3. Main Operational Grid: Today's Routine & Class Teacher Leave Approval */}

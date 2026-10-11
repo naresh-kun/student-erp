@@ -30,16 +30,24 @@ export function useChildAttendance(studentId = 'STU202600001') {
     staleTime: 5 * 60 * 1000,
   });
 
+  const trendQuery = useQuery<{ month: string; attendance: number }[]>({
+    queryKey: ['childAttendanceTrend', studentId],
+    queryFn: () => ParentService.getChildMonthlyAttendanceTrend(studentId),
+    staleTime: 5 * 60 * 1000,
+  });
+
   return {
     summary: summaryQuery.data,
     subjectAttendance: subjectAttendanceQuery.data || [],
     history: historyQuery.data || [],
-    isLoading: summaryQuery.isLoading || subjectAttendanceQuery.isLoading || historyQuery.isLoading,
-    isError: summaryQuery.isError || subjectAttendanceQuery.isError || historyQuery.isError,
+    trend: trendQuery.data || [],
+    isLoading: summaryQuery.isLoading || subjectAttendanceQuery.isLoading || historyQuery.isLoading || trendQuery.isLoading,
+    isError: summaryQuery.isError || subjectAttendanceQuery.isError || historyQuery.isError || trendQuery.isError,
     refetch: () => {
       summaryQuery.refetch();
       subjectAttendanceQuery.refetch();
       historyQuery.refetch();
+      trendQuery.refetch();
     },
   };
 }

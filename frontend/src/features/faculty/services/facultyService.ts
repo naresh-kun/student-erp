@@ -114,7 +114,6 @@ export const DEFAULT_ASSIGNED_CLASSES: FacultyAssignedClass[] = [
     student_count: 30,
     is_class_teacher: true,
     periods_per_week: 6,
-    avg_score: '87.0%',
   },
   {
     id: 'cls_002_sec_001',
@@ -131,7 +130,6 @@ export const DEFAULT_ASSIGNED_CLASSES: FacultyAssignedClass[] = [
     student_count: 31,
     is_class_teacher: false,
     periods_per_week: 6,
-    avg_score: '89.2%',
   },
   {
     id: 'cls_000_sec_g10_a',
@@ -147,7 +145,6 @@ export const DEFAULT_ASSIGNED_CLASSES: FacultyAssignedClass[] = [
     student_count: 38,
     is_class_teacher: false,
     periods_per_week: 6,
-    avg_score: '83.4%',
   },
 ];
 

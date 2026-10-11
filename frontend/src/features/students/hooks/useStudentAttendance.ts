@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { StudentService } from '../services/studentService';
-import { MockDataService, type StudentAttendanceSessionLog } from '@/services/mockService';
+import type { StudentAttendanceSessionLog } from '@/services/mockService';
 import type { StudentAttendanceStatSummary, StudentSubjectAttendance } from '../types';
 import type { AttendanceStatus } from '@/types';
 
@@ -25,8 +25,8 @@ export function useStudentAttendance(studentId = 'STU202600001') {
       const [statsData, subjectsData, logsData, trendData] = await Promise.all([
         StudentService.getAttendanceSummary(studentId),
         StudentService.getSubjectAttendance(),
-        StudentService.getAttendanceLogs(),
-        MockDataService.getMonthlyAttendanceTrend(),
+        StudentService.getAttendanceLogs(studentId),
+        StudentService.getMonthlyAttendanceTrend(studentId),
       ]);
       setStats(statsData);
       setSubjectAttendance(subjectsData);

@@ -25,8 +25,9 @@ Per authoritative project governance:
 - Task 5.3 (Faculty Module Live API Integration) is **COMPLETE**.
 - Task 5.4 (Academic Structure + Administrative Integration) is **COMPLETE**.
 - Task 5.5 (Attendance API Integration + Oversight) is **COMPLETE**.
-- Task 5.6 (Marks API Integration + Oversight & PROP_001 Durable Audit Trail): Implementation and regression verification is **PASS**; durable audit trail (PROP_001 Option B) is **FULLY IMPLEMENTED & VERIFIED** across all 14+ acceptance criteria; recommended for governance sign-off.
-- Task 5.7 is **NOT STARTED**.
+- Task 5.6 (Marks API Integration + Oversight & PROP_001 Durable Audit Trail) is **COMPLETE** (Accepted).
+- Task 5.7 (Dashboard & Cross-Module Integration) is **COMPLETE**.
+- Task 5.8 is **NOT STARTED** (Strictly blocked pending explicit authorization).
 
 ---
 
@@ -39,8 +40,9 @@ Per authoritative project governance:
 | **Task 5.3** | **Faculty Live API Integration** | Wire Faculty views, profile, assigned classes/sections, student roster, marks entry, roll call, Class Teacher leave review, and homework to live `/api/v1/` endpoints | **COMPLETE** | 436 backend tests passing (+24 new); 213 frontend tests passing (+14 new); clean build (11.67s); live browser verification completed (login -> dashboard -> classes -> students roster -> attendance roll call -> marks entry -> homework -> logout; recording `faculty_browser_test_1791366974619.webp`) |
 | **Task 5.4** | **Academic Structure + Administrative Integration** | Wire Academic Years, Classes, Sections, Subjects, Enrollments, Admin directories (Students, Parents, Faculty), and Operational Allocations (Student Section & Class Teacher) to live `/api/v1/` endpoints | **COMPLETE** | 458 backend tests passing (+22 new in `test_phase5_admin_allocation_task54.py`, 33 in `test_endpoint_rbac_task44.py`); 229 frontend tests passing (+16 new in `admin_allocation_api_integration.test.ts`); clean build (9.09s); live browser verification completed for Admin, Principal, and Faculty |
 | **Task 5.5** | **Attendance API Integration + Oversight** | Wire Admin attendance oversight, Principal attendance analytics, Student Absentees register, Attendance Not Entered sessions, and preserve Student/Parent/Faculty live attendance integrations | **COMPLETE** | 475 backend tests passing (+17 new in `test_phase5_attendance_integration_task55.py`); 245 frontend tests passing (+16 new in `attendance_api_integration.test.ts`); clean build (6.75s); live browser verification completed for Admin, Principal, and Faculty (`task55_browser_qa_1791444398880.webp`) |
-| **Task 5.6** | **Marks API Integration + Oversight & Durable Audit Trail** | Wire Admin marks oversight, Principal academic analytics, Faculty bulk marks entry with 'AB' absent support, server-authoritative Student/Parent report cards, and durable audit trail (PROP_001 Option B) | **IMPLEMENTED — READY FOR SIGN-OFF** | Implementation & regression: **PASS** (520/520 backend tests passing, 265/265 frontend tests passing, clean build 12.84s, 0 migration drift); Durable audit trail: **100% IMPLEMENTED & VERIFIED** (Option B dual-role PostgreSQL, ORM immutability, DB trigger enforcement, atomic rollback, RBAC guards, historical data preserved) |
-| **Task 5.7** | **Phase 5 Full System Verification & Release Gate** | End-to-end integration tests, regression test suites, performance audit | **NOT STARTED** | Scheduled — strictly blocked pending Task 5.6 sign-off |
+| **Task 5.6** | **Marks API Integration + Oversight & Durable Audit Trail** | Wire Admin marks oversight, Principal academic analytics, Faculty bulk marks entry with 'AB' absent support, server-authoritative Student/Parent report cards, and durable audit trail (PROP_001 Option B) | **COMPLETE** | Implementation & regression: **PASS** (520/520 backend tests passing, 265/265 frontend tests passing, clean build 12.84s, 0 migration drift); Durable audit trail: **100% IMPLEMENTED & ACCEPTED** (Option B dual-role PostgreSQL, ORM immutability, DB trigger enforcement, atomic rollback, RBAC guards, credential hygiene reconciled) |
+| **Task 5.7** | **Dashboard & Cross-Module Integration** | Connect all 5 role dashboards (Student, Parent, Faculty, Admin, Principal) to live DRF APIs and typed services; eliminate mock values (`Arun`, `82.5`, `79.40%`, `4th`, `91`, `24`, `avg_score`), preserve non-evaluative faculty policy, retain school enterprise UI | **COMPLETE** | 278/278 Vitest passed across 17 test files (+13 new in `dashboard_integration.test.ts`); clean build (7.97s, 0 TS errors); 0 migration drift; live multi-role browser QA verified across all 5 roles (`student_arun`, `parent_ramanathan`, `faculty_suresh`, `admin_demo`, `principal_demo`) |
+| **Task 5.8** | **Phase 5 Full System Verification & Release Gate** | End-to-end integration tests, regression test suites, performance audit | **NOT STARTED** | Strictly blocked pending explicit authorization |
 
 ---
 
@@ -209,6 +211,46 @@ Per authoritative project governance:
 - **Live Multi-Role Verification**: Full verification of all 5 roles (Admin, Faculty, Student, Parent, Principal) against live running server with `verify_phase56_live_e2e.py`.
 - **Live Browser QA**: Full automated browser verification of Faculty marks-entry register, active ExamTypes loading, authoritative UUID dispatch, and rejection error banner (`faculty_marks_browser_qa_1791610618158.webp`).
 
+---
 
+## 9. Task 5.7 Execution Summary: Dashboard & Cross-Module Integration
 
+### 9.1 Overview & Scope
+Task 5.7 connected all five user role dashboards (**Student, Parent, Faculty, Admin, Principal**) directly to the authoritative backend DRF APIs and typed service layer. It systematically eliminated remaining hardcoded metrics, placeholder statistics, and synthetic mock comparison bars, while strictly adhering to institutional governance policies:
+- Retained the traditional, high-density enterprise school portal UI.
+- Maintained zero teacher rankings, appraisals, or evaluative scorecards (non-evaluative faculty policy).
+- Preserved principal oversight as strictly read-only.
+- Replaced synthetic mock values with real backend calculations.
 
+### 9.2 Per-Role Dashboard Integration Details
+1. **Student Dashboard (`/student/dashboard`)**:
+   - Replaced hardcoded `Arun` in charts with dynamic student name interpolation (`${profile.first_name}'s Marks`).
+   - Removed synthetic `classAverage: 82.5` section comparison bar from subject marks chart; renders student's own marks directly.
+   - Added live `getMonthlyAttendanceTrend(studentId)` in `studentService.ts` deriving monthly percentages from live session logs via canonical formula `(P + OD) / Total * 100`.
+   - Wired authoritative report card summary from `StudentApiService.getReportCard` into `useStudentMarks`.
+2. **Parent Dashboard (`/parent/dashboard`)**:
+   - Added `getChildMonthlyAttendanceTrend(studentId)` in `parentService.ts` computing live monthly rates.
+   - Replaced Card 4 (`Section Standing / Rank`) with `Evaluated Academic Subjects` showing `${summary.subjectCount} Subjects` and `CBSE 8-Tier Academic Performance`.
+   - Replaced Card 2 comparison (`Section Average: 79.40%`) with `CBSE Passing Threshold: 33.00%`.
+   - Replaced static mock advisory strings with deterministic, data-driven advisories derived directly from attendance session counts, leave tallies, and actual subject mark records.
+   - Wired live attendance trend into `<ParentAttendanceTrendChart>` with dynamic rate badge (`${latestRate}% Current`) and clean empty-state fallback.
+3. **Faculty Dashboard (`/faculty/dashboard`)**:
+   - Removed hardcoded `avg_score` (`'87.0%'`, `'89.2%'`, `'83.4%'`) from assigned classes.
+   - Replaced synthetic fallback numbers (`|| 91`, `|| 24`, `|| 3`) in `FacultyDashboardPage` with live aggregated values derived from assigned classes and schedules.
+   - Defaulted `FacultyKPIOverview` metric fallbacks to `0` rather than synthetic metrics.
+4. **Admin Dashboard (`/admin/dashboard`)**:
+   - Updated `adminApiService.getDashboardSummary()` to fetch live statistics from `AttendanceApiService.getAttendanceAnalytics()`, `MarksApiService.getExamTypes({ is_active: true })`, `AttendanceApiService.getAttendanceNotEntered()`, and pending leave requests from `/api/v1/attendance/leaves/?status=PENDING`.
+   - Populated monthly attendance trend and real counts for active exams and operational actions.
+5. **Principal Dashboard (`/principal/dashboard`)**:
+   - Updated `principalService.getDashboardSummary()` to consume live `AdminApiService`, `AttendanceApiService`, and `MarksApiService.getMarksSummary()`.
+   - Maps authoritative CBSE 8-tier letter grade distribution, school attendance percentage, and longitudinal attendance trends.
+   - Preserves strictly read-only oversight without teacher appraisals or ranking scorecards.
+
+### 9.3 Test & Quality Metrics
+- **Frontend Test Suite**: **278 / 278 passed across all 17 test files** (+13 dedicated tests in `dashboard_integration.test.ts`).
+- **Production Bundle Build**: Clean build in 7.97s (`tsc && vite build`) with zero TypeScript errors.
+- **Django Checks**: 0 issues (`manage.py check`).
+- **Migration Drift**: 0 changes detected (`manage.py makemigrations --check`).
+- **Multi-Role Live Browser QA**: Full live browser verification executed across all 5 roles (`student_arun`, `parent_ramanathan`, `faculty_suresh`, `admin_demo`, `principal_demo`) against running dev servers; visual inspection and screenshots captured confirming complete elimination of mock metrics.
+
+---

@@ -20,7 +20,7 @@ interface ParentMarksSummaryCardsProps {
 
 export const ParentMarksSummaryCards: React.FC<ParentMarksSummaryCardsProps> = ({
   summary,
-  childName = 'Arun Kumar',
+  childName = 'Ward',
 }) => {
   if (!summary) return null;
 
@@ -65,7 +65,7 @@ export const ParentMarksSummaryCards: React.FC<ParentMarksSummaryCardsProps> = (
             </span>
           </div>
           <p className="mt-1 text-[11px] text-slate-500">
-            Section Average: 79.40%
+            CBSE Passing Threshold: 33.00%
           </p>
         </Card>
 
@@ -88,20 +88,22 @@ export const ParentMarksSummaryCards: React.FC<ParentMarksSummaryCardsProps> = (
           </p>
         </Card>
 
-        {/* Card 4: Section Standing / Rank */}
+        {/* Card 4: Evaluated Academic Subjects */}
         <Card className="p-4 bg-white dark:bg-slate-900 border-l-4 border-l-teal-600 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase">Section Standing</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase">Evaluated Subjects</span>
             <TrendingUp className="w-4 h-4 text-teal-600" />
           </div>
           <div className="mt-1 flex items-baseline gap-1">
             <span className="text-2xl sm:text-3xl font-black text-teal-700 dark:text-teal-400 font-mono">
-              {summary.sectionRank}
+              {summary.subjectCount ?? (summary.sectionRank ? `${summary.sectionRank}` : (summary.cumulativeMarks > 0 ? 'Verified' : '—'))}
             </span>
-            <span className="text-xs text-slate-400 font-medium">Rank</span>
+            <span className="text-xs text-slate-400 font-medium">
+              {summary.subjectCount !== undefined ? 'Subjects' : (summary.sectionRank ? 'Rank' : '')}
+            </span>
           </div>
           <p className="mt-1 text-[11px] text-slate-500">
-            Out of {summary.totalStudentsInSection} Enrolled Students
+            {summary.totalStudentsInSection ? `Out of ${summary.totalStudentsInSection} Enrolled Students` : 'CBSE 8-Tier Academic Performance'}
           </p>
         </Card>
       </div>

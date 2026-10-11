@@ -9,9 +9,17 @@ import { StudentService } from '../services/studentService';
 import type { StudentExamRecord } from '@/services/mockService';
 import { calculateGrade, calculatePercentage } from '@/utils';
 
-export function useStudentMarks(_studentId = 'STU202600001') {
+export function useStudentMarks(studentId = 'STU202600001') {
   const [examRecords, setExamRecords] = useState<StudentExamRecord[]>([]);
   const [comparison, setComparison] = useState<any[]>([]);
+  const [backendSummary, setBackendSummary] = useState<{
+    cumulativeMarks: number;
+    maxMarks: number;
+    percentage: number;
+    overallGrade: string;
+    isPassed: boolean;
+    evaluatedSubjectsCount: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,24 +27,40 @@ export function useStudentMarks(_studentId = 'STU202600001') {
     try {
       setLoading(true);
       setError(null);
-      const [records, comparisonData] = await Promise.all([
-        StudentService.getExamRecords(),
-        StudentService.getSubjectMarksComparison(),
+      const [records, comparisonData, reportCard] = await Promise.all([
+        StudentService.getExamRecords(studentId),
+        StudentService.getSubjectMarksComparison(studentId),
+        StudentService.getReportCard(studentId).catch(() => null),
       ]);
       setExamRecords(records);
       setComparison(comparisonData);
+
+      if (reportCard && typeof reportCard.overall_percentage === 'number') {
+        setBackendSummary({
+          cumulativeMarks: reportCard.total_marks_obtained,
+          maxMarks: reportCard.total_max_marks,
+          percentage: reportCard.overall_percentage,
+          overallGrade: reportCard.overall_grade,
+          isPassed: reportCard.overall_percentage >= 33,
+          evaluatedSubjectsCount: reportCard.subject_count ?? (reportCard.marks?.length || 0),
+        });
+      }
     } catch (err) {
       setError('Unable to load student examination scores.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [studentId]);
 
   useEffect(() => {
     fetchMarks();
   }, [fetchMarks]);
 
   const summary = useMemo(() => {
+    if (backendSummary) {
+      return backendSummary;
+    }
+
     if (!examRecords.length) {
       return {
         cumulativeMarks: 0,
@@ -69,7 +93,7 @@ export function useStudentMarks(_studentId = 'STU202600001') {
       isPassed,
       evaluatedSubjectsCount: examRecords.length,
     };
-  }, [examRecords]);
+  }, [backendSummary, examRecords]);
 
   return {
     examRecords,
