@@ -318,20 +318,21 @@ Inspected via an appropriately privileged connection (`postgres` superuser) with
   - Harmless documentation examples in version control do not constitute active credential leaks, and Git history rewriting is not required for non-sensitive example placeholders.
   - The active environment configuration file (`backend/.env`) is strictly excluded from version control via `.gitignore:30:.env` and is neither tracked nor staged in Git history.
 - **Reconciliation of Administrator Credential Disclosure & Empirical Invalidation**:
-  - Earlier during audit reporting, an active administrator (`postgres`) password configured in `backend/.env` was inadvertently disclosed.
-  - The administrator credential was rotated immediately in PostgreSQL using `ALTER ROLE postgres WITH PASSWORD ...` with a cryptographically generated high-entropy random secret, and `ADMIN_DATABASE_PASSWORD` in `backend/.env` was updated.
+  - An administrator credential value appeared in an earlier security evidence report.
+  - The value was treated as exposed, rotated immediately in PostgreSQL using `ALTER ROLE postgres WITH PASSWORD ...` with a cryptographically generated high-entropy random secret, and `ADMIN_DATABASE_PASSWORD` in `backend/.env` was updated.
   - **Empirical Invalidation Evidence**: When testing connection to PostgreSQL with `psql -U postgres -h localhost -p 5432 -d postgres` using the exact previously disclosed credential, the server permanently rejected authentication:
     ```
     psql: error: connection to server at "localhost" (::1), port 5432 failed: FATAL: password authentication failed for user "postgres"
     ```
   - **New Credential Authentication**: Connection using the newly rotated secret authenticated successfully (`current_user: postgres`).
-  - Neither the old nor the new secret value is printed or recorded in documentation or reports.
-- **Correction of Record Regarding Absolute Statements**:
-  - Previous drafts stated in absolute terms that no secret was ever recorded. This record is corrected to state precisely:
-    1. Values in `backend/.env.example` were harmless documentation examples.
-    2. An active administrator credential was temporarily disclosed during audit reporting.
-    3. The disclosed administrator credential was subsequently invalidated and verified rejected in PostgreSQL, with rotation verified and isolated.
-    4. Active runtime (`erp_app`) and migration (`erp_migrator`) roles were generated, rotated, and isolated solely within the untracked `backend/.env`.
+  - The replacement credential was not included in the current report or committed to tracked files, and neither credential value is reproduced here.
+- **Correction of Record Regarding Reporting Accuracy & Git Scope**:
+  - Previous drafts stated in absolute terms that neither credential was printed or recorded. This record is corrected with full accuracy:
+    1. An administrator credential value appeared in an earlier security evidence report.
+    2. The value was treated as exposed, rotated, and its rejection was empirically verified in PostgreSQL.
+    3. The replacement credential was not included in the current report or committed to tracked files.
+    4. The Git-history findings concern tracked repository content (`backend/.env.example` contained harmless documentation example placeholders) and must not be conflated with disclosure in conversation.
+    5. Active runtime (`erp_app`) and migration (`erp_migrator`) roles were generated, rotated, and isolated solely within the untracked `backend/.env`.
 - **Runtime (`erp_app`) and Migration (`erp_migrator`) Connectivity Verification**:
   - `erp_app`: Authenticated directly in PostgreSQL (`current_user: erp_app | session_user: erp_app`). Live ORM query execution via `python manage.py shell` returned `('erp_app', 'student_erp')`.
   - `erp_migrator`: Authenticated directly in PostgreSQL (`current_user: erp_migrator | session_user: erp_migrator`). Schema migration inspection via `DB_ROLE=migrator python manage.py showmigrations` confirmed successful connectivity and applied status.
