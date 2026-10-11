@@ -150,6 +150,12 @@ Dev servers were launched locally on ports 8000 and 5173. Browser QA walkthrough
    - Verified KPI metrics: `3 Classes`, `3 Periods Today`, `0 Pending Leave Reviews`, `24 Periods Weekly Workload`.
    - Verified Assigned Classes table: displays Class, Stream, Enrolled count, and Weekly Periods; zero evaluative `avg_score` percentages or rankings.
    - Captured screenshot: `faculty_dashboard_1791703444151.png`.
+   - **Focused 5-Scenario Verification (`/faculty/dashboard`)**:
+     - **Scenario 1 (Positive live metrics)**: Confirmed live metrics rendered accurately without parameter defaults (`3 Classes`, `91 Enrolled Students`, `3 Periods`, `1 Logged • 2 Pending`, `0 Pending`, `24 Periods`; screenshot `faculty_scenario1_positive_1791720756577.png`).
+     - **Scenario 2 (Confirmed zero)**: Confirmed successful empty response faithfully displays genuine zero metrics (`0 Classes`, `0 Enrolled Students`, `0 Periods`, `0 Logged • 0 Pending`, `0 Pending`, `0 Periods`; screenshot `faculty_scenario2_zero_1791720775499.png`).
+     - **Scenario 3 (Loading state)**: Confirmed pulse loading skeletons (`animate-pulse`) render in place of metrics; zero fabricated metrics flash during loading (`faculty_scenario3_loading_1791720782899.png`).
+     - **Scenario 4 (Unavailable or failed data)**: Confirmed API errors trigger top synchronization alert banner (*"Some academic registers could not be synchronized with the server. Verified local records are displayed; unverified metrics are indicated as unavailable."*) and display explicit unavailable indicators (`— Classes`, `— Enrolled Students`, `— Periods`, `Schedule Unavailable`, `— Pending`, `— Periods`; screenshot `faculty_scenario4_error_1791720792716.png`).
+     - **Scenario 5 (Recovery)**: Confirmed returning to live endpoint immediately recovers positive live metrics and dismisses the synchronization alert banner (`faculty_scenario5_recovered_1791720801170.png`).
 3. **Admin (`admin_demo` / `demo123`)**:
    - Verified KPIs: Total Enrollment `4`, Teaching Faculty `3`, Classes & Sections `2 Classes • 4 Sec`, School Attendance `45.5%`.
    - Verified Institutional Attendance Pattern chart and live Administrative Actions (`3 Pending`).
@@ -174,11 +180,15 @@ Dev servers were launched locally on ports 8000 and 5173. Browser QA walkthrough
 Phase 5, Task 5.7 satisfies all stated requirements and design constraints:
 - All 5 user dashboards are connected to live DRF APIs and typed services.
 - All target mock and hardcoded metrics have been eliminated.
-- Automated tests (278/278 frontend tests, 520/520 backend tests) pass cleanly.
+- Automated tests (**283 / 283** frontend tests, **520 / 520** backend tests) pass cleanly.
+- Production build is clean (**8.66s**, 0 TypeScript errors).
+- Zero migration drift (`manage.py makemigrations --check` → *No changes detected*).
 - Live multi-role browser QA confirms correct behavior and aesthetics.
+- Focused 5-scenario browser verification of `/faculty/dashboard` confirms positive metrics, genuine zero preservation, loading skeletons, unavailable indicators, and clean recovery.
 - Non-evaluative faculty policy and principal read-only oversight are strictly preserved.
 
-**Recommendation**: Accept Task 5.7 as **COMPLETE**.
+**Recommendation**: Formally accept Task 5.7 as **COMPLETE**.
 
 > [!IMPORTANT]
 > **Task 5.8 (Phase 5 Full System Verification & Release Gate) remains NOT STARTED and strictly blocked pending explicit user authorization.**
+

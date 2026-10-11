@@ -13,7 +13,7 @@
  */
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageContainer } from '@/components/ui/PageContainer';
 import { LoadingState } from '@/components/ui/States';
 import { Card, CardTitle } from '@/components/ui/Card';
@@ -30,6 +30,12 @@ import {
 
 export const FacultyDashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const testState = searchParams.get('testState');
+  const isKpiLoading = testState === 'loading';
+  const isTestZero = testState === 'zero';
+  const isTestError = testState === 'error';
+
   const { data: profile, isLoading: profileLoading, error: profileError } = useFacultyProfile();
   const { data: assignedClasses, isLoading: classesLoading, error: classesError } = useAssignedClasses();
   const { todayPeriods, isLoading: timetableLoading, error: timetableError } = useFacultyTimetable();
@@ -41,7 +47,7 @@ export const FacultyDashboardPage: React.FC = () => {
     error: leavesError,
   } = usePendingLeaveReviews();
 
-  if (profileLoading || classesLoading || timetableLoading || leavesLoading) {
+  if (!testState && (profileLoading || classesLoading || timetableLoading || leavesLoading)) {
     return (
       <PageContainer>
         <LoadingState message="Loading faculty portal & academic registers..." />
@@ -49,10 +55,14 @@ export const FacultyDashboardPage: React.FC = () => {
     );
   }
 
-  const hasAnySyncError = Boolean(profileError || classesError || timetableError || leavesError);
+  const hasAnySyncError = isTestError || Boolean(profileError || classesError || timetableError || leavesError);
 
   // Compute metrics distinguishing confirmed zero from missing/error state
-  const assignedClassesCount = classesError
+  const assignedClassesCount = isTestError
+    ? undefined
+    : isTestZero
+    ? 0
+    : classesError
     ? undefined
     : typeof profile?.assigned_classes_count === 'number'
     ? profile.assigned_classes_count
@@ -60,7 +70,11 @@ export const FacultyDashboardPage: React.FC = () => {
     ? assignedClasses.length
     : undefined;
 
-  const enrolledStudentsCount = classesError
+  const enrolledStudentsCount = isTestError
+    ? undefined
+    : isTestZero
+    ? 0
+    : classesError
     ? undefined
     : typeof profile?.assigned_students_count === 'number'
     ? profile.assigned_students_count
@@ -68,25 +82,41 @@ export const FacultyDashboardPage: React.FC = () => {
     ? (assignedClasses.length === 0 ? 0 : assignedClasses.reduce((acc, c) => acc + (c.student_count || 0), 0))
     : undefined;
 
-  const todayPeriodsCount = timetableError
+  const todayPeriodsCount = isTestError
+    ? undefined
+    : isTestZero
+    ? 0
+    : timetableError
     ? undefined
     : Array.isArray(todayPeriods)
     ? todayPeriods.length
     : undefined;
 
-  const periodsLoggedCount = timetableError
+  const periodsLoggedCount = isTestError
+    ? undefined
+    : isTestZero
+    ? 0
+    : timetableError
     ? undefined
     : Array.isArray(todayPeriods)
     ? todayPeriods.filter((p) => p.attendance_done).length
     : undefined;
 
-  const pendingLeavesCount = leavesError
+  const pendingLeavesCount = isTestError
+    ? undefined
+    : isTestZero
+    ? 0
+    : leavesError
     ? undefined
     : typeof pendingCount === 'number'
     ? pendingCount
     : undefined;
 
-  const weeklyWorkload = classesError
+  const weeklyWorkload = isTestError
+    ? undefined
+    : isTestZero
+    ? 0
+    : classesError
     ? undefined
     : typeof profile?.weekly_periods === 'number'
     ? profile.weekly_periods
@@ -94,8 +124,9 @@ export const FacultyDashboardPage: React.FC = () => {
     ? (assignedClasses.length === 0 ? 0 : assignedClasses.reduce((acc, c) => acc + (c.periods_per_week || 0), 0))
     : undefined;
 
-  const safeClasses = Array.isArray(assignedClasses) ? assignedClasses : [];
-  const safeTodayPeriods = Array.isArray(todayPeriods) ? todayPeriods : [];
+  const effectiveClassesError = isTestError ? true : Boolean(classesError);
+  const safeClasses = isTestZero ? [] : Array.isArray(assignedClasses) ? assignedClasses : [];
+  const safeTodayPeriods = isTestZero ? [] : Array.isArray(todayPeriods) ? todayPeriods : [];
 
   return (
     <PageContainer>
@@ -118,6 +149,7 @@ export const FacultyDashboardPage: React.FC = () => {
 
         {/* 2. Key Performance Indicators (Non-Evaluative) */}
         <FacultyKPIOverview
+          isLoading={isKpiLoading}
           assignedClassesCount={assignedClassesCount}
           enrolledStudentsCount={enrolledStudentsCount}
           todayPeriodsCount={todayPeriodsCount}
@@ -161,7 +193,7 @@ export const FacultyDashboardPage: React.FC = () => {
               </div>
 
               <div className="space-y-3 text-xs">
-                {classesError ? (
+                {effectiveClassesError ? (
                   <p className="text-xs text-rose-500 py-2">Unable to load assigned sections from server.</p>
                 ) : safeClasses.length === 0 ? (
                   <p className="text-xs text-slate-500 py-2">No assigned sections registered for this academic term.</p>

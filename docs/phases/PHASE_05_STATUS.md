@@ -254,5 +254,11 @@ Task 5.7 connected all five user role dashboards (**Student, Parent, Faculty, Ad
 - **Django Checks**: 0 issues (`manage.py check`).
 - **Migration Drift**: 0 changes detected (`manage.py makemigrations --check`).
 - **Multi-Role Live Browser QA**: Full live browser verification executed across all 5 roles (`student_arun`, `parent_ramanathan`, `faculty_suresh`, `admin_demo`, `principal_demo`) against running dev servers; visual inspection and screenshots captured confirming complete elimination of mock metrics.
+- **Faculty Dashboard Focused Browser QA**: 5-scenario verification of `/faculty/dashboard` completed in live browser:
+  1. *Positive Live Metrics*: Verified `3 Classes`, `91 Enrolled Students`, `3 Periods`, `1 Logged • 2 Pending`, `0 Pending`, `24 Periods` (`faculty_scenario1_positive_1791720756577.png`).
+  2. *Confirmed Zero*: Verified genuine zeros displayed (`0 Classes`, `0 Enrolled Students`, `0 Periods`, `0 Pending`, `0 Periods`) (`faculty_scenario2_zero_1791720775499.png`).
+  3. *Loading*: Verified pulse loading skeletons (`animate-pulse`) render without flashing fabricated zeros (`faculty_scenario3_loading_1791720782899.png`).
+  4. *Unavailable / Failed Data*: Verified sync alert banner and unavailable indicators (`— Classes`, `— Periods`, `Schedule Unavailable`) appear without silent zero fabrication (`faculty_scenario4_error_1791720792716.png`).
+  5. *Recovery*: Verified immediate clean recovery to live positive metrics and removal of sync alert banner upon reconnection (`faculty_scenario5_recovered_1791720801170.png`).
 
 ---
