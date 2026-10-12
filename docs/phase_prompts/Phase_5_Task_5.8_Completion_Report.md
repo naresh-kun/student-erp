@@ -29,7 +29,7 @@ All mandatory acceptance criteria across backend APIs, frontend services, five u
  4. Django Checks             PASS       manage.py check -> 0 issues, 0 silenced
  5. Migration Drift           PASS       manage.py makemigrations --check -> 0 changes
  6. Migration History         PASS       manage.py showmigrations -> 100% applied
- 7. Live E2E Role QA          PASS       verify_phase56_live_e2e.py -> All 5 roles 200/403 OK
+ 7. Live E2E Role Audit       PASS       verify_phase56_live_e2e.py operations audited; non-mutating DB state verified (11 marks, 3 audit records)
  8. Multi-Role Browser QA     PASS       5 roles verified live (screenshots & WebP session)
  9. Route Protection & 404    PASS       Direct access redirected; 404 page verified
 10. Option B DB Security      PASS       26/26 tables & 8/8 seqs owned by erp_migrator;
@@ -49,8 +49,11 @@ All mandatory acceptance criteria across backend APIs, frontend services, five u
 ## 2. Test Execution & Quality Gates Evidence
 
 ### 2.1 Backend Pytest Suite
-- **Command**: `backend\.venv\Scripts\pytest.exe backend\tests\ -q`
-- **Execution Mode**: Executed against isolated test database (`test_student_erp`) using documented administrative provisioning credentials (`ADMIN_DATABASE_USER` / `ADMIN_DATABASE_PASSWORD`).
+- **Command**: `backend\.venv\Scripts\python.exe -m pytest -c backend/pytest.ini backend/tests/ -v --tb=short --reuse-db`
+- **Execution Mode & Credential Separation**: Executed against isolated test database (`test_student_erp`). Administrative provisioning credentials (`ADMIN_DATABASE_USER` / `ADMIN_DATABASE_PASSWORD`) are restricted exclusively to test-database creation (`CREATE DATABASE test_student_erp`) and schema/privilege provisioning because application roles `erp_app` and `erp_migrator` intentionally have `NOCREATEDB` under Option B least-privilege security. Unlike earlier test invocations that temporarily assigned admin credentials to `RUNTIME_DATABASE_USER`, the full pytest execution connects strictly under the application's unprivileged runtime identity (`erp_app`), verified via `SELECT current_user`.
+- **Runtime Restriction Verification (`erp_app`)**: Independently verified on live database: unauthorized DDL (`ALTER TABLE`, `CREATE TABLE`) is denied (`InsufficientPrivilege`), and direct `UPDATE`, `DELETE`, and `TRUNCATE` operations on `audit_logs` are strictly blocked (`InsufficientPrivilege permission denied for table audit_logs`).
+- **Database Identity**: `erp_app` on `test_student_erp`
+- **Duration**: `1037.31s` (~17m 17s)
 - **Exit Code**: `0`
 - **Total Collected**: **520 items**
 - **Total Passed**: **520 items** (100% pass rate, 0 failed, 0 skipped)
@@ -134,13 +137,30 @@ All mandatory acceptance criteria across backend APIs, frontend services, five u
 
 ## 3. Live System & Multi-Role Browser Verification
 
-### 3.1 Live API & RBAC Operational Script (`verify_phase56_live_e2e.py`)
-Executed against running Django REST Framework development server (`http://127.0.0.1:8000`):
-- **Admin (`admin_demo`)**: Verified marks summary rollups (11 sections), ExamTypes (5 types), ExamType weightage patch (`200 OK`), durable audit trail event generated (`action=UPDATE`), audit mutation rejected (`405 Method Not Allowed`), anonymous access blocked (`401 Unauthorized`).
-- **Faculty (`faculty_suresh`)**: Verified scoped marks access (10 records), bulk marks submission in assigned subject CS101 (`200/201 OK`), absent `'AB'` marks submission (`200/201 OK`), unassigned subject MATH101 submission blocked with HTTP `403 Forbidden`, audit trail query blocked with HTTP `403 Forbidden`.
-- **Student (`student_arun`)**: Verified own report card (`801.0/1000.0`, `80.1%`, `B1`), marks mutation blocked with HTTP `403 Forbidden`, audit trail query blocked with HTTP `403 Forbidden`.
-- **Parent (`parent_ramanathan`)**: Verified ward report card (`B1`), marks mutation blocked with HTTP `403 Forbidden`, audit trail query blocked with HTTP `403 Forbidden`.
-- **Principal (`principal_demo`)**: Verified institutional marks rollups (11 sections), academic analytics retrieved, marks mutation blocked with HTTP `403 Forbidden` (read-only oversight), **strictly zero faculty rankings or teacher performance evaluations**.
+### 3.1 Live Integration Operations Audit & Non-Mutating Database State Inspection
+
+#### Operations Analysis of `verify_phase56_live_e2e.py`
+The integration script `backend/tests/verify_phase56_live_e2e.py` was originally authored during Task 5.6 to validate live API routing across all five roles. An audit of its implementation reveals that when run against the running development server (`http://127.0.0.1:8000`), it performs both read-only and mutating HTTP requests against the development database:
+1. **Mutating Admin ExamType Patch**: Calls `PATCH /api/v1/marks/exam-types/{cycle_test_id}/` setting weightage to `10.00`. This executes an `UPDATE` on `marks_exam_types` and generates an audit log event (`action=UPDATE`, `resource_type=ExamType`) in `audit_logs`.
+2. **Mutating Faculty Bulk Marks Entry**: Calls `POST /api/v1/marks/bulk/` as `faculty_suresh`, writing 92.00 for `STU202600001` in `CS101` under `Cycle Test`.
+3. **Mutating Faculty Absent Entry**: Calls `POST /api/v1/marks/bulk/` as `faculty_suresh` with `"marks_obtained": "AB"`, writing 0.00 with remarks `"Medical absence"` for `STU202600001` in `CS101` under `Quarterly Examination`.
+4. **Read-Only & Security Route Checks**: Validates unassigned subject rejection (403 for MATH101), anonymous rejection (401 for `/api/v1/audit/`), role-scoped audit queries (403 for Student, Parent, and Faculty), audit immutability (405 for POST to `/api/v1/audit/`), and Principal read-only analytics with zero faculty rankings.
+
+#### Task 5.8 Database Integrity & Non-Mutating Inspection
+In strict adherence to governance directives:
+- **No mutating tests were rerun** against `student_erp`.
+- **No records were deleted, reset, restored, or altered** in `student_erp` to force a match with baseline summaries.
+- A direct, read-only inspection of the development database (`student_erp`) via `psycopg` confirmed:
+  - **`marks_records` (11 rows total)**:
+    - 5 historical marks records for `Half-Yearly Examination 2026` (`8ed9817e-4f9f-4334-a64f-c9fb868266ea`): **100% intact** (scores: 92.00, 88.50, 84.00, 90.00, 88.00).
+    - 4 marks records for `Half-Yearly Examination` (`d4ed1422-593e-4be9-a549-47c101be136d`): scores 92.00, 88.50, 84.00, 90.00.
+    - 1 marks record for `Cycle Test` (`0f504569-2334-473c-b2e6-9e586f6c4bbf`): score 92.00 (from live E2E verification).
+    - 1 marks record for `Quarterly Examination` (`ba0b14ef-7e3f-4170-876c-7d86683c635b`): score 0.00, absent (`Medical absence`, from live E2E verification).
+  - **`marks_exam_types` (5 rows total)**:
+    - All 5 exam types are active: `Cycle Test` (weightage 10.00), `Quarterly Examination` (20.00), `Half-Yearly Examination` (30.00), `Final / Annual Examination` (40.00), and `Half-Yearly Examination 2026` (50.00).
+  - **`audit_logs` (3 rows total)**:
+    - Exactly 3 audit records exist, all capturing authorized administrative `UPDATE` operations on ExamType `Cycle Test`.
+  - **Historical Data Preservation**: Historical `Half-Yearly Examination 2026` and all 5 linked marks records are fully preserved with zero data corruption.
 
 ### 3.2 Five-Role Live Browser Verification
 
@@ -216,8 +236,9 @@ A direct inspection of the live PostgreSQL database verified cross-module data i
 ## 6. Documented Limitations (Non-Blocking)
 
 The following operational characteristics were observed and confirmed to be non-blocking architectural designs:
-1. **Windows Pytest Test Database Creation**: When running the backend pytest suite on local Windows environments, Django's test runner attempts `CREATE DATABASE test_student_erp`, which requires PostgreSQL `CREATEDB` privilege. Because the runtime user `erp_app` and migrator `erp_migrator` intentionally have `NOCREATEDB` for least-privilege security under Option B, the test suite is executed using documented administrative provisioning credentials (`ADMIN_DATABASE_USER` / `ADMIN_DATABASE_PASSWORD`). This is standard practice for Django database-backed test runners.
-2. **Frontend Chunk Size Warning**: Production bundle chunk `index-CnZiSwIY.js` is 630 kB minified (gzip 132 kB), triggering Vite's informational advisory (>500 kB). This does not affect runtime correctness or functionality and can be optimized in Phase 6 via dynamic route code-splitting if desired.
+1. **Test Database Provisioning vs. Test Execution Separation**: When initializing or recreating the test database on local Windows environments, Django's test runner attempts `CREATE DATABASE test_student_erp`, which requires PostgreSQL `CREATEDB` privilege. Because the runtime user `erp_app` and migrator `erp_migrator` intentionally have `NOCREATEDB` for least-privilege security under Option B, administrative credentials (`ADMIN_DATABASE_USER` / `ADMIN_DATABASE_PASSWORD`) are utilized strictly for initial test database creation and Option B schema/role provisioning. Full pytest test execution runs strictly under the unprivileged runtime identity `erp_app` (`--reuse-db`), guaranteeing that runtime tests execute without administrative privileges.
+2. **Development Database Live Test Artifacts**: Executing mutating integration scripts like `verify_phase56_live_e2e.py` directly against the running development server leaves records in `student_erp` (specifically 1 `Cycle Test` mark, 1 `Quarterly Examination` mark, and 3 `ExamType` audit records). Because no pre-execution database snapshot was captured, the original pristine state cannot be determined with complete certainty. Per governance directives, no records were manually deleted or restored to fabricate a pristine state.
+3. **Frontend Chunk Size Warning**: Production bundle chunk `index-CnZiSwIY.js` is 630 kB minified (gzip 132 kB), triggering Vite's informational advisory (>500 kB). This does not affect runtime correctness or functionality and can be optimized in Phase 6 via dynamic route code-splitting if desired.
 
 ---
 

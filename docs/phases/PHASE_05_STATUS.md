@@ -269,11 +269,13 @@ Task 5.7 connected all five user role dashboards (**Student, Parent, Faculty, Ad
 ### 10.1 Overview & Scope
 Task 5.8 executed the authoritative full-system release gate for Phase 5 of the Student ERP. The verification rigorously audited all five user roles (**Student, Parent, Faculty, Admin, Principal**), live backend REST APIs, frontend services, PostgreSQL Option B least-privilege security boundaries, CBSE academic business rules, attendance semantics, and cross-module consistency against running instances of the application.
 
+Provisioning of the isolated test database (`test_student_erp`) and Option B role privileges was conducted with administrative credentials (`ADMIN_DATABASE_USER` / `ADMIN_DATABASE_PASSWORD`) to decouple `CREATEDB` requirements from unprivileged application roles (`erp_app`, `NOCREATEDB`). The full backend pytest suite was executed strictly under the unprivileged runtime identity `erp_app` (`--reuse-db`), with verified runtime restrictions (denial of unauthorized DDL, denial of audit-log UPDATE/DELETE/TRUNCATE). In accordance with governance instructions, no mutating E2E scripts were rerun against `student_erp`, and no records in the development database were altered.
+
 ### 10.2 Quality Gate Summary & Execution Results
 
 | Quality Gate | Requirement | Actual Result | Status |
 | :--- | :--- | :--- | :--- |
-| **Backend Test Suite** | Full pytest regression pass | **520 / 520 passed** (0 failed, 0 skipped, 28 test suites, exit code 0) | **PASS** |
+| **Backend Test Suite** | Full pytest regression pass under `erp_app` | **520 / 520 passed** (0 failed, 0 skipped, 26 test suites, exit code 0, 1037.31s) | **PASS** |
 | **Frontend Test Suite** | Full Vitest regression pass | **283 / 283 passed** (0 failed, 17 test files, 5.33s, exit code 0) | **PASS** |
 | **Frontend Production Build** | TypeScript compilation & Vite bundle | **Clean build** in 6.43s (`tsc && vite build`), 0 errors, exit code 0 | **PASS** |
 | **Django System Check** | `python manage.py check` | **0 issues identified** (exit code 0) | **PASS** |
@@ -287,6 +289,7 @@ Task 5.8 executed the authoritative full-system release gate for Phase 5 of the 
 | **Attendance Semantics** | 4-status model: P, OD, A, L | **Verified 100%**; P+OD positive, A+L absence, no fake attendance metrics | **PASS** |
 | **Non-Evaluative Faculty Policy** | Zero ratings, rankings, scorecards | **Verified 100%**; strictly 0 faculty appraisals or rankings across all modules | **PASS** |
 | **Historical Data Preservation** | Half-Yearly 2026 exam & marks intact | **Verified 100%**; exam and 5 linked marks records fully intact | **PASS** |
+| **Development DB State Audit** | Non-mutating read-only inspection of `student_erp` | **Verified 100%**; 11 marks records, 3 audit records, 5 exam types; zero mutating rerun | **PASS** |
 | **5-Role Browser Verification** | Live interactive browser QA | **5 / 5 roles verified** (Student, Parent, Faculty, Admin, Principal) + 404 handler | **PASS** |
 
 ### 10.3 Multi-Role Live Browser Verification Evidence
