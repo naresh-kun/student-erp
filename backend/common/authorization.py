@@ -491,6 +491,8 @@ class AuthorizationService(BaseService):
             has_perm = cls.has_permission(user, PERM_MARKS_ENTER) or cls.has_permission(user, PERM_MARKS_OVERRIDE)
         elif domain == 'academics' and normalized_action in ('create', 'update', 'delete'):
             has_perm = cls.has_permission(user, PERM_ACADEMICS_MANAGE)
+        elif domain == 'timetable' and normalized_action in ('create', 'update', 'delete'):
+            has_perm = cls.has_permission(user, PERM_TIMETABLE_MANAGE)
         else:
             perm = f"{domain}.{normalized_action}"
             has_perm = cls.has_permission(user, perm)
@@ -653,6 +655,12 @@ class AuthorizationService(BaseService):
                 return getattr(obj, 'faculty_id', None) == faculty.id
             return False
 
+        # TimetableSlot entity: view assigned slots only
+        if obj_class == 'TimetableSlot':
+            if action == 'view':
+                return getattr(obj, 'faculty_id', None) == faculty.id
+            return False
+
         return False
 
     @classmethod
@@ -719,6 +727,17 @@ class AuthorizationService(BaseService):
             if action != 'view':
                 return False
             if getattr(obj, 'status', None) != 'PUBLISHED':
+                return False
+            if hasattr(student, 'enrollments'):
+                return student.enrollments.filter(
+                    section_id=getattr(obj, 'section_id', None),
+                    status__in=['Active', 'ACTIVE', 'Enrolled', 'enrolled'],
+                ).exists()
+            return False
+
+        # TimetableSlot entity: view enrolled section only
+        if obj_class == 'TimetableSlot':
+            if action != 'view':
                 return False
             if hasattr(student, 'enrollments'):
                 return student.enrollments.filter(
@@ -802,6 +821,17 @@ class AuthorizationService(BaseService):
                 ).exists()
             return False
 
+        # TimetableSlot entity: view linked children's enrolled section slots
+        if obj_class == 'TimetableSlot':
+            if action != 'view':
+                return False
+            if hasattr(parent, 'children'):
+                return parent.children.filter(
+                    enrollments__section_id=getattr(obj, 'section_id', None),
+                    enrollments__status__in=['Active', 'ACTIVE', 'Enrolled', 'enrolled'],
+                ).exists()
+            return False
+
         return False
 
     # ─── Queryset Scoping ─────────────────────────────────────────────────────
@@ -862,6 +892,9 @@ class AuthorizationService(BaseService):
 
         if model_name == 'Homework':
             return cls._scope_homework_queryset(queryset, user, role)
+
+        if model_name == 'TimetableSlot':
+            return cls._scope_timetable_queryset(queryset, user, role)
 
         if model_name == 'Faculty':
             # Descriptive directory lookup for all active roles
@@ -1088,5 +1121,33 @@ class AuthorizationService(BaseService):
                 Q(children__enrollments__section__class_teacher=faculty)
                 | Q(children__enrollments__section__teaching_assignments__faculty=faculty, children__enrollments__section__teaching_assignments__is_active=True)
             ).distinct()
+
+        return queryset.none()
+
+    @classmethod
+    def _scope_timetable_queryset(cls, queryset: QuerySet, user: Any, role: str) -> QuerySet:
+        if role == ROLE_FACULTY:
+            faculty = getattr(user, 'faculty_profile', None)
+            if not faculty:
+                return queryset.none()
+            return queryset.filter(faculty=faculty)
+
+        if role == ROLE_STUDENT:
+            student = getattr(user, 'student_profile', None)
+            if not student:
+                return queryset.none()
+            section_ids = student.enrollments.filter(
+                status__in=['Active', 'ACTIVE', 'Enrolled', 'enrolled']
+            ).values_list('section_id', flat=True)
+            return queryset.filter(section_id__in=section_ids)
+
+        if role == ROLE_PARENT:
+            parent = getattr(user, 'parent_profile', None)
+            if not parent:
+                return queryset.none()
+            section_ids = parent.children.filter(
+                enrollments__status__in=['Active', 'ACTIVE', 'Enrolled', 'enrolled']
+            ).values_list('enrollments__section_id', flat=True)
+            return queryset.filter(section_id__in=section_ids).distinct()
 
         return queryset.none()

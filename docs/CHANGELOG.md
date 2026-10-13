@@ -2,6 +2,95 @@
 
 All notable changes to the Student ERP project will be documented in this file.
 
+## [Phase 6: Task 6.1 — Timetable Domain Models, Migrations and REST APIs] - 2026-10-13
+
+### Summary
+
+Implemented Phase 6 Task 6.1: the complete timetable domain in Django REST Framework and PostgreSQL under Option B dual-role database security. Authored `TimetableSlot(BaseModel)` mapped to table `timetables` in `apps/timetable/models.py` with composite unique constraints on `(section, day_of_week, period_number)` and `(faculty, day_of_week, period_number)`, positive period checks (`period_number >= 1`), and chronological time checks (`start_time < end_time`). Applied Option B migration (`0001_initial.py`) with ownership assigned to `erp_migrator` and least-privileged DML privileges (`INSERT`, `SELECT`, `UPDATE`, `DELETE`) granted to runtime user `erp_app`. Implemented `TimetableService` with double-booking conflict detection raising `TimetableConflictError` (`HTTP 409 Conflict`) with structured error details for section and faculty collisions. Built DRF serializers and views (`TimetableListView`, `TimetableDetailView`) with 5-role RBAC data scoping (Admin full CRUD, Principal read-only school-wide oversight, Faculty scoped to assigned teaching slots, Student scoped to enrolled section, Parent scoped to linked children sections). Created a 28-test automated pytest suite in `backend/tests/test_phase6_timetable_task61.py` with 100% pass rate under runtime role `erp_app` and 0 migration drift.
+
+### Added
+
+- **`backend/apps/timetable/models.py`**: Concrete `TimetableSlot(BaseModel)` mapped to `db_table='timetables'`.
+  - Foreign keys: `section` (`models.CASCADE`), `subject` (`models.PROTECT`), `faculty` (`models.PROTECT`).
+  - Fields: `day_of_week` (`CharField`, Indian school day choices), `period_number` (`PositiveSmallIntegerField`), `start_time` (`TimeField`), `end_time` (`TimeField`), `room_number` (`CharField(max_length=50, blank=True)`).
+  - Constraints: `unique_section_day_period` on `(section, day_of_week, period_number)`, `unique_faculty_day_period` on `(faculty, day_of_week, period_number)`, CheckConstraint `chk_timetable_start_before_end` (`start_time < end_time`), CheckConstraint `chk_timetable_positive_period` (`period_number >= 1`).
+- **`backend/apps/timetable/migrations/0001_initial.py`**: Option B-compatible migration.
+  - Creates table `timetables` with foreign keys, indexes, and constraints.
+  - Option B security operations: `ALTER TABLE timetables OWNER TO erp_migrator;`, `GRANT SELECT, INSERT, UPDATE, DELETE ON timetables TO erp_app;`.
+- **`backend/apps/timetable/services.py`**: `TimetableService(BaseService)` domain logic.
+  - `TimetableConflictError(StudentERPException)` with `status_code = 409`.
+  - `check_conflicts`: Validates proposed slot against section double-booking (`SECTION_SCHEDULE_CONFLICT`) and faculty double-booking (`FACULTY_SCHEDULE_CONFLICT`).
+  - `create_slot`, `update_slot`, `delete_slot`: Transactional mutation methods requiring Admin authorization.
+  - `get_timetable_queryset`: Scopes slots per user role and applies filter parameters `?section_id=`, `?day_of_week=`, `?faculty_id=`.
+- **`backend/apps/timetable/serializers.py`**: DRF serializers for timetable domain.
+  - `TimetableSlotSerializer` (list serializer) and `TimetableSlotDetailSerializer` (deep nested section/subject/faculty details).
+  - `TimetableSlotWriteSerializer`: Payload validation with `validators = []` so conflict handling delegates cleanly to `TimetableService` for structured 409 responses.
+- **`backend/apps/timetable/views.py`**: DRF API views.
+  - `TimetableListView` (`GET`, `POST`): Scoped list query and Admin-only creation.
+  - `TimetableDetailView` (`GET`, `PATCH`, `DELETE`): Scoped object retrieval, Admin-only partial update with conflict check, and Admin-only deletion (`204 No Content`).
+- **`backend/apps/timetable/urls.py`**: URL routes for `''` (`timetable_list`) and `'<uuid:pk>/'` (`timetable_detail`).
+- **`backend/tests/test_phase6_timetable_task61.py`**: Comprehensive 28-test automated suite.
+  - `TestTimetableSlotModelValidation` (9 tests): Valid creation, time constraint validation, day of week choices, positive period number, section & faculty double-booking rejection in clean() and DB constraints, CASCADE and PROTECT rules.
+  - `TestTimetableService` (5 tests): Conflict detection raising 409 for section and faculty, slot self-exclusion on update, Admin-only creation/update/delete.
+  - `TestTimetableAPIEndpointsAndScoping` (14 tests): 401 unauthenticated, Admin school-wide list & filters, Principal read-only oversight, Faculty assigned slot scoping, Student enrolled section scoping, Parent linked child scoping, Admin 201 creation, non-Admin 403 rejection, double-booking 409 conflict, invalid payload 400, Admin PATCH & DELETE, PATCH 409 conflict, detail view scoping, and runtime database identity verification (`SELECT current_user == 'erp_app'`).
+
+### Modified
+
+- **`backend/common/authorization.py`**: Extended `can_access_object` and query scoping for `TimetableSlot` across Faculty (`_can_faculty_access_object`), Student (`_can_student_access_object`), Parent (`_can_parent_access_object`), and timetable mutations mapped to `PERM_TIMETABLE_MANAGE`.
+- **`backend/tests/test_models_task33.py` & `backend/tests/test_task35_hardening_and_seed.py`**: Reconciled historical Phase 3 migration inventory assertions per established Phase 5 precedent by removing `timetable` from the deferred apps list and explicitly asserting that approved Phase 6 migration `('timetable', '0001_initial')` exists.
+- **`docs/phases/PHASE_06_STATUS.md`**: Marked Task 6.1 `COMPLETE`, checked all 15 acceptance criteria, recorded implementation, Option B verification, and full 549/549 backend regression evidence, preserved empty evidence fields for Tasks 6.2–6.8.
+- **`docs/API_CONTRACT.md`**: Promoted Timetable endpoints from scaffolding to Section 3.12 `[IMPLEMENTED — TASK 6.1]`, documenting full CRUD contracts, 5-role scoping, payload schemas, query parameters, and 409 Conflict responses.
+- **`docs/PROJECT_STATUS.md`**: Updated header to Phase 6 in progress, updated Backend matrix with Task 6.1 completion and 15 concrete models.
+
+### Verification Evidence
+
+- **Pytest Task 6.1 Suite**: 28/28 tests passing (`backend/tests/test_phase6_timetable_task61.py`).
+- **Complete Backend Regression Suite**: 549/549 tests passing (100% pass rate, 0 failed, 0 skipped, 1468.18s, exit code 0) executing against `test_student_erp` under least-privileged runtime role `erp_app`.
+- **Option B PostgreSQL Security**: Live dual-role verification confirmed `timetables` owned by `erp_migrator`, runtime application connection executes under `erp_app` with restricted privileges `['INSERT', 'SELECT', 'UPDATE', 'DELETE']`.
+- **Django System Check**: `python manage.py check` — 0 issues.
+- **Migration Consistency**: `python manage.py makemigrations --check` — No changes detected (0 drift).
+- **Git State**: All changes uncommitted in working tree per instructions.
+
+---
+
+## [Phase 6: Roadmap Establishment — Timetable + Calendar + Realtime] - 2026-10-13
+
+### Summary
+
+Formally established the Phase 6 roadmap documentation. Phase 6 targets full timetable domain, academic calendar domain, and Django Channels realtime (WebSocket) implementation following the Phase 5 release gate (PASS verdict, 520 backend tests, 283 frontend tests, clean build). Roadmap explicitly authorized by the project owner.
+
+This is a **documentation-only** entry. No application code, tests, migrations, or database records were modified.
+
+### Added
+
+- **`docs/phase_prompts/PHASE_06.md`**: Authoritative Phase 6 kickoff specification document.
+  - Phase objective and scope boundaries (in scope / explicitly out of scope).
+  - 8 tasks formally defined: Task 6.1 (Timetable Domain Models, Migrations and REST APIs), Task 6.2 (Academic Calendar Models and REST APIs), Task 6.3 (Django Channels and WebSocket Authentication), Task 6.4 (Student and Parent Timetable/Calendar Integration), Task 6.5 (Faculty Timetable and Attendance Scheduling Integration), Task 6.6 (Admin Timetable Builder and Calendar Management), Task 6.7 (Realtime Client Integration), Task 6.8 (Full System Verification and Release Gate).
+  - Architectural invariants (Phase 5 behavior preservation, Option B security continuation, no mock/live mixing, schema baseline compliance, non-evaluative faculty policy, backend as the authoritative security boundary).
+  - Two pending proposals requiring explicit owner approval before Task 6.3 may begin:
+    - **PROP_006_A** — WebSocket authentication handshake (recommended: short-lived single-use ticket via `POST /api/v1/ws/ticket/`).
+    - **PROP_006_B** — WebSocket test strategy (recommended: in-memory `WebsocketCommunicator` for standard CI + real Redis integration tests under `pytest -m redis_integration` marker).
+  - Task dependency structure, parallel execution rules, test requirements (backend and frontend test files, minimum test counts per task), browser QA plan, governance invariants, stop conditions, and documentation deliverables.
+
+- **`docs/phases/PHASE_06_STATUS.md`**: Phase 6 execution status ledger.
+  - All 8 tasks in `NOT STARTED` state with full acceptance checklists.
+  - Evidence fields empty and ready for population as implementation proceeds.
+  - Outstanding decisions table tracking PROP_006_A and PROP_006_B pending approval.
+
+### Modified
+
+- **`docs/PROJECT_STATUS.md`**: Updated phase summary header to reflect Phase 6 roadmap establishment; updated `Realtime WebSockets (Channels)` entry with Phase 6 roadmap context; added Phase 6 roadmap row to backend matrix; updated last-updated date to 2026-10-13.
+- **`docs/API_CONTRACT.md`**: Updated status header to reflect Phase 5 complete state and Phase 6 roadmap. Updated scaffolding timetable and calendar endpoint entries to document planned Phase 6 full CRUD contracts. Added new Section 4 documenting planned Phase 6 WebSocket endpoints (`POST /api/v1/ws/ticket/`, `WS /ws/timetable/`, `WS /ws/calendar/`) pending PROP_006_A approval. Updated last-updated date to 2026-10-13.
+- **`docs/DECISIONS.md`**: Added PROP_006_A (ADR 021) and PROP_006_B (ADR 022) as pending ADR entries with full technical rationale (assigned next available unique identifiers following Phase 5 ADR 020).
+
+### Not Modified (By Design)
+
+- No application code, test files, migrations, database contents, or Redis data were modified.
+- Phase 5 test baseline preserved: 520 backend tests, 283 frontend tests.
+- No Phase 7 or beyond features introduced.
+
+---
+
 ## [Phase 5: Task 5.6 Reconciliation & PROP_001 Revision 2.2 — Durable Audit Trail] - 2026-10-10
 
 ### Summary

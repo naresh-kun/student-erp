@@ -1,10 +1,10 @@
 # REST API Contract Specification (`/api/v1/`)
 
-> **Status**: Authoritative API Specification  
-> **API Version**: `v1`  
-> **Current Status**: **Phase 4 Task 4.4 COMPLETE** (Comprehensive endpoint-level RBAC enforcement, query scoping, and object-level authorization across all 33 API routes; frontend integration deferred to Phase 5)  
-> **Base URL**: `/api/v1`  
-> **Last Updated**: 2026-10-06
+> **Status**: Authoritative API Specification
+> **API Version**: `v1`
+> **Current Status**: **Phase 5 COMPLETE** (520 backend tests; full RBAC enforcement on all 33 REST endpoints; Phase 6 roadmap established 2026-10-13 — full timetable/calendar CRUD and WebSocket endpoints planned for Phase 6 implementation)
+> **Base URL**: `/api/v1`
+> **Last Updated**: 2026-10-13
 
 ---
 
@@ -273,7 +273,48 @@
   - Required Permission: `homework.delete` + Object Check (`can_access_object`)
   - Permitted Roles: Admin (Global), Faculty (Author only; cross-faculty deletion rejected with 403/404). Returns `204 No Content`. Students, Parents, and Principals denied (403).
 
-### 3.12 Scaffolding Endpoints
+### 3.12 Timetable (`/api/v1/timetable/`) `[IMPLEMENTED — TASK 6.1]`
+- `GET /api/v1/timetable/` `[IMPLEMENTED — TASK 6.1]`
+  - Authentication: Required (`Authorization: Bearer <JWT_ACCESS_TOKEN>`)
+  - Required Permission: `timetable.view`
+  - Permitted Roles & Scoping:
+    - Admin: Global school-wide timetable list across all sections and faculty.
+    - Principal: Global school-wide read-only timetable oversight.
+    - Faculty: Scoped to slots where faculty is assigned (`faculty=user.faculty_profile`).
+    - Student: Scoped strictly to currently enrolled section (`section__enrollments__student=user.student_profile, is_active=True`).
+    - Parent: Scoped strictly to sections where linked children are actively enrolled.
+  - Query Parameters: `section_id` (UUID), `day_of_week` (Monday–Sunday), `faculty_id` (UUID).
+  - Response Envelope: `{ "success": true, "data": [ ... ], "error": null }` with serialized slot records (`id`, `section`, `subject`, `faculty`, `day_of_week`, `period_number`, `start_time`, `end_time`, `room_number`).
+- `POST /api/v1/timetable/` `[IMPLEMENTED — TASK 6.1]`
+  - Authentication: Required
+  - Required Permission: `timetable.manage`
+  - Permitted Roles: Admin only (Principal has read-only oversight; Faculty, Student, Parent denied with 403 Forbidden).
+  - Payload Schema: `{ "section": "<UUID>", "subject": "<UUID>", "faculty": "<UUID>", "day_of_week": "Monday", "period_number": 1, "start_time": "08:30:00", "end_time": "09:15:00", "room_number": "Room 101" }`
+  - Validation & Conflict Rules:
+    - `period_number >= 1` enforced at model and database check constraint level.
+    - `start_time < end_time` enforced at model and database check constraint level.
+    - Double-booking conflict detection (`TimetableConflictError` -> `HTTP 409 Conflict`):
+      - Section conflict: Section cannot have two classes scheduled for the same day and period number (`SECTION_SCHEDULE_CONFLICT`).
+      - Faculty conflict: Faculty cannot be assigned to two classes scheduled for the same day and period number (`FACULTY_SCHEDULE_CONFLICT`).
+  - Response: `HTTP 201 Created` with created `TimetableSlot`.
+- `GET /api/v1/timetable/{id}/` `[IMPLEMENTED — TASK 6.1]`
+  - Authentication: Required
+  - Required Permission: `timetable.view` + Object Check (`can_access_object`)
+  - Permitted Roles: Admin, Principal (school-wide); Faculty (assigned slot only); Student (enrolled section only); Parent (linked child section only). Unauthorized role/access returns `403 Forbidden`.
+  - Response: `HTTP 200 OK` with nested detail objects (`section`, `subject`, `faculty`).
+- `PATCH /api/v1/timetable/{id}/` `[IMPLEMENTED — TASK 6.1]`
+  - Authentication: Required
+  - Required Permission: `timetable.manage` + Object Check (`can_access_object`)
+  - Permitted Roles: Admin only (Principal, Faculty, Student, Parent denied with 403 Forbidden).
+  - Conflict Detection: Excludes slot being updated; validates against section and faculty double-booking. Returns `HTTP 409 Conflict` on collision.
+  - Response: `HTTP 200 OK` with updated slot.
+- `DELETE /api/v1/timetable/{id}/` `[IMPLEMENTED — TASK 6.1]`
+  - Authentication: Required
+  - Required Permission: `timetable.manage` + Object Check (`can_access_object`)
+  - Permitted Roles: Admin only (Principal, Faculty, Student, Parent denied with 403 Forbidden).
+  - Response: `HTTP 204 No Content`.
+
+### 3.13 Scaffolding Endpoints
 - `GET /api/v1/allocation/` `[IMPLEMENTED]`
   - Required Permission: `allocation.view` (Admin, Principal, Faculty)
 - `GET /api/v1/audit/` `[IMPLEMENTED]`
@@ -292,11 +333,42 @@
   - Immutability Guards:
     - POST, PUT, PATCH, DELETE to `/api/v1/audit/` return `405 Method Not Allowed` for authorized Admin/Principal (401/403 for unauthorized).
     - Database-level PostgreSQL trigger `trg_audit_logs_immutable` and Option B restricted role `erp_app` prevent SQL modification or deletion.
-- `GET /api/v1/calendar/events/` `[IMPLEMENTED]`
+- `GET /api/v1/calendar/events/` `[SCAFFOLDING — Phase 6: Task 6.2 will implement full CRUD]`
   - Required Permission: `calendar.view` (All authenticated roles)
-- `GET /api/v1/timetable/` `[IMPLEMENTED]`
-  - Required Permission: `timetable.view` (All authenticated roles)
+  - **Phase 6 planned endpoints** (Task 6.2):
+    - `GET /api/v1/calendar/events/` — list (role-scoped by `target_roles`; filters: `start_date`, `end_date`, `category`, `is_holiday`, `target_role`)
+    - `POST /api/v1/calendar/events/` — create (Admin/Principal; `409 Conflict` on validation failure)
+    - `GET /api/v1/calendar/events/{id}/` — retrieve
+    - `PATCH /api/v1/calendar/events/{id}/` — update (Admin/Principal)
+    - `DELETE /api/v1/calendar/events/{id}/` — delete (Admin only)
 - `GET /api/v1/reports/` `[IMPLEMENTED]`
   - Required Permission: `reports.view` (All authenticated roles)
 - `GET /api/v1/notifications/` `[IMPLEMENTED]`
   - Required Permission: `users.view` (All authenticated roles)
+
+---
+
+## 4. Phase 6 Planned WebSocket Endpoints (PLANNED — Not Yet Implemented)
+
+> These endpoints are planned for Phase 6 and require explicit owner approval of PROP_006_A (authentication handshake) before implementation.
+
+### 4.1 WebSocket Ticket Issuance (PROP_006_A — PENDING APPROVAL)
+
+- `POST /api/v1/ws/ticket/` `[PLANNED — Phase 6: Task 6.3]`
+  - Authentication: Required (`Authorization: Bearer <JWT_ACCESS_TOKEN>`)
+  - Purpose: Issues a short-lived single-use opaque ticket (UUID, 30-second TTL in Redis) for WebSocket authentication.
+  - Response: `{ "ticket": "<uuid>" }`
+  - Implementation status: Pending approval of PROP_006_A.
+
+### 4.2 WebSocket Consumer Endpoints (PLANNED — Phase 6: Task 6.3)
+
+- `WS /ws/timetable/?ticket=<uuid>` `[PLANNED — Phase 6: Task 6.3]`
+  - Authentication: Ticket-based (PROP_006_A; pending approval) or approved alternative.
+  - Channel groups: Role-based groups (e.g. section group for students, faculty-assigned scope for faculty).
+  - Events pushed from server: `timetable.updated` (room change, period swap, new assignment), `timetable.deleted`.
+  - Unauthenticated connections closed with code 4001.
+- `WS /ws/calendar/?ticket=<uuid>` `[PLANNED — Phase 6: Task 6.3]`
+  - Authentication: Ticket-based (PROP_006_A; pending approval) or approved alternative.
+  - Channel groups: Role-based groups per `target_roles`.
+  - Events pushed from server: `calendar.event.created`, `calendar.event.updated`, `calendar.event.cancelled`.
+  - Unauthenticated connections closed with code 4001.

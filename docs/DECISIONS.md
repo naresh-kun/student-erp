@@ -534,9 +534,60 @@
   - Zero database schema migrations required (100% schema stability).
   - 24 backend integration/security tests and 14 frontend tests added (436/436 backend passed, 213/213 frontend passed, clean build in 11.67s, live browser verified).
 
+---
 
+## ADR 021: Phase 6 WebSocket Authentication Handshake (PROP_006_A)
 
+- **Status**: **PENDING OWNER APPROVAL** (Documented 2026-10-13; not approved; must not be implemented until approved)
+- **Proposer**: Antigravity IDE (AI Coding Agent)
+- **Date**: 2026-10-13
+- **Phase**: Phase 6 (Task 6.3 — Django Channels and WebSocket Authentication)
+- **Context**:
+  - The HTTP/REST layer uses short-lived JWT Bearer tokens for stateless authentication.
+  - Browser-native `WebSocket()` constructors cannot send HTTP `Authorization` headers directly.
+  - The common naive approach (JWT-in-query-parameter: `?token=<jwt>`) exposes access tokens in server access logs, browser history, and proxy logs in plaintext.
+  - Django Channels consumers authenticate during `connect()` via the ASGI `scope` (query string, cookies).
+- **Options Considered**:
+  1. **JWT-in-query-parameter** (`/ws/timetable/?token=<jwt>`): Simple. Exposes JWT access tokens in server logs. Moderate risk if logs are retained.
+  2. **Short-lived single-use ticket handshake** (recommended): `POST /api/v1/ws/ticket/` with `Authorization: Bearer <jwt>` issues a UUID ticket in Redis (30-second TTL, single-use). Frontend passes ticket as query parameter. Consumer validates on `connect()` and immediately invalidates. Opaque UUID in logs has no user data embedded.
+  3. **Cookie-based session**: Requires CSRF/SessionMiddleware. Incompatible with JWT-only stateless architecture without significant complexity.
+- **Recommendation**: Option 2 (short-lived single-use ticket handshake).
+- **Decision**: **PENDING OWNER APPROVAL**. Implement only after explicit owner sign-off.
+- **Consequences if approved**:
+  - `POST /api/v1/ws/ticket/` REST endpoint required (Task 6.3).
+  - Redis used for ticket storage (already required by Django Channels layer).
+  - 30-second TTL and single-use invalidation required in ticket validation middleware.
+  - Frontend must obtain a ticket before opening each WebSocket connection.
+- **Consequences if alternative (Option 1) approved**:
+  - No new REST endpoint needed.
+  - JWT tokens exposed in server access logs; log retention and access policies must be reviewed.
+  - 15-minute access token TTL limits exposure window.
 
+---
+
+## ADR 022: Phase 6 WebSocket Test Strategy (PROP_006_B)
+
+- **Status**: **PENDING OWNER APPROVAL** (Documented 2026-10-13; not approved; must not be implemented until approved)
+- **Proposer**: Antigravity IDE (AI Coding Agent)
+- **Date**: 2026-10-13
+- **Phase**: Phase 6 (Task 6.3 — Django Channels and WebSocket Authentication)
+- **Context**:
+  - Django Channels consumers can be tested with `channels.testing.WebsocketCommunicator` + `InMemoryChannelLayer` (no external infrastructure) or real `RedisChannelLayer` (requires running Redis).
+  - The Phase 5 test baseline (520 pytest tests) runs with `--reuse-db` and does not require Redis.
+  - Adding Redis as a mandatory dependency for the standard pytest suite would increase setup friction and create brittleness in offline/CI-restricted environments.
+  - Real Redis tests are valuable for validating actual pub/sub fanout and channel group behaviour.
+- **Options Considered**:
+  1. **In-memory only**: All Channels tests use `InMemoryChannelLayer`. No Redis required. Does not test real pub/sub.
+  2. **Real Redis only**: Requires Redis running for all Channels tests. Adds infrastructure dependency to standard CI gate.
+  3. **Split strategy** (recommended): Standard CI gate uses `InMemoryChannelLayer` (min. 8 tests in `test_phase6_websocket_task63.py`). Separate Redis integration tests (`pytest -m redis_integration`) validate actual pub/sub and fanout without becoming part of mandatory CI.
+- **Recommendation**: Option 3 (split strategy).
+- **Rationale**: Preserves the Phase 5 contract of a pytest suite executable without external infrastructure. Redis integration tests remain available for thorough end-to-end validation. Separation documented in settings to prevent test configuration from silently overriding production `CHANNEL_LAYERS`.
+- **Decision**: **PENDING OWNER APPROVAL**. Implement only after explicit owner sign-off.
+- **Configuration constraint** (if approved): In-memory test Channel Layer must be configured separately from production Redis `CHANNEL_LAYERS` in `backend/config/settings.py`. They must never share a single configuration block.
+- **Consequences if approved**:
+  - `pytest.ini` or `pyproject.toml` requires a `redis_integration` marker definition.
+  - CI pipeline documentation must clarify which tests require Redis and which do not.
+  - `backend/config/settings.py` documents test-only channel layer configuration.
 
 
 

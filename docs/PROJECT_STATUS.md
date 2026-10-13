@@ -1,8 +1,8 @@
 # Project Status & Milestone Ledger
 
-> **Current Phase**: **Phase 5 COMPLETE (Full System Verification & Release Gate: PASS) | Phase 4 COMPLETE & SIGNED OFF | MOD_001 COMPLETED**  
-> **Authoritative State**: Phase 1 COMPLETE, Phase 2 COMPLETE, Phase 3 COMPLETE, Phase 4 COMPLETE & SIGNED OFF; MOD_001 COMPLETED; Phase 5 COMPLETE (Tasks 5.1–5.8 Complete; Release Gate Verdict: PASS; 520 backend tests passing, 283 frontend tests passing, clean build in 6.43s, 0 Django issues, 0 migration drift; live PostgreSQL dual-role & trigger security verified; Phase 6 NOT STARTED pending authorization)  
-> **Last Updated**: 2026-10-11
+> **Current Phase**: **Phase 6 IN PROGRESS (Task 6.1 COMPLETE — Tasks 6.2–6.8 NOT STARTED)**
+> **Authoritative State**: Phase 1 COMPLETE, Phase 2 COMPLETE, Phase 3 COMPLETE, Phase 4 COMPLETE & SIGNED OFF; MOD_001 COMPLETED; Phase 5 COMPLETE (Tasks 5.1–5.8 Complete; Release Gate Verdict: PASS); Phase 6 IN PROGRESS: Task 6.1 COMPLETE (Timetable Domain Models, Migrations, Option B DB Security, and REST APIs; 28/28 tests passing; 0 issues, 0 migration drift); Tasks 6.2–6.8 NOT STARTED (PROP_006_A & PROP_006_B pending owner approval before Task 6.3)
+> **Last Updated**: 2026-10-13
 
 ---
 
@@ -84,9 +84,10 @@ To ensure strict engineering honesty, features and modules are classified into e
 | **Faculty Assignment & Homework Domain (MOD_001)** | `IMPLEMENTED` | Approved Project Modification: Class Teacher cardinality (max 1 per year), Subject Faculty TeachingAssignment model, marks and attendance reconciliation, complete Homework REST API under `/api/v1/homework/` (GET, POST, GET/:id, PATCH, DELETE 204), server-side teaching scope verification, 32 dedicated tests (32/32 passing; 319 total backend tests passing; 167 frontend tests passing) |
 | **Phase-Wide Security & Hardening (Task 4.7)** | `IMPLEMENTED` | Comprehensive auth/RBAC hardening suite (`backend/tests/test_phase4_security_hardening_task47.py`): 58 dedicated tests across all 11 security classes, live server smoke verification across all 5 roles, 377 backend tests passing, 181 frontend tests passing, clean build, zero schema drift; Phase 4 signed off; Phase 5 remains NOT STARTED |
 | **Phase 4 Final Sign-off & Gate (Task 4.8)** | `IMPLEMENTED` | Comprehensive release-gate audit: local browser UI verified for all 5 roles (`task48_ui_verification_1791316080446.webp`), MOD_001 active enrollment scoping verified, 377/377 backend pytest passing, 181/181 frontend vitest passing, clean build, zero migration drift; Phase 4 signed off; Phase 5 remains NOT STARTED |
-| **Phase 5 (Core ERP API Integration & Advanced Workflows)** | `IMPLEMENTED` | Phase 5 COMPLETE. Tasks 5.1–5.8 COMPLETE. Release Gate Verdict: PASS. 520 backend tests passing, 283 frontend tests passing, clean production build (6.43s), zero migration drift. Task 5.8 Full System Verification & Release Gate PASSED across all 5 roles. Phase 6 NOT STARTED. |
-| **Realtime WebSockets (Channels)** | `PLANNED` | Documented in `docs/BACKEND_ARCHITECTURE.md`; scheduled for Phase 6 |
-| **Database Migrations & Models** | `IMPLEMENTED` | 14 concrete 3NF PostgreSQL models (`Role`, `User`, `Faculty`, `Parent`, `Student`, `AcademicYear`, `SchoolClass`, `Section`, `Subject`, `Enrollment`, `TeachingAssignment`, `Attendance`, `LeaveApplication`, `ExamType`, `Mark`, `Homework`), hardened migrations, and live PostgreSQL seeded dataset |
+| **Phase 5 (Core ERP API Integration & Advanced Workflows)** | `IMPLEMENTED` | Phase 5 COMPLETE. Tasks 5.1–5.8 COMPLETE. Release Gate Verdict: PASS. 520 backend tests passing, 283 frontend tests passing, clean production build (6.43s), zero migration drift. Task 5.8 Full System Verification & Release Gate PASSED across all 5 roles. |
+| **Realtime WebSockets (Channels)** | `PLANNED` | Documented in `docs/BACKEND_ARCHITECTURE.md`; Phase 6 roadmap established 2026-10-13; PROP_006_A (WebSocket auth handshake) & PROP_006_B (test strategy) pending owner approval before Task 6.3 may begin |
+| **Phase 6 Timetable Domain & REST API (Task 6.1)** | `IMPLEMENTED` | Task 6.1 COMPLETE. `TimetableSlot` model, Option B migration (`erp_migrator` owner, `erp_app` CRUD), `TimetableService` double-booking conflict detection (HTTP 409), DRF endpoints under `/api/v1/timetable/` with 5-role scoping, 28 pytest tests passing under `erp_app`. Tasks 6.2–6.8 NOT STARTED. |
+| **Database Migrations & Models** | `IMPLEMENTED` | 15 concrete 3NF PostgreSQL models (`Role`, `User`, `Faculty`, `Parent`, `Student`, `AcademicYear`, `SchoolClass`, `Section`, `Subject`, `Enrollment`, `TeachingAssignment`, `Attendance`, `LeaveApplication`, `ExamType`, `Mark`, `Homework`, `TimetableSlot`), Option B dual-role PostgreSQL security, and live PostgreSQL seeded dataset |
 
 
 ### 2.5 Infrastructure & Database

@@ -101,11 +101,12 @@ class TestMigrationGraph:
     def test_later_domain_apps_have_no_migrations(self):
         """
         Scope boundary: later domain apps must have zero migrations.
-        (Note: 'audit' is authorized under PROP_001 Revision 2.2).
+        (Note: 'audit' is authorized under PROP_001 Revision 2.2;
+        'timetable' is authorized under Phase 6 Task 6.1).
         """
         from django.db.migrations.loader import MigrationLoader
         loader = MigrationLoader(None, ignore_no_migrations=True)
-        for deferred_app in ('timetable', 'calendar', 'allocation', 'reports', 'notifications'):
+        for deferred_app in ('calendar', 'allocation', 'reports', 'notifications'):
             mig_keys = [k for k in loader.disk_migrations if k[0] == deferred_app]
             assert mig_keys == [], (
                 f"Scope violation: '{deferred_app}' app has premature migration files {mig_keys}."
@@ -117,6 +118,13 @@ class TestMigrationGraph:
         loader = MigrationLoader(None, ignore_no_migrations=True)
         audit_keys = [k for k in loader.disk_migrations if k[0] == 'audit']
         assert ('audit', '0001_initial') in audit_keys, "audit 0001_initial migration must exist"
+
+    def test_phase6_timetable_migration_exists(self):
+        """Approved Phase 6 timetable migration 0001_initial exists in disk migrations."""
+        from django.db.migrations.loader import MigrationLoader
+        loader = MigrationLoader(None, ignore_no_migrations=True)
+        timetable_keys = [k for k in loader.disk_migrations if k[0] == 'timetable']
+        assert ('timetable', '0001_initial') in timetable_keys, "timetable 0001_initial migration must exist"
 
 
 class TestModelStructure:
