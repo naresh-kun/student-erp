@@ -2,6 +2,63 @@
 
 All notable changes to the Student ERP project will be documented in this file.
 
+## [Phase 6: Task 6.2 — Academic Calendar Models, Role Scoping, Migrations and REST APIs] - 2026-10-14
+
+### Summary
+
+Implemented Phase 6 Task 6.2: the academic calendar domain in Django REST Framework and PostgreSQL under Option B dual-role database security. Authored `CalendarEvent(BaseModel)` mapped to table `calendar_events` in `apps/calendar/models.py` adhering strictly to Section 3.5 of `docs/DATABASE_SCHEMA.md` with CheckConstraint `start_date <= end_date` and indexes on `(start_date, end_date)`, `(category)`, `(is_holiday)`, and `(is_published)`. Applied Option B migration (`0001_initial.py`) with ownership assigned to `erp_migrator` and least-privileged DML privileges (`INSERT`, `SELECT`, `UPDATE`, `DELETE`) granted to runtime user `erp_app`. Implemented `CalendarService` with multi-day interval overlap date filtering, category normalization/reconciliation across canonical choices (`academic`, `exam`, `holiday`, `event`, `administrative`, `meeting`), role-targeted query scoping, publishing controls, and transactional mutations. Built DRF serializers and views (`CalendarEventListView`, `CalendarEventDetailView`) under `/api/v1/calendar/events/` with 5-role RBAC data scoping (Admin full CRUD, Principal full CRUD with deletion restricted to Admin, Faculty scoped to targeted/public events and own drafts, Student and Parent scoped to published targeted/public events only). Created a 36-test automated pytest suite in `backend/tests/test_phase6_calendar_task62.py` with 100% pass rate under runtime role `erp_app` and 0 migration drift.
+
+### Added
+
+- **`backend/apps/calendar/models.py`**: Concrete `CalendarEvent(BaseModel)` mapped to `db_table='calendar_events'`.
+  - Fields: `title` (`CharField(200)`), `category` (`CharField(64)` with choices and normalization), `description` (`TextField(blank=True)`), `start_date` (`DateTimeField`), `end_date` (`DateTimeField`), `target_roles` (`JSONField(default=list)`), `location` (`CharField(255, blank=True)`), `is_holiday` (`BooleanField(default=False)`), `is_published` (`BooleanField(default=True)`), `is_school_sanctioned` (`BooleanField(default=False)`), `created_by` (`ForeignKey(User, null=True, on_delete=SET_NULL)`).
+  - Properties: `od_eligible` (alias for `is_school_sanctioned`), `is_public` (True if `target_roles` is empty).
+  - Constraints & Indexes: CheckConstraint `check_calendar_event_date_order` (`start_date <= end_date`), indexes on `(start_date, end_date)`, `(category)`, `(is_holiday)`, and `(is_published)`.
+  - Invariants: Clean validation requires title and category, validates canonical category choices with alias normalization (`Examination` -> `exam`, `PTM` -> `meeting`), enforces `start_date <= end_date`, synchronizes `is_holiday = True` when category is `'holiday'`, and validates that all items in `target_roles` are valid canonical ERP roles (`Admin`, `Principal`, `Faculty`, `Student`, `Parent`).
+- **`backend/apps/calendar/migrations/0001_initial.py`**: Option B-compatible migration.
+  - Creates table `calendar_events` with foreign keys, indexes, and constraints.
+  - Option B ownership preserved under `erp_migrator`; runtime DML granted to `erp_app`.
+- **`backend/apps/calendar/services.py`**: `CalendarService(BaseService)` domain logic.
+  - Multi-day interval overlap date filtering: an event matches query window `[start, end]` if `start_date <= query_end` and `end_date >= query_start`.
+  - Inverted date range detection (`start_date > end_date`) and malformed date format validation raising `DomainValidationError(status_code=400)`.
+  - Category filtering with alias normalization and canonical validation raising `DomainValidationError(status_code=400)`.
+  - Role-targeted visibility scoping across all 5 roles.
+  - Publishing controls: `create_event` and `update_event` prevent users without `calendar.publish` (Faculty) from creating or updating published events, allowing drafts only.
+  - Admin-only deletion enforcement in `delete_event`.
+  - Preserves `get_service_status()` backward compatibility for scaffolding test assertions.
+- **`backend/apps/calendar/serializers.py`**: DRF serializers for calendar domain.
+  - `CalendarEventSerializer`: Read presentation serializer exposing canonical fields, convenience properties (`od_eligible`, `is_public`), author details, and audit timestamps.
+  - `CalendarEventWriteSerializer`: Validation serializer with category normalization, target role validation, date order checks, and `od_eligible` mapping.
+- **`backend/apps/calendar/views.py`**: DRF API views.
+  - `CalendarEventListView` (`GET`, `POST`): Scoped list query with date, category, holiday, target-role, and publishing filters; authorized event creation returning `201 Created`.
+  - `CalendarEventDetailView` (`GET`, `PATCH`, `DELETE`): Scoped object retrieval, authorized partial update/publishing, and Admin-only deletion returning `204 No Content`.
+- **`backend/apps/calendar/urls.py`**: URL routes for `''` (`event_list`) and `'<uuid:pk>/'` (`event_detail`).
+- **`backend/tests/test_phase6_calendar_task62.py`**: Comprehensive 36-test automated suite.
+  - `TestCalendarEventModelValidation` (8 tests): Valid academic event creation, valid holiday creation with auto-sync, category normalization and alias mapping, invalid category rejection, required title validation, invalid date range rejection in clean() and DB constraint, invalid target roles rejection.
+  - `TestCalendarServiceLayer` (9 tests): Multi-day interval overlap date filtering, category filtering, inverted date range error, malformed date error, Student role scoping, Parent role scoping, Faculty role scoping, Faculty publishing restriction, Admin-only deletion restriction.
+  - `TestCalendarAPIEndpointsAndScoping` (16 tests): Unauthenticated 401, Admin school-wide list & filters, invalid date filter 400 error envelope, invalid category filter 400 error envelope, Student and Parent role scoping, Admin 201 creation, Principal 201 creation, Faculty draft 201 creation, Faculty publishing attempt 403 rejection, non-authorized roles (Student/Parent) 403 creation rejection, Admin patch and publish, Faculty patch own draft but cannot publish, Faculty cannot patch other events, Admin 204 deletion, non-Admin roles 403 deletion rejection, detail endpoint scoping and object access.
+  - `TestCalendarAttendanceSemantics` (2 tests): Verified that creating or publishing school-sanctioned events does NOT alter attendance records or auto-grant ON_DUTY, and ON_DUTY attendance remains strictly controlled by authorized Class Teachers.
+  - `TestDatabaseIdentity` (1 test): Verified runtime database identity is strictly `('erp_app', 'erp_app', 'test_student_erp')`.
+
+### Modified
+
+- **`backend/common/authorization.py`**: Extended `can_access_object` and `filter_queryset_for_user` (`_scope_calendar_queryset`) for `CalendarEvent` across all 5 roles; restricted timetable and calendar deletions to Admin.
+- **`backend/tests/test_models_scaffolding.py`**: Updated `deferred_later` list by removing `CalendarEvent` and explicitly asserting `CalendarEvent` registration under Phase 6 Task 6.2.
+- **`backend/tests/test_models_task33.py` & `backend/tests/test_task35_hardening_and_seed.py`**: Removed `calendar` from deferred apps, explicitly asserted disk migration `('calendar', '0001_initial')` exists, and asserted `CalendarEvent` model registration.
+- **`docs/DATABASE_SCHEMA.md`**: Clarified Section 3.5 `calendar_events` table definition with `is_published`, `is_school_sanctioned` (`od_eligible`), `created_by_id`, check constraint, and indexes.
+- **`docs/API_CONTRACT.md`**: Promoted Calendar endpoints from scaffolding to Section 3.14 `[IMPLEMENTED — TASK 6.2]`, documenting full CRUD contracts, 5-role scoping, payload schemas, query parameters, multi-day date filtering semantics, and error envelopes.
+- **`docs/phases/PHASE_06_STATUS.md`**: Marked Task 6.2 `COMPLETE`, checked all 15 acceptance criteria, recorded implementation, Option B verification, and test evidence, preserving Tasks 6.3–6.8 as NOT STARTED.
+- **`docs/PROJECT_STATUS.md`**: Updated header to Tasks 6.1 & 6.2 COMPLETE, updated Backend matrix with Task 6.2 completion and 16 concrete models.
+
+### Verification Evidence
+
+- **Option B PostgreSQL Security**: Live verification confirmed table `calendar_events` is owned by `erp_migrator`, runtime application connection executes under unprivileged `erp_app` with restricted privileges `['INSERT', 'SELECT', 'UPDATE', 'DELETE']`, and `ALTER TABLE` DDL attempts by `erp_app` are blocked by PostgreSQL with `InsufficientPrivilege`.
+- **Automated Tests**:
+  - `backend/tests/test_phase6_calendar_task62.py`: **36 passed** (100% pass rate in 94.26s).
+  - Regression suite (`test_phase6_timetable_task61.py`, `test_models_scaffolding.py`, `test_models_task33.py`, `test_task35_hardening_and_seed.py`, `test_services_scaffolding.py`): **105 passed** (100% pass rate in 98.24s).
+  - RBAC endpoint suite (`test_endpoint_rbac_task44.py`): **33 passed** (100% pass rate in 109.86s).
+- **Migration Drift & Integrity**: `python manage.py makemigrations --check` returned `No changes detected`. `python manage.py check` returned `System check identified no issues (0 silenced).`
+
 ## [Phase 6: Task 6.1 — Timetable Domain Models, Migrations and REST APIs] - 2026-10-13
 
 ### Summary

@@ -208,16 +208,21 @@ erDiagram
   - Indexes on `(status)`, `(section_id, status)`, `(faculty_id, status)`, `(due_date)`
 
 ### 3.5 Governance, Communication & System Events
-- **`calendar_events`**:
+- **`calendar_events`**: `[IMPLEMENTED — TASK 6.2]`
   - `id`: UUID (PK)
   - `title`: VARCHAR(200) NOT NULL
-  - `category`: VARCHAR(64) NOT NULL (e.g., `'Exam'`, `'Holiday'`, `'Meeting'`, `'Academic'`)
-  - `description`: TEXT
+  - `category`: VARCHAR(64) NOT NULL CHECK (`category IN ('academic', 'exam', 'holiday', 'event', 'administrative', 'meeting')`)
+  - `description`: TEXT DEFAULT `''`
   - `start_date`: TIMESTAMPTZ NOT NULL
   - `end_date`: TIMESTAMPTZ NOT NULL
   - `target_roles`: JSONB NOT NULL DEFAULT `'[]'`
-  - `location`: VARCHAR(255)
+  - `location`: VARCHAR(255) DEFAULT `''`
   - `is_holiday`: BOOLEAN DEFAULT FALSE
+  - `is_published`: BOOLEAN DEFAULT TRUE (publishing workflow: drafts visible only to author and administrators)
+  - `is_school_sanctioned`: BOOLEAN DEFAULT FALSE (designates school-sanctioned events eligible for manual On-Duty attendance reference; alias `od_eligible`)
+  - `created_by_id`: FK -> `users.id` (SET NULL, NULLABLE)
+  - Check constraint: `start_date <= end_date` (`check_calendar_event_date_order`)
+  - Indexes on `(start_date, end_date)`, `(category)`, `(is_holiday)`, `(is_published)`
 - **`allocations`**:
   - `id`: UUID (PK)
   - `academic_year_id`: FK -> `academic_years.id` (CASCADE)

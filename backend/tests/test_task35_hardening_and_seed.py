@@ -92,7 +92,7 @@ class TestMigrationInventoryTask35:
         """Deferred apps must have zero migration files; audit has approved PROP_001 migration; timetable has approved Phase 6 Task 6.1 migration."""
         from django.db.migrations.loader import MigrationLoader
         loader = MigrationLoader(None, ignore_no_migrations=True)
-        deferred_apps = ('calendar', 'allocation', 'reports', 'notifications')
+        deferred_apps = ('allocation', 'reports', 'notifications')
         for app in deferred_apps:
             keys = [k for k in loader.disk_migrations if k[0] == app]
             assert keys == [], f"Deferred app '{app}' has unexpected migrations: {keys}"
@@ -100,6 +100,8 @@ class TestMigrationInventoryTask35:
         assert audit_keys == [('audit', '0001_initial')], f"Audit has unexpected migrations: {audit_keys}"
         timetable_keys = [k for k in loader.disk_migrations if k[0] == 'timetable']
         assert timetable_keys == [('timetable', '0001_initial')], f"Timetable has unexpected migrations: {timetable_keys}"
+        calendar_keys = [k for k in loader.disk_migrations if k[0] == 'calendar']
+        assert calendar_keys == [('calendar', '0001_initial')], f"Calendar has unexpected migrations: {calendar_keys}"
 
 
 # ============================================================================

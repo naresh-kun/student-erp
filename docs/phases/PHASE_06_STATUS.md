@@ -24,7 +24,8 @@ Per authoritative project governance:
   - **Phase 5**: COMPLETE — Release Gate: PASS (520 backend tests, 283 frontend tests, clean build 6.43s, 0 migration drift, live dual-role PostgreSQL security verified)
 - **Phase 6**:
   - **Task 6.1**: COMPLETE (Timetable Domain Models, Migrations, Option B DB Security, and REST APIs; 28/28 tests passing).
-  - **Tasks 6.2–6.8**: NOT STARTED.
+  - **Task 6.2**: COMPLETE (Academic Calendar Models, Option B Migration, Role Scoping, and REST APIs; 36/36 tests passing).
+  - **Tasks 6.3–6.8**: NOT STARTED.
 
 **Pending decisions required before Task 6.3 may begin**:
 
@@ -40,7 +41,7 @@ Per authoritative project governance:
 | Task | Title | Status | Dependencies |
 | :--- | :--- | :--- | :--- |
 | **Task 6.1** | Timetable Domain Models, Migrations and REST APIs | **COMPLETE** | Phase 5 complete |
-| **Task 6.2** | Academic Calendar Models and REST APIs | **NOT STARTED** | Phase 5 complete |
+| **Task 6.2** | Academic Calendar Models and REST APIs | **COMPLETE** | Phase 5 complete; Task 6.1 Option B pattern |
 | **Task 6.3** | Django Channels and WebSocket Authentication | **NOT STARTED** | Tasks 6.1, 6.2; PROP_006_A & PROP_006_B owner approval |
 | **Task 6.4** | Student and Parent Timetable/Calendar Integration | **NOT STARTED** | Tasks 6.1, 6.2 |
 | **Task 6.5** | Faculty Timetable and Attendance Scheduling Integration | **NOT STARTED** | Tasks 6.1, 6.2 |
@@ -98,42 +99,50 @@ Per authoritative project governance:
 
 ## 4. Task 6.2 — Academic Calendar Models and REST APIs
 
-**Status**: NOT STARTED
+**Status**: COMPLETE
 
 **Objective**: Implement the academic calendar event domain and expose it as a fully tested REST API.
 
 ### 4.1 Acceptance Checklist
 
-- [ ] `calendar_events` model exists in `apps/calendar/models.py` consistent with `docs/DATABASE_SCHEMA.md`.
-- [ ] Migration is Option B-compatible.
-- [ ] `target_roles` (JSONB) visibility correctly scopes which roles can see each event.
-- [ ] Admin: Full CRUD on `/api/v1/calendar/events/`.
-- [ ] Principal: Full CRUD on `/api/v1/calendar/events/`.
-- [ ] Faculty: Read events where `target_roles` includes `Faculty`.
-- [ ] Student: Read events where `target_roles` includes `Student`.
-- [ ] Parent: Read events where `target_roles` includes `Parent`.
-- [ ] Date-range filtering (`?start_date=`, `?end_date=`) functional.
-- [ ] Category filtering (`?category=`) functional.
-- [ ] Holiday filtering (`?is_holiday=`) functional.
-- [ ] Holiday events (`is_holiday=True`) do not conflict with `ON_DUTY` attendance semantics.
-- [ ] Pytest suite for Task 6.2: min. 12 new tests in `tests/test_phase6_calendar_task62.py`.
-- [ ] Zero migration drift.
-- [ ] `manage.py check` produces 0 issues.
+- [x] `calendar_events` model exists in `apps/calendar/models.py` consistent with `docs/DATABASE_SCHEMA.md` Section 3.5.
+- [x] Migration is Option B-compatible (`erp_migrator` table ownership, `erp_app` least-privilege CRUD grants).
+- [x] `target_roles` (JSONB) visibility correctly scopes which roles can see each event.
+- [x] Admin: Full CRUD on `/api/v1/calendar/events/`.
+- [x] Principal: Full CRUD on `/api/v1/calendar/events/` (deletion restricted to Admin).
+- [x] Faculty: Read events where `target_roles` includes `Faculty` or public, plus own drafts; draft creation supported.
+- [x] Student: Read published events where `target_roles` includes `Student` or public (`is_published=True`).
+- [x] Parent: Read published events where `target_roles` includes `Parent` or public (`is_published=True`).
+- [x] Date-range filtering (`?start_date=`, `?end_date=`) functional with multi-day interval overlap matching.
+- [x] Category filtering (`?category=`) functional with alias normalization and canonical validation.
+- [x] Holiday filtering (`?is_holiday=`) functional.
+- [x] Holiday events (`is_holiday=True`) and school-sanctioned events (`is_school_sanctioned=True`) do not conflict with or alter `ON_DUTY` attendance semantics.
+- [x] Pytest suite for Task 6.2: 36 new tests in `tests/test_phase6_calendar_task62.py` (100% pass rate).
+- [x] Zero migration drift (`manage.py makemigrations --check` passed).
+- [x] `manage.py check` produces 0 issues.
 
 ### 4.2 Dependency Information
 
 - **Prerequisite**: Phase 5 COMPLETE; Task 6.1 Option B migration pattern established.
 - **Enables**: Tasks 6.4, 6.5, 6.6 (frontend integration tasks).
 
-### 4.3 Evidence (Empty — Awaiting Implementation)
+### 4.3 Evidence
 
-- **Implementation date**: —
-- **Backend tests added**: —
+- **Implementation date**: 2026-10-14
+- **Backend tests added**: 36 passing tests (100% pass rate in `backend/tests/test_phase6_calendar_task62.py`)
 - **Test file**: `backend/tests/test_phase6_calendar_task62.py`
-- **Migration file(s)**: —
-- **Django check result**: —
-- **Migration drift check**: —
-- **Completion report**: —
+- **Migration file(s)**: `backend/apps/calendar/migrations/0001_initial.py` (applied under `erp_migrator`; table owned by `erp_migrator`; CRUD granted to `erp_app`)
+- **Option B Security Verification**:
+  - Target table: `calendar_events`
+  - Table owner: `erp_migrator`
+  - Runtime user: `erp_app`
+  - `erp_app` table privileges: `['INSERT', 'SELECT', 'UPDATE', 'DELETE']` (DML only, zero DDL privileges)
+  - Runtime DDL denial: Verified `ALTER TABLE calendar_events` blocked for `erp_app` with `InsufficientPrivilege`
+  - Live test identity: Verified `('erp_app', 'erp_app', 'test_student_erp')`
+- **Django check result**: `System check identified no issues (0 silenced).`
+- **Migration drift check**: `No changes detected` (`manage.py makemigrations --check` passed)
+- **Regression test result**: 105 regression tests passing (`test_phase6_timetable_task61.py`, `test_models_scaffolding.py`, `test_models_task33.py`, `test_task35_hardening_and_seed.py`, `test_services_scaffolding.py`) and 33 RBAC tests passing (`test_endpoint_rbac_task44.py`) with zero regressions
+- **Completion report**: Task 6.2 Academic Calendar Models, Role Scoping, Migrations and REST APIs is complete. Implemented `CalendarEvent(BaseModel)` mapped to `calendar_events` in PostgreSQL adhering strictly to Section 3.5 of `docs/DATABASE_SCHEMA.md` with check constraint `start_date <= end_date` and indexes on `(start_date, end_date)`, `(category)`, `(is_holiday)`, and `(is_published)`. Option B dual-role database security verified on live PostgreSQL and isolated test database. Implemented `CalendarService` with multi-day interval overlap date filtering, category normalization, role-targeted scoping, publishing controls, and transactional mutations. Built DRF serializers and views (`CalendarEventListView`, `CalendarEventDetailView`) under `/api/v1/calendar/events/` supporting 5-role scoping and structured error responses. Verified attendance isolation (school-sanctioned events do not alter attendance records or auto-grant ON_DUTY). Fully verified with 36 automated pytest tests executing under runtime role `erp_app`. Zero schema drift.
 
 ---
 

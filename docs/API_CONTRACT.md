@@ -333,14 +333,54 @@
   - Immutability Guards:
     - POST, PUT, PATCH, DELETE to `/api/v1/audit/` return `405 Method Not Allowed` for authorized Admin/Principal (401/403 for unauthorized).
     - Database-level PostgreSQL trigger `trg_audit_logs_immutable` and Option B restricted role `erp_app` prevent SQL modification or deletion.
-- `GET /api/v1/calendar/events/` `[SCAFFOLDING — Phase 6: Task 6.2 will implement full CRUD]`
-  - Required Permission: `calendar.view` (All authenticated roles)
-  - **Phase 6 planned endpoints** (Task 6.2):
-    - `GET /api/v1/calendar/events/` — list (role-scoped by `target_roles`; filters: `start_date`, `end_date`, `category`, `is_holiday`, `target_role`)
-    - `POST /api/v1/calendar/events/` — create (Admin/Principal; `409 Conflict` on validation failure)
-    - `GET /api/v1/calendar/events/{id}/` — retrieve
-    - `PATCH /api/v1/calendar/events/{id}/` — update (Admin/Principal)
-    - `DELETE /api/v1/calendar/events/{id}/` — delete (Admin only)
+- `GET /api/v1/calendar/events/` `[IMPLEMENTED — TASK 6.2]`
+  - Authentication: Required
+  - Required Permission: `calendar.view`
+  - Permitted Roles & Scoping:
+    - Admin: Global school-wide list of all events (published and drafts, all target roles).
+    - Principal: Global school-wide read oversight of all events (published and drafts, all target roles).
+    - Faculty: Scoped to published events where `target_roles` includes `'Faculty'` or is empty (`[]`, public), plus own author drafts.
+    - Student: Scoped strictly to published events where `target_roles` includes `'Student'` or is empty (`[]`, public). Unpublished drafts and administrative/staff events are completely hidden.
+    - Parent: Scoped strictly to published events where `target_roles` includes `'Parent'` or is empty (`[]`, public). Unpublished drafts and non-public administrative events are completely hidden.
+  - Query Parameters:
+    - `start_date` (ISO date/datetime, e.g. `'2026-10-15'`)
+    - `end_date` (ISO date/datetime, e.g. `'2026-10-20'`)
+    - `category` (canonical choice: `'academic'`, `'exam'`, `'holiday'`, `'event'`, `'administrative'`, `'meeting'`; TitleCase aliases normalized)
+    - `is_holiday` (boolean string: `'true'` / `'false'`)
+    - `target_role` (canonical role: `'Admin'`, `'Principal'`, `'Faculty'`, `'Student'`, `'Parent'`)
+    - `is_school_sanctioned` / `od_eligible` (boolean string: `'true'` / `'false'`)
+    - `is_published` (boolean string: `'true'` / `'false'`)
+    - `page` (integer, default 1), `page_size` (integer, default 20, max 100)
+  - Date Filtering Semantics: Multi-day interval overlap matching. An event matches query range `[start, end]` if `event.start_date <= query_end` AND `event.end_date >= query_start`. Reversed date ranges (`start_date > end_date`) and malformed date strings return `HTTP 400 Bad Request` with structured error envelope.
+  - Response Envelope: `{ "success": true, "data": [ ... ], "meta": { "total_records": N, "filters_applied": { ... } } }`.
+- `POST /api/v1/calendar/events/` `[IMPLEMENTED — TASK 6.2]`
+  - Authentication: Required
+  - Required Permission: `calendar.create`
+  - Permitted Roles:
+    - Admin: Can create published or draft events (`calendar.publish` granted).
+    - Principal: Can create published or draft events (`calendar.publish` granted).
+    - Faculty: Can create draft events (`is_published=False`). Attempting to publish without `calendar.publish` returns `HTTP 403 Forbidden`.
+    - Student & Parent: Denied with `HTTP 403 Forbidden` (`calendar.create` missing).
+    - Anonymous: Denied with `HTTP 401 Unauthorized`.
+  - Payload Schema: `{ "title": "Midterm Examination", "category": "exam", "description": "...", "start_date": "2026-10-15T09:00:00Z", "end_date": "2026-10-20T17:00:00Z", "target_roles": ["Student", "Parent"], "location": "Exam Hall", "is_holiday": false, "is_published": true, "od_eligible": false }`.
+  - Response: `HTTP 201 Created` with created `CalendarEvent`.
+- `GET /api/v1/calendar/events/{id}/` `[IMPLEMENTED — TASK 6.2]`
+  - Authentication: Required
+  - Required Permission: `calendar.view` + Object Check (`can_access_object`)
+  - Permitted Roles: Admin and Principal (all); Faculty (targeted/public or own draft); Student/Parent (published targeted/public only). Unauthorized access returns `HTTP 403 Forbidden` (or 404).
+  - Response: `HTTP 200 OK` with serialized event object.
+- `PATCH /api/v1/calendar/events/{id}/` `[IMPLEMENTED — TASK 6.2]`
+  - Authentication: Required
+  - Required Permission: `calendar.create` + Object Check (`can_access_object`)
+  - Permitted Roles:
+    - Admin and Principal: Full update and publishing authority.
+    - Faculty: Can update own draft events only; publishing without `calendar.publish` returns `HTTP 403 Forbidden`.
+    - Student and Parent: Denied with `HTTP 403 Forbidden`.
+  - Response: `HTTP 200 OK` with updated `CalendarEvent`.
+- `DELETE /api/v1/calendar/events/{id}/` `[IMPLEMENTED — TASK 6.2]`
+  - Authentication: Required
+  - Permitted Roles: Admin only. Principal, Faculty, Student, and Parent are denied with `HTTP 403 Forbidden`.
+  - Response: `HTTP 204 No Content`.
 - `GET /api/v1/reports/` `[IMPLEMENTED]`
   - Required Permission: `reports.view` (All authenticated roles)
 - `GET /api/v1/notifications/` `[IMPLEMENTED]`

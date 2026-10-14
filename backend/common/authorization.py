@@ -493,6 +493,8 @@ class AuthorizationService(BaseService):
             has_perm = cls.has_permission(user, PERM_ACADEMICS_MANAGE)
         elif domain == 'timetable' and normalized_action in ('create', 'update', 'delete'):
             has_perm = cls.has_permission(user, PERM_TIMETABLE_MANAGE)
+        elif domain == 'calendar' and normalized_action in ('create', 'update', 'delete'):
+            has_perm = cls.has_permission(user, PERM_CALENDAR_CREATE)
         else:
             perm = f"{domain}.{normalized_action}"
             has_perm = cls.has_permission(user, perm)
@@ -504,8 +506,10 @@ class AuthorizationService(BaseService):
         if role == ROLE_ADMIN:
             return True
 
-        # Principal holds global oversight/approval authority
+        # Principal holds global oversight/approval authority (except deletions on timetable/calendar)
         if role == ROLE_PRINCIPAL:
+            if domain in ('timetable', 'calendar') and normalized_action == 'delete':
+                return False
             return True
 
         # Faculty: assignment-aware access
@@ -661,6 +665,17 @@ class AuthorizationService(BaseService):
                 return getattr(obj, 'faculty_id', None) == faculty.id
             return False
 
+        # CalendarEvent entity: view targeted / public published events, or own drafts
+        if obj_class == 'CalendarEvent':
+            if action == 'view':
+                if not getattr(obj, 'is_published', True):
+                    return getattr(obj, 'created_by_id', None) == user.id
+                target_roles = getattr(obj, 'target_roles', []) or []
+                return not target_roles or ROLE_FACULTY in target_roles
+            if action in ('update', 'patch'):
+                return getattr(obj, 'created_by_id', None) == user.id and not getattr(obj, 'is_published', True)
+            return False
+
         return False
 
     @classmethod
@@ -745,6 +760,15 @@ class AuthorizationService(BaseService):
                     status__in=['Active', 'ACTIVE', 'Enrolled', 'enrolled'],
                 ).exists()
             return False
+
+        # CalendarEvent entity: view targeted / public published events only
+        if obj_class == 'CalendarEvent':
+            if action != 'view':
+                return False
+            if not getattr(obj, 'is_published', True):
+                return False
+            target_roles = getattr(obj, 'target_roles', []) or []
+            return not target_roles or ROLE_STUDENT in target_roles
 
         return False
 
@@ -832,6 +856,15 @@ class AuthorizationService(BaseService):
                 ).exists()
             return False
 
+        # CalendarEvent entity: view targeted / public published events only
+        if obj_class == 'CalendarEvent':
+            if action != 'view':
+                return False
+            if not getattr(obj, 'is_published', True):
+                return False
+            target_roles = getattr(obj, 'target_roles', []) or []
+            return not target_roles or ROLE_PARENT in target_roles
+
         return False
 
     # ─── Queryset Scoping ─────────────────────────────────────────────────────
@@ -895,6 +928,9 @@ class AuthorizationService(BaseService):
 
         if model_name == 'TimetableSlot':
             return cls._scope_timetable_queryset(queryset, user, role)
+
+        if model_name == 'CalendarEvent':
+            return cls._scope_calendar_queryset(queryset, user, role)
 
         if model_name == 'Faculty':
             # Descriptive directory lookup for all active roles
@@ -1149,5 +1185,26 @@ class AuthorizationService(BaseService):
                 enrollments__status__in=['Active', 'ACTIVE', 'Enrolled', 'enrolled']
             ).values_list('enrollments__section_id', flat=True)
             return queryset.filter(section_id__in=section_ids).distinct()
+
+        return queryset.none()
+
+    @classmethod
+    def _scope_calendar_queryset(cls, queryset: QuerySet, user: Any, role: str) -> QuerySet:
+        if role in (ROLE_ADMIN, ROLE_PRINCIPAL):
+            return queryset
+
+        if role == ROLE_FACULTY:
+            # Published events targeting Faculty or public, or own drafts
+            is_target = Q(target_roles=[]) | Q(target_roles__isnull=True) | Q(target_roles__contains=['Faculty'])
+            is_visible = (Q(is_published=True) & is_target) | Q(created_by=user)
+            return queryset.filter(is_visible).distinct()
+
+        if role == ROLE_STUDENT:
+            is_target = Q(target_roles=[]) | Q(target_roles__isnull=True) | Q(target_roles__contains=['Student'])
+            return queryset.filter(is_published=True).filter(is_target).distinct()
+
+        if role == ROLE_PARENT:
+            is_target = Q(target_roles=[]) | Q(target_roles__isnull=True) | Q(target_roles__contains=['Parent'])
+            return queryset.filter(is_published=True).filter(is_target).distinct()
 
         return queryset.none()

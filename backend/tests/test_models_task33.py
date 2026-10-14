@@ -106,7 +106,7 @@ class TestMigrationGraph:
         """
         from django.db.migrations.loader import MigrationLoader
         loader = MigrationLoader(None, ignore_no_migrations=True)
-        for deferred_app in ('calendar', 'allocation', 'reports', 'notifications'):
+        for deferred_app in ('allocation', 'reports', 'notifications'):
             mig_keys = [k for k in loader.disk_migrations if k[0] == deferred_app]
             assert mig_keys == [], (
                 f"Scope violation: '{deferred_app}' app has premature migration files {mig_keys}."
@@ -126,6 +126,13 @@ class TestMigrationGraph:
         timetable_keys = [k for k in loader.disk_migrations if k[0] == 'timetable']
         assert ('timetable', '0001_initial') in timetable_keys, "timetable 0001_initial migration must exist"
 
+    def test_phase6_calendar_migration_exists(self):
+        """Approved Phase 6 calendar migration 0001_initial exists in disk migrations."""
+        from django.db.migrations.loader import MigrationLoader
+        loader = MigrationLoader(None, ignore_no_migrations=True)
+        calendar_keys = [k for k in loader.disk_migrations if k[0] == 'calendar']
+        assert ('calendar', '0001_initial') in calendar_keys, "calendar 0001_initial migration must exist"
+
 
 class TestModelStructure:
     """Structural model validation — no live DB required."""
@@ -143,10 +150,10 @@ class TestModelStructure:
         assert not missing, f"Missing Task 3.3/3.4 models: {missing}"
 
     def test_deferred_models_not_registered(self):
-        """Later domain models (Timetable, CalendarEvent, etc.) must not be registered."""
+        """Later domain models (Timetable, Allocation, etc.) must not be registered."""
         all_names = {m.__name__ for m in django_apps.get_models()}
         forbidden = {
-            'Timetable', 'CalendarEvent', 'Allocation', 'Report', 'Notification',
+            'Timetable', 'Allocation', 'Report', 'Notification',
         }
         leaked = forbidden & all_names
         assert not leaked, f"Deferred models leaked into repository: {leaked}"
@@ -155,6 +162,11 @@ class TestModelStructure:
         """AuditLog approved by PROP_001 is registered in app registry."""
         all_names = {m.__name__ for m in django_apps.get_models()}
         assert 'AuditLog' in all_names, "AuditLog model must be registered under PROP_001."
+
+    def test_phase6_calendar_event_model_registered(self):
+        """CalendarEvent approved by Phase 6 Task 6.2 is registered in app registry."""
+        all_names = {m.__name__ for m in django_apps.get_models()}
+        assert 'CalendarEvent' in all_names, "CalendarEvent model must be registered under Phase 6 Task 6.2."
 
     def test_abstract_base_models_not_registered_as_concrete(self):
         """Abstract base models in common must remain abstract."""

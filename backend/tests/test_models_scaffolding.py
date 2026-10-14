@@ -81,9 +81,10 @@ def test_task_3_4_concrete_models_registered_and_scope_boundaries_enforced():
     )
 
     # --- Later-domain deferred models (must NOT be present) ---
-    deferred_later = {'Timetable', 'CalendarEvent', 'Allocation', 'Report', 'Notification'}
+    deferred_later = {'Timetable', 'Allocation', 'Report', 'Notification'}
     leaked_later = deferred_later & all_model_names
     assert not leaked_later, (
         f"Later-domain models leaked into repository: {leaked_later}."
     )
+    assert 'CalendarEvent' in all_model_names, "CalendarEvent must be registered under Phase 6 Task 6.2."
 
