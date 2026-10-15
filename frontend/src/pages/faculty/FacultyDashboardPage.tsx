@@ -164,7 +164,7 @@ export const FacultyDashboardPage: React.FC = () => {
             {/* Today's Period Routine */}
             <FacultyTodayScheduleCard
               periods={safeTodayPeriods}
-              onMarkAttendance={(_period) => navigate('/faculty/attendance')}
+              onMarkAttendance={(p) => navigate('/faculty/attendance', { state: { period: p.period_time, periodNumber: p.period_number, className: p.class_name, subject: p.subject } })}
             />
 
             {/* Class Teacher Leave Review Workflow */}

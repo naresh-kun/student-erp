@@ -33,6 +33,19 @@ export interface BackendCalendarEvent {
   updated_at?: string;
 }
 
+export interface FacultyCalendarEventItem {
+  id: string;
+  title: string;
+  category: string;
+  date: string;
+  time: string;
+  venue: string;
+  description: string;
+  is_holiday: boolean;
+  is_published: boolean;
+  target_roles?: string[];
+}
+
 export class CalendarApiService {
   private static readonly MONTH_NAMES = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -191,6 +204,24 @@ export class CalendarApiService {
       location: event.location || 'Campus Closed',
       category: cat as ParentCalendarEvent['category'],
       desc: event.description || '',
+    };
+  }
+
+  /**
+   * Transforms BackendCalendarEvent to Faculty's FacultyCalendarEventItem format.
+   */
+  static transformEventToFacultyItem(event: BackendCalendarEvent): FacultyCalendarEventItem {
+    return {
+      id: event.id,
+      title: event.title,
+      category: this.formatCategory(event.category),
+      date: this.formatDateRange(event.start_date, event.end_date),
+      time: this.formatTimeRange(event.start_date, event.end_date, event.is_holiday),
+      venue: event.location || 'Campus',
+      description: event.description || '',
+      is_holiday: Boolean(event.is_holiday),
+      is_published: Boolean(event.is_published),
+      target_roles: event.target_roles || [],
     };
   }
 

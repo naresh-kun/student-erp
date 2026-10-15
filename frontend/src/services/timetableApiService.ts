@@ -11,6 +11,7 @@
 
 import { ApiClient } from '@/services/api';
 import type { ParentTimetableDay } from '@/features/parents/types';
+import type { FacultyTimetableEntry, FacultyTodayPeriod, FacultySessionType } from '@/features/faculty/types';
 
 export interface BackendTimetableSlot {
   id: string;
@@ -135,6 +136,97 @@ export class TimetableApiService {
             type: isLab ? 'Lab' : 'Lecture',
           };
         }),
+      };
+    });
+  }
+
+  /**
+   * Transforms an array of backend slots into FacultyTimetableEntry[] for Faculty.
+   */
+  static transformSlotsToFacultyTimetable(slots: BackendTimetableSlot[]): FacultyTimetableEntry[] {
+    const validDays: Array<FacultyTimetableEntry['day']> = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    const dayOrder: Record<string, number> = {
+      Monday: 1,
+      Tuesday: 2,
+      Wednesday: 3,
+      Thursday: 4,
+      Friday: 5,
+    };
+
+    return slots
+      .filter((s) => validDays.includes(s.day_of_week as any))
+      .sort((a, b) => {
+        const dDiff = (dayOrder[a.day_of_week] || 0) - (dayOrder[b.day_of_week] || 0);
+        if (dDiff !== 0) return dDiff;
+        return a.period_number - b.period_number;
+      })
+      .map((s) => {
+        const startTime = this.formatTime(s.start_time);
+        const endTime = this.formatTime(s.end_time);
+        const subject = s.subject_name || 'Subject';
+        const room = s.room_number || 'Room';
+        const lowerSub = subject.toLowerCase();
+        const lowerRoom = room.toLowerCase();
+
+        let session_type: FacultySessionType = 'Class Lecture';
+        if (lowerSub.includes('lab') || lowerRoom.includes('lab') || lowerSub.includes('practical')) {
+          session_type = 'Practical / Lab';
+        } else if (lowerSub.includes('remedial') || lowerSub.includes('doubt')) {
+          session_type = 'Remedial Support';
+        } else if (lowerSub.includes('planning') || lowerSub.includes('review') || lowerSub.includes('mentorship') || lowerSub.includes('assembly')) {
+          session_type = 'Faculty Planning';
+        }
+
+        return {
+          id: s.id,
+          day: s.day_of_week as FacultyTimetableEntry['day'],
+          period_number: s.period_number,
+          time: `${startTime} - ${endTime}`,
+          subject,
+          class_name: s.class_name || 'Class',
+          section_name: s.section_name || 'Section',
+          room,
+          session_type,
+          class_id: s.class_id,
+          section_id: s.section,
+        };
+      });
+  }
+
+  /**
+   * Transforms an array of backend slots into FacultyTodayPeriod[] for Faculty dashboard.
+   */
+  static transformSlotsToFacultyTodaySchedule(
+    slots: BackendTimetableSlot[],
+    options?: { currentDay?: string; markedPeriods?: string[] }
+  ): FacultyTodayPeriod[] {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const defaultDay = days[new Date().getDay()];
+    const activeDay = options?.currentDay || (defaultDay === 'Saturday' || defaultDay === 'Sunday' ? 'Monday' : defaultDay);
+    const marked = options?.markedPeriods || [];
+
+    const todaySlots = slots
+      .filter((s) => s.day_of_week?.toLowerCase() === activeDay.toLowerCase())
+      .sort((a, b) => a.period_number - b.period_number);
+
+    return todaySlots.map((s) => {
+      const startTime = this.formatTime(s.start_time);
+      const endTime = this.formatTime(s.end_time);
+      const attendanceDone = marked.some((m) => m.includes(`Period ${s.period_number}`));
+
+      const classDisplay = s.class_name && s.section_name
+        ? `${s.class_name}-${s.section_name}`
+        : s.class_name || s.section_name || 'Class';
+
+      return {
+        period_number: s.period_number,
+        period_time: `${startTime} - ${endTime}`,
+        class_name: classDisplay,
+        subject: s.subject_name || 'Subject',
+        room: s.room_number || 'Classroom',
+        student_count: 30,
+        attendance_done: attendanceDone,
+        attendance_session_id: undefined,
       };
     });
   }

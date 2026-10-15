@@ -12,6 +12,8 @@
 
 import { ApiClient } from '@/services/api';
 import type { AttendanceStatus } from '@/types';
+import { TimetableApiService, type BackendTimetableSlot } from '@/services/timetableApiService';
+import { CalendarApiService, type BackendCalendarEvent } from '@/services/calendarApiService';
 
 export interface BackendFacultyUser {
   id: string;
@@ -248,5 +250,19 @@ export class FacultyApiService {
    */
   static async deleteHomework(homeworkId: string): Promise<void> {
     await ApiClient.delete(`/api/v1/homework/${homeworkId}/`);
+  }
+
+  /**
+   * Fetches scoped timetable slots for the faculty member's teaching routine.
+   */
+  static async getTimetable(params?: Parameters<typeof TimetableApiService.getTimetableSlots>[0]): Promise<BackendTimetableSlot[]> {
+    return TimetableApiService.getTimetableSlots(params);
+  }
+
+  /**
+   * Fetches academic calendar events targeted to Faculty.
+   */
+  static async getCalendarEvents(params?: Parameters<typeof CalendarApiService.getCalendarEvents>[0]): Promise<BackendCalendarEvent[]> {
+    return CalendarApiService.getCalendarEvents({ ...params, target_role: 'Faculty' });
   }
 }

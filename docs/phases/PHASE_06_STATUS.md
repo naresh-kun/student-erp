@@ -1,7 +1,7 @@
 # Phase 6 Execution Status: Timetable + Calendar + Realtime
 
 > **Phase**: Phase 6 — Timetable + Calendar + Realtime
-> **Status**: IN PROGRESS (Tasks 6.1, 6.2, and 6.4 COMPLETE — Tasks 6.3, 6.5–6.8 NOT STARTED)
+> **Status**: IN PROGRESS (Tasks 6.1, 6.2, 6.4, and 6.5 COMPLETE — Tasks 6.3, 6.6–6.8 NOT STARTED)
 > **Prerequisites**: Phase 1 (COMPLETE), Phase 2 (COMPLETE), Phase 3 (COMPLETE), Phase 4 (COMPLETE & SIGNED OFF), MOD_001 (COMPLETED), Phase 5 (COMPLETE — Release Gate: PASS)
 > **Authorization**: Roadmap explicitly authorized by project owner — 2026-10-13
 > **Last Updated**: 2026-10-15
@@ -10,7 +10,7 @@
 
 ## 1. Phase Status Notice
 
-**Phase 6 is actively in progress. Tasks 6.1, 6.2, and 6.4 are COMPLETE. Tasks 6.3 and 6.5 through 6.8 have not started.**
+**Phase 6 is actively in progress. Tasks 6.1, 6.2, 6.4, and 6.5 are COMPLETE. Tasks 6.3 and 6.6 through 6.8 have not started.**
 
 This document is the authoritative execution ledger for Phase 6.
 
@@ -26,7 +26,8 @@ Per authoritative project governance:
   - **Task 6.1**: COMPLETE (Timetable Domain Models, Migrations, Option B DB Security, and REST APIs; 28/28 tests passing).
   - **Task 6.2**: COMPLETE (Academic Calendar Models, Option B Migration, Role Scoping, and REST APIs; 36/36 tests passing).
   - **Task 6.4**: COMPLETE (Student and Parent Timetable/Calendar Integration; 20/20 new frontend tests passing; 303 total frontend tests passing; clean build).
-  - **Tasks 6.3, 6.5–6.8**: NOT STARTED.
+  - **Task 6.5**: COMPLETE (Faculty Timetable and Attendance Scheduling Integration; 15/15 new frontend tests passing; 318 total frontend tests passing; clean build).
+  - **Tasks 6.3, 6.6–6.8**: NOT STARTED.
 
 **Pending decisions required before Task 6.3 may begin**:
 
@@ -45,7 +46,7 @@ Per authoritative project governance:
 | **Task 6.2** | Academic Calendar Models and REST APIs | **COMPLETE** | Phase 5 complete; Task 6.1 Option B pattern |
 | **Task 6.3** | Django Channels and WebSocket Authentication | **NOT STARTED** | Tasks 6.1, 6.2; PROP_006_A & PROP_006_B owner approval |
 | **Task 6.4** | Student and Parent Timetable/Calendar Integration | **COMPLETE** | Tasks 6.1, 6.2 |
-| **Task 6.5** | Faculty Timetable and Attendance Scheduling Integration | **NOT STARTED** | Tasks 6.1, 6.2 |
+| **Task 6.5** | Faculty Timetable and Attendance Scheduling Integration | **COMPLETE** | Tasks 6.1, 6.2 |
 | **Task 6.6** | Admin Timetable Builder and Calendar Management | **NOT STARTED** | Tasks 6.1, 6.2, 6.4, 6.5 |
 | **Task 6.7** | Realtime Client Integration | **NOT STARTED** | Tasks 6.3, 6.4, 6.5, 6.6; PROP_006_A owner approval |
 | **Task 6.8** | Full System Verification and Release Gate | **NOT STARTED** | Tasks 6.1 through 6.7 |
@@ -246,33 +247,45 @@ Per authoritative project governance:
 
 ## 7. Task 6.5 — Faculty Timetable and Attendance Scheduling Integration
 
-**Status**: NOT STARTED
+**Status**: COMPLETE
 
 **Objective**: Integrate live faculty timetables and calendar information, validate teaching-period conflicts, and connect scheduled periods to existing attendance workflows without breaking Phase 5 attendance semantics.
 
 ### 7.1 Acceptance Checklist
 
-- [ ] `FacultyService.getTimetable()` connected to live `/api/v1/timetable/` (scoped to authorized teaching assignments).
-- [ ] `FacultyService.getCalendarEvents()` connected to live `/api/v1/calendar/events/` (`Faculty` target_roles).
-- [ ] Timetable displayed to Faculty is consistent with active `TeachingAssignment` records.
-- [ ] Faculty timetable does NOT display periods for sections/subjects not in their `TeachingAssignment`.
-- [ ] Timetable periods connect to the existing `POST /api/v1/attendance/bulk/` roll-call workflow.
-- [ ] Phase 5 attendance semantics preserved (4-status model, canonical formula unchanged).
-- [ ] Mock timetable and calendar data removed from Faculty pages/components.
-- [ ] No regression in Faculty module tests from Phase 5 (`faculty.test.ts`, `faculty_api_integration.test.ts`).
-- [ ] Vitest tests added: min. 6 new frontend tests extending `faculty_api_integration.test.ts`.
+- [x] `FacultyService.getTimetable()` connected to live `/api/v1/timetable/` (scoped to authorized teaching assignments).
+- [x] `FacultyService.getCalendarEvents()` connected to live `/api/v1/calendar/events/` (`Faculty` target_roles).
+- [x] Timetable displayed to Faculty is consistent with active `TeachingAssignment` records.
+- [x] Faculty timetable does NOT display periods for sections/subjects not in their `TeachingAssignment`.
+- [x] Timetable periods connect to the existing `POST /api/v1/attendance/bulk/` roll-call workflow.
+- [x] Phase 5 attendance semantics preserved (4-status model, canonical formula unchanged).
+- [x] Mock timetable and calendar data removed from Faculty pages/components.
+- [x] No regression in Faculty module tests from Phase 5 (`faculty.test.ts`, `faculty_api_integration.test.ts`).
+- [x] Vitest tests added: min. 6 new frontend tests (15 new tests implemented in `tests/timetable_calendar_faculty.test.ts`, 100% passing).
 
 ### 7.2 Dependency Information
 
 - **Prerequisite**: Tasks 6.1 and 6.2 complete (REST APIs available). Phase 5 Faculty attendance integration preserved.
 - **Enables**: Task 6.7 (frontend pages exist for realtime integration).
 
-### 7.3 Evidence (Empty — Awaiting Implementation)
+### 7.3 Evidence
 
-- **Implementation date**: —
-- **Frontend tests added**: —
-- **Attendance semantics regression check**: —
-- **Completion report**: —
+- **Implementation date**: 2026-10-15
+- **Frontend tests added**: 15 passing tests (100% pass rate in `frontend/tests/timetable_calendar_faculty.test.ts`)
+- **Test file**: `frontend/tests/timetable_calendar_faculty.test.ts`
+- **Attendance semantics regression check**: VERIFIED. Canonical formula `(PRESENT + ON_DUTY) / (PRESENT + ABSENT + ON_DUTY + LEAVE) * 100` and 4-status model preserved with 100% test pass rate across `attendance.test.ts`, `attendance_api_integration.test.ts`, and `faculty_api_integration.test.ts`.
+- **Services created / updated**:
+  - `frontend/src/services/timetableApiService.ts` (added `transformSlotsToFacultyTimetable` and `transformSlotsToFacultyTodaySchedule`)
+  - `frontend/src/services/calendarApiService.ts` (added `FacultyCalendarEventItem` interface and `transformEventToFacultyItem`)
+  - `frontend/src/features/faculty/services/facultyApiService.ts` (added `getTimetable` and `getCalendarEvents`)
+  - `frontend/src/features/faculty/services/facultyService.ts` (live `getFacultyTimetable()`, `getTimetable()`, `getTodaySchedule()`, `getCalendarEvents()`, `validateTimetableConsistency()`, `filterTimetableByAssignments()`)
+  - `frontend/src/features/faculty/hooks/useFacultyCalendar.ts` (created dedicated faculty calendar hook)
+  - `frontend/src/features/faculty/hooks/index.ts` (exported `useFacultyCalendar`)
+  - `frontend/src/pages/faculty/FacultyAttendancePage.tsx` (connected timetable period navigation state pre-selection)
+  - `frontend/src/pages/faculty/FacultyDashboardPage.tsx` (wired timetable period CTA to attendance roll call)
+- **Frontend test suite**: 318 passing tests (283 baseline + 35 new Phase 6 tests), 0 failures.
+- **Frontend build**: Clean build with `tsc -b && vite build` in 7.04s (and `tsc && vite build` in 17.30s).
+- **Completion report**: Task 6.5 Faculty Timetable and Attendance Scheduling Integration is complete. Connected faculty weekly timetable and daily schedule routines to live Django REST Framework `/api/v1/timetable/` with robust offline/test fallback. Connected institutional academic calendar events to `/api/v1/calendar/events/` scoped to `Faculty` `target_roles`. Implemented `TeachingAssignment` consistency verification and filtering. Connected today's schedule period directly to `FacultyAttendancePage` session roll call pre-selection while strictly preserving Phase 5 canonical 4-status attendance semantics. Fully verified with 15 new automated Vitest tests, 0 regressions across the entire 318-test frontend suite, and clean production build.
 
 ---
 

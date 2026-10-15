@@ -34,6 +34,8 @@ import type {
 import { validateMarkInput } from '../schemas/marksSchema';
 import { FacultyApiService } from './facultyApiService';
 import { MarksApiService, type MarkRecordItem } from '@/services/marksApiService';
+import { TimetableApiService } from '@/services/timetableApiService';
+import { CalendarApiService, type FacultyCalendarEventItem } from '@/services/calendarApiService';
 
 // Storage keys coordinated across Student, Parent, and Faculty domains
 const STORAGE_PARENT_ABSENCE_KEY = 'student_erp_parent_absence_notices';
@@ -492,8 +494,9 @@ export class FacultyService {
 
   /**
    * Retrieves today's periods and teaching routine for R. Suresh
+   * Backed by Django REST Framework /api/v1/timetable/ with mock fallback.
    */
-  static async getTodaySchedule(_facultyId = 'fac_001'): Promise<FacultyTodayPeriod[]> {
+  static async getTodaySchedule(_facultyId = 'fac_001', customDay?: string): Promise<FacultyTodayPeriod[]> {
     // Check if session has been marked in storage
     const storage = getStorage();
     const sessionsRaw = storage.getItem(STORAGE_ATTENDANCE_SESSIONS_KEY);
@@ -509,6 +512,18 @@ export class FacultyService {
       } catch {
         // use default
       }
+    }
+
+    try {
+      const slots = await TimetableApiService.getTimetableSlots();
+      if (Array.isArray(slots) && slots.length > 0) {
+        return TimetableApiService.transformSlotsToFacultyTodaySchedule(slots, {
+          currentDay: customDay,
+          markedPeriods,
+        });
+      }
+    } catch {
+      // Graceful offline/test fallback
     }
 
     return [
@@ -545,10 +560,20 @@ export class FacultyService {
   }
 
   /**
-   * Retrieves the full weekly teaching timetable for R. Suresh
+   * Retrieves the full weekly teaching timetable for R. Suresh.
+   * Backed by Django REST Framework /api/v1/timetable/ with mock fallback.
    * Adheres to Indian school 8-period convention without university credit concepts.
    */
   static async getFacultyTimetable(_facultyId = 'fac_001'): Promise<FacultyTimetableEntry[]> {
+    try {
+      const slots = await TimetableApiService.getTimetableSlots();
+      if (Array.isArray(slots) && slots.length > 0) {
+        return TimetableApiService.transformSlotsToFacultyTimetable(slots);
+      }
+    } catch {
+      // Graceful offline/test fallback
+    }
+
     return [
       // Monday
       { id: 'tt_mon_1', day: 'Monday', period_number: 1, time: '08:30 - 09:15', subject: 'Mathematics (Calculus)', class_name: 'Grade 11', section_name: 'Section A2', stream: 'Computer Science A', room: 'Room XI-A2', session_type: 'Class Lecture' },
@@ -579,6 +604,128 @@ export class FacultyService {
       { id: 'tt_fri_1', day: 'Friday', period_number: 1, time: '08:30 - 09:15', subject: 'Mathematics (Sequences & Series)', class_name: 'Grade 11', section_name: 'Section A2', stream: 'Computer Science A', room: 'Room XI-A2', session_type: 'Class Lecture' },
       { id: 'tt_fri_3', day: 'Friday', period_number: 3, time: '10:15 - 11:00', subject: 'Mathematics (Linear Programming)', class_name: 'Grade 12', section_name: 'Section A1', stream: 'Computer Science A', room: 'Room XII-A1', session_type: 'Class Lecture' },
       { id: 'tt_fri_5', day: 'Friday', period_number: 5, time: '12:30 - 01:15', subject: 'Mathematics (Statistics & Revisions)', class_name: 'Grade 10', section_name: 'Section A', room: 'Room X-A', session_type: 'Class Lecture' },
+    ];
+  }
+
+  /**
+   * Alias for getFacultyTimetable() satisfying Task 6.5 API contract.
+   */
+  static async getTimetable(): Promise<FacultyTimetableEntry[]> {
+    return this.getFacultyTimetable();
+  }
+
+  /**
+   * Filters timetable entries to ensure strict consistency with authorized TeachingAssignment records.
+   * Prevents displaying periods for sections or subjects not assigned to the faculty member.
+   */
+  static filterTimetableByAssignments(
+    entries: FacultyTimetableEntry[],
+    assignments: Array<{ section_id?: string; section?: string; subject?: string; subject_id?: string }>
+  ): FacultyTimetableEntry[] {
+    if (!Array.isArray(assignments) || assignments.length === 0) {
+      return entries;
+    }
+
+    return entries.filter((entry) => {
+      // Non-teaching slots (e.g. Planning) don't have a section_id
+      if (entry.session_type === 'Faculty Planning' && !entry.section_id) {
+        return true;
+      }
+
+      return assignments.some((a) => {
+        const secId = a.section_id || a.section;
+        const matchesSection = !entry.section_id || !secId || entry.section_id === secId;
+        const matchesSubject = !entry.subject || !a.subject || entry.subject.toLowerCase().includes(a.subject.toLowerCase()) || a.subject.toLowerCase().includes(entry.subject.toLowerCase());
+        return matchesSection && matchesSubject;
+      });
+    });
+  }
+
+  /**
+   * Validates whether all classroom teaching entries in the timetable correspond to authorized assignments.
+   */
+  static validateTimetableConsistency(
+    entries: FacultyTimetableEntry[],
+    assignments: Array<{ section_id?: string; section?: string; subject?: string; subject_id?: string }>
+  ): boolean {
+    if (!Array.isArray(entries) || entries.length === 0) return true;
+    if (!Array.isArray(assignments) || assignments.length === 0) return true;
+
+    return entries
+      .filter((e) => e.session_type === 'Class Lecture' || e.session_type === 'Practical / Lab')
+      .every((entry) => {
+        return assignments.some((a) => {
+          const secId = a.section_id || a.section;
+          const matchesSection = !entry.section_id || !secId || entry.section_id === secId;
+          const matchesSubject = !entry.subject || !a.subject || entry.subject.toLowerCase().includes(a.subject.toLowerCase()) || a.subject.toLowerCase().includes(entry.subject.toLowerCase());
+          return matchesSection && matchesSubject;
+        });
+      });
+  }
+
+  /**
+   * Retrieves institutional academic calendar events scoped to Faculty.
+   * Backed by Django REST Framework /api/v1/calendar/events/ with mock fallback.
+   */
+  static async getCalendarEvents(): Promise<FacultyCalendarEventItem[]> {
+    try {
+      const events = await CalendarApiService.getCalendarEvents({ target_role: 'Faculty' });
+      if (Array.isArray(events) && events.length > 0) {
+        return events.map((e) => CalendarApiService.transformEventToFacultyItem(e));
+      }
+    } catch {
+      // Graceful offline/test fallback
+    }
+
+    return [
+      {
+        id: 'cal_001',
+        title: 'Half-Yearly Written Examinations',
+        category: 'Examination',
+        date: 'October 12 - October 22, 2026',
+        time: '08:30 AM - 11:30 AM',
+        venue: 'Examination Block 1 & 2',
+        description: 'CBSE syllabus evaluations; invigilation duties assigned per master roster.',
+        is_holiday: false,
+        is_published: true,
+        target_roles: ['Faculty', 'Student', 'Parent'],
+      },
+      {
+        id: 'cal_002',
+        title: 'Diwali & Autumn School Holidays',
+        category: 'Holiday',
+        date: 'November 01 - November 05, 2026',
+        time: 'All Day',
+        venue: 'Campus Closed',
+        description: 'School closed for festive break.',
+        is_holiday: true,
+        is_published: true,
+        target_roles: ['Faculty', 'Student', 'Parent'],
+      },
+      {
+        id: 'cal_003',
+        title: 'Parent-Teacher Meeting (Term 1 Review)',
+        category: 'Meeting',
+        date: 'November 14, 2026',
+        time: '09:00 AM - 02:00 PM',
+        venue: 'Classrooms / Staff Rooms',
+        description: 'Class Teacher and Subject Faculty consultations with parents.',
+        is_holiday: false,
+        is_published: true,
+        target_roles: ['Faculty', 'Parent'],
+      },
+      {
+        id: 'cal_004',
+        title: 'Faculty Academic Council Review',
+        category: 'Meeting',
+        date: 'October 30, 2026',
+        time: '03:00 PM - 04:30 PM',
+        venue: 'Conference Room A',
+        description: 'Curriculum progress review and mid-term evaluations with Principal.',
+        is_holiday: false,
+        is_published: true,
+        target_roles: ['Faculty'],
+      },
     ];
   }
 

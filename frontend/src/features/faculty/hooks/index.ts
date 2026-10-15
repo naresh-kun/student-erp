@@ -10,3 +10,4 @@ export * from './useFacultyTimetable';
 export * from './useFacultyAttendanceSession';
 export * from './useFacultyMarksEntry';
 export * from './usePendingLeaveReviews';
+export * from './useFacultyCalendar';

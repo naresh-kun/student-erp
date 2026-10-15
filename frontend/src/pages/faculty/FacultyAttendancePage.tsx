@@ -22,14 +22,22 @@ import {
   useFacultyAttendanceSession,
   FacultyAttendanceRollCallSheet,
 } from '@/features/faculty';
+import { useLocation } from 'react-router-dom';
 import { ClipboardCheck, UserX, Clock } from 'lucide-react';
 
 export const FacultyAttendancePage: React.FC = () => {
+  const location = useLocation();
+  const routeState = location.state as { period?: string; periodNumber?: number; classId?: string } | null;
+
   const [activeTab, setActiveTab] = useState<'roll_call' | 'absentees' | 'not_entered'>('roll_call');
   const { data: classes = [], isLoading: classesLoading } = useAssignedClasses();
 
-  const [selectedClassId, setSelectedClassId] = useState('cls_001_sec_002');
-  const [selectedPeriod, setSelectedPeriod] = useState('Period 1 (08:30 - 09:15)');
+  const [selectedClassId, setSelectedClassId] = useState(routeState?.classId || 'cls_001_sec_002');
+  const [selectedPeriod, setSelectedPeriod] = useState(
+    routeState?.period
+      ? (routeState.period.includes('Period') ? routeState.period : `Period ${routeState.periodNumber || 1} (${routeState.period})`)
+      : 'Period 1 (08:30 - 09:15)'
+  );
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   const activeClass = classes.find((c) => c.id === selectedClassId) || classes[0];
