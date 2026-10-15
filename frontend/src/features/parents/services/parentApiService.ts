@@ -16,6 +16,8 @@ import type {
   BackendLeaveApplication,
   BackendReportCard,
 } from '@/features/students/services/studentApiService';
+import { TimetableApiService, type BackendTimetableSlot } from '@/services/timetableApiService';
+import { CalendarApiService, type BackendCalendarEvent } from '@/services/calendarApiService';
 
 export interface BackendParentUser {
   id: string;
@@ -132,5 +134,19 @@ export class ParentApiService {
   static async getChildMarks(studentId: string): Promise<any[]> {
     const res = await ApiClient.get<any[]>('/api/v1/marks/', { student_id: studentId });
     return Array.isArray(res.data) ? res.data : [];
+  }
+
+  /**
+   * Fetches scoped timetable slots for a linked child's section.
+   */
+  static async getChildTimetable(params?: Parameters<typeof TimetableApiService.getTimetableSlots>[0]): Promise<BackendTimetableSlot[]> {
+    return TimetableApiService.getTimetableSlots(params);
+  }
+
+  /**
+   * Fetches academic calendar events targeted to Parent.
+   */
+  static async getCalendarEvents(params?: Parameters<typeof CalendarApiService.getCalendarEvents>[0]): Promise<BackendCalendarEvent[]> {
+    return CalendarApiService.getCalendarEvents({ ...params, target_role: 'Parent' });
   }
 }

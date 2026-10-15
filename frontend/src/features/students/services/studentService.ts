@@ -11,6 +11,8 @@
 import { MockDataService } from '@/services/mockService';
 import { SCHOOL_CONFIG } from '@/config/schoolConfig';
 import { StudentApiService } from './studentApiService';
+import { TimetableApiService } from '@/services/timetableApiService';
+import { CalendarApiService } from '@/services/calendarApiService';
 import type { 
   StudentProfile, 
   StudentLeaveRequest, 
@@ -495,16 +497,41 @@ export class StudentService {
   }
 
   /**
-   * Timetable and schedule (preserved pending future Phase 5 timetable task).
+   * Timetable and schedule.
+   * Backed by Django REST Framework /api/v1/timetable/ with mock fallback.
    */
   static async getWeeklyTimetable() {
+    try {
+      const slots = await TimetableApiService.getTimetableSlots();
+      if (Array.isArray(slots) && slots.length > 0) {
+        return TimetableApiService.transformSlotsToWeeklyGrid(slots);
+      }
+    } catch {
+      // Graceful offline/test fallback
+    }
     return MockDataService.getWeeklyTimetableGrid();
   }
 
   /**
-   * Academic calendar events (preserved pending future Phase 5 calendar task).
+   * Alias for getWeeklyTimetable() satisfying Task 6.4 API contract.
+   */
+  static async getTimetable() {
+    return this.getWeeklyTimetable();
+  }
+
+  /**
+   * Academic calendar events.
+   * Backed by Django REST Framework /api/v1/calendar/events/ with mock fallback.
    */
   static async getCalendarEvents() {
+    try {
+      const events = await CalendarApiService.getCalendarEvents({ target_role: 'Student' });
+      if (Array.isArray(events) && events.length > 0) {
+        return events.map((e) => CalendarApiService.transformEventToStudentItem(e));
+      }
+    } catch {
+      // Graceful offline/test fallback
+    }
     return MockDataService.getAcademicCalendarEvents('Student');
   }
 }

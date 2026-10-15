@@ -16,4 +16,6 @@ export * from './allocationApiService';
 export * from './attendanceApiService';
 export * from './homeworkService';
 export * from './marksApiService';
+export * from './timetableApiService';
+export * from './calendarApiService';
 export * from './api';

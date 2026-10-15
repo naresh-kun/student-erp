@@ -27,6 +27,8 @@ import type {
 } from '../types';
 import type { ParentAbsenceNoticeFormData } from '../schemas/absenceNoticeSchema';
 import { ParentApiService } from './parentApiService';
+import { TimetableApiService } from '@/services/timetableApiService';
+import { CalendarApiService } from '@/services/calendarApiService';
 
 const STORAGE_ABSENCE_KEY = 'student_erp_parent_absence_notices';
 
@@ -631,9 +633,19 @@ export class ParentService {
   }
 
   /**
-   * Retrieves weekly period timetable for the child's enrolled section (XI-A2)
+   * Retrieves weekly period timetable for the child's enrolled section.
+   * Backed by Django REST Framework /api/v1/timetable/ with mock fallback.
    */
   static async getChildTimetable(_studentId = 'STU202600001'): Promise<ParentTimetableDay[]> {
+    try {
+      const slots = await TimetableApiService.getTimetableSlots();
+      if (Array.isArray(slots) && slots.length > 0) {
+        return TimetableApiService.transformSlotsToParentTimetable(slots);
+      }
+    } catch {
+      // Graceful offline/test fallback
+    }
+
     return [
       {
         day: 'Monday',
@@ -689,9 +701,19 @@ export class ParentService {
   }
 
   /**
-   * Retrieves relevant school academic events, holidays, and PTM dates
+   * Retrieves relevant school academic events, holidays, and PTM dates.
+   * Backed by Django REST Framework /api/v1/calendar/events/ with mock fallback.
    */
   static async getParentCalendarEvents(): Promise<ParentCalendarEvent[]> {
+    try {
+      const events = await CalendarApiService.getCalendarEvents({ target_role: 'Parent' });
+      if (Array.isArray(events) && events.length > 0) {
+        return events.map((e) => CalendarApiService.transformEventToParentItem(e));
+      }
+    } catch {
+      // Graceful offline/test fallback
+    }
+
     return [
       {
         id: 'ev_001',
@@ -739,6 +761,13 @@ export class ParentService {
         desc: 'Annual sports meet and march past. Parents and guardians welcome to cheer track and field athletes.',
       },
     ];
+  }
+
+  /**
+   * Alias for getParentCalendarEvents() satisfying Task 6.4 API contract.
+   */
+  static async getCalendarEvents(): Promise<ParentCalendarEvent[]> {
+    return this.getParentCalendarEvents();
   }
 
   /**

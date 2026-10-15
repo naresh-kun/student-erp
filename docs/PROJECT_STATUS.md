@@ -1,8 +1,8 @@
 # Project Status & Milestone Ledger
 
-> **Current Phase**: **Phase 6 IN PROGRESS (Tasks 6.1 & 6.2 COMPLETE — Tasks 6.3–6.8 NOT STARTED)**  
-> **Authoritative State**: Phase 1 COMPLETE, Phase 2 COMPLETE, Phase 3 COMPLETE, Phase 4 COMPLETE & SIGNED OFF; MOD_001 COMPLETED; Phase 5 COMPLETE (Tasks 5.1–5.8 Complete; Release Gate Verdict: PASS); Phase 6 IN PROGRESS: Tasks 6.1 & 6.2 COMPLETE (Timetable & Calendar Domain Models, Migrations, Option B DB Security, and REST APIs; 64 new Phase 6 tests passing; 0 issues, 0 migration drift); Tasks 6.3–6.8 NOT STARTED (PROP_006_A & PROP_006_B pending owner approval before Task 6.3)  
-> **Last Updated**: 2026-10-14
+> **Current Phase**: **Phase 6 IN PROGRESS (Tasks 6.1, 6.2 & 6.4 COMPLETE — Tasks 6.3, 6.5–6.8 NOT STARTED)**  
+> **Authoritative State**: Phase 1 COMPLETE, Phase 2 COMPLETE, Phase 3 COMPLETE, Phase 4 COMPLETE & SIGNED OFF; MOD_001 COMPLETED; Phase 5 COMPLETE (Tasks 5.1–5.8 Complete; Release Gate Verdict: PASS); Phase 6 IN PROGRESS: Tasks 6.1, 6.2, and 6.4 COMPLETE (Timetable & Calendar Domain Models, Migrations, Option B DB Security, REST APIs, and Student/Parent Frontend Integration; 64 new Phase 6 backend tests + 20 new frontend tests passing; 303 total frontend tests; 0 issues, 0 migration drift); Tasks 6.3, 6.5–6.8 NOT STARTED (PROP_006_A & PROP_006_B pending owner approval before Task 6.3)  
+> **Last Updated**: 2026-10-15
 
 ---
 
@@ -87,7 +87,8 @@ To ensure strict engineering honesty, features and modules are classified into e
 | **Phase 5 (Core ERP API Integration & Advanced Workflows)** | `IMPLEMENTED` | Phase 5 COMPLETE. Tasks 5.1–5.8 COMPLETE. Release Gate Verdict: PASS. 520 backend tests passing, 283 frontend tests passing, clean production build (6.43s), zero migration drift. Task 5.8 Full System Verification & Release Gate PASSED across all 5 roles. |
 | **Realtime WebSockets (Channels)** | `PLANNED` | Documented in `docs/BACKEND_ARCHITECTURE.md`; Phase 6 roadmap established 2026-10-13; PROP_006_A (WebSocket auth handshake) & PROP_006_B (test strategy) pending owner approval before Task 6.3 may begin |
 | **Phase 6 Timetable Domain & REST API (Task 6.1)** | `IMPLEMENTED` | Task 6.1 COMPLETE. `TimetableSlot` model, Option B migration (`erp_migrator` owner, `erp_app` CRUD), `TimetableService` double-booking conflict detection (HTTP 409), DRF endpoints under `/api/v1/timetable/` with 5-role scoping, 28 pytest tests passing under `erp_app`. |
-| **Phase 6 Calendar Domain & REST API (Task 6.2)** | `IMPLEMENTED` | Task 6.2 COMPLETE. `CalendarEvent` model (`calendar_events` table), Option B migration (`erp_migrator` owner, `erp_app` CRUD), `CalendarService` with multi-day interval overlap date filtering, category normalization, publishing controls, and 5-role scoping, REST endpoints under `/api/v1/calendar/events/`, 36 pytest tests passing under `erp_app`. Tasks 6.3–6.8 NOT STARTED. |
+| **Phase 6 Calendar Domain & REST API (Task 6.2)** | `IMPLEMENTED` | Task 6.2 COMPLETE. `CalendarEvent` model (`calendar_events` table), Option B migration (`erp_migrator` owner, `erp_app` CRUD), `CalendarService` with multi-day interval overlap date filtering, category normalization, publishing controls, and 5-role scoping, REST endpoints under `/api/v1/calendar/events/`, 36 pytest tests passing under `erp_app`. |
+| **Phase 6 Student & Parent Timetable/Calendar (Task 6.4)** | `IMPLEMENTED` | Task 6.4 COMPLETE. `TimetableApiService` and `CalendarApiService` connecting `StudentService` and `ParentService` to live DRF endpoints (`/api/v1/timetable/` and `/api/v1/calendar/events/`), role & section visibility, 20 new frontend tests passing in `tests/timetable_calendar_student_parent.test.ts`, 303 total frontend tests passing, clean production build. Tasks 6.3, 6.5–6.8 NOT STARTED. |
 | **Database Migrations & Models** | `IMPLEMENTED` | 16 concrete 3NF PostgreSQL models (`Role`, `User`, `Faculty`, `Parent`, `Student`, `AcademicYear`, `SchoolClass`, `Section`, `Subject`, `Enrollment`, `TeachingAssignment`, `Attendance`, `LeaveApplication`, `ExamType`, `Mark`, `Homework`, `TimetableSlot`, `CalendarEvent`), Option B dual-role PostgreSQL security, and live PostgreSQL seeded dataset |
 
 

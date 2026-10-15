@@ -7,6 +7,8 @@
  */
 
 import { ApiClient } from '@/services/api';
+import { TimetableApiService, type BackendTimetableSlot } from '@/services/timetableApiService';
+import { CalendarApiService, type BackendCalendarEvent } from '@/services/calendarApiService';
 
 export interface BackendStudentDetail {
   id: string;
@@ -192,5 +194,19 @@ export class StudentApiService {
   }): Promise<any[]> {
     const res = await ApiClient.get<any[]>('/api/v1/marks/', params);
     return Array.isArray(res.data) ? res.data : [];
+  }
+
+  /**
+   * Fetches scoped timetable slots for the student's enrolled section.
+   */
+  static async getTimetable(params?: Parameters<typeof TimetableApiService.getTimetableSlots>[0]): Promise<BackendTimetableSlot[]> {
+    return TimetableApiService.getTimetableSlots(params);
+  }
+
+  /**
+   * Fetches academic calendar events targeted to Student.
+   */
+  static async getCalendarEvents(params?: Parameters<typeof CalendarApiService.getCalendarEvents>[0]): Promise<BackendCalendarEvent[]> {
+    return CalendarApiService.getCalendarEvents({ ...params, target_role: 'Student' });
   }
 }
