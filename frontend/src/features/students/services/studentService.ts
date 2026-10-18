@@ -498,40 +498,35 @@ export class StudentService {
 
   /**
    * Timetable and schedule.
-   * Backed by Django REST Framework /api/v1/timetable/ with mock fallback.
+   * Backed by Django REST Framework /api/v1/timetable/.
+   * Strictly queries live backend without silent mock fallback on API failure or empty results.
    */
-  static async getWeeklyTimetable() {
-    try {
-      const slots = await TimetableApiService.getTimetableSlots();
-      if (Array.isArray(slots) && slots.length > 0) {
-        return TimetableApiService.transformSlotsToWeeklyGrid(slots);
-      }
-    } catch {
-      // Graceful offline/test fallback
+  static async getWeeklyTimetable(options?: { useMock?: boolean }) {
+    if (options?.useMock) {
+      return MockDataService.getWeeklyTimetableGrid();
     }
-    return MockDataService.getWeeklyTimetableGrid();
+    const slots = await TimetableApiService.getTimetableSlots();
+    return TimetableApiService.transformSlotsToWeeklyGrid(Array.isArray(slots) ? slots : []);
   }
 
   /**
    * Alias for getWeeklyTimetable() satisfying Task 6.4 API contract.
    */
-  static async getTimetable() {
-    return this.getWeeklyTimetable();
+  static async getTimetable(options?: { useMock?: boolean }) {
+    return this.getWeeklyTimetable(options);
   }
 
   /**
    * Academic calendar events.
-   * Backed by Django REST Framework /api/v1/calendar/events/ with mock fallback.
+   * Backed by Django REST Framework /api/v1/calendar/events/.
+   * Strictly queries live backend without silent mock fallback on API failure or empty results.
    */
-  static async getCalendarEvents() {
-    try {
-      const events = await CalendarApiService.getCalendarEvents({ target_role: 'Student' });
-      if (Array.isArray(events) && events.length > 0) {
-        return events.map((e) => CalendarApiService.transformEventToStudentItem(e));
-      }
-    } catch {
-      // Graceful offline/test fallback
+  static async getCalendarEvents(options?: { useMock?: boolean }) {
+    if (options?.useMock) {
+      return MockDataService.getAcademicCalendarEvents('Student');
     }
-    return MockDataService.getAcademicCalendarEvents('Student');
+    const events = await CalendarApiService.getCalendarEvents({ target_role: 'Student' });
+    return (Array.isArray(events) ? events : []).map((e) => CalendarApiService.transformEventToStudentItem(e));
   }
 }
+

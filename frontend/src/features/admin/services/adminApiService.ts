@@ -15,6 +15,8 @@
 import { ApiClient } from '@/services/api';
 import { AttendanceApiService } from '@/services/attendanceApiService';
 import { MarksApiService } from '@/services/marksApiService';
+import { TimetableApiService, type BackendTimetableSlot } from '@/services/timetableApiService';
+import { CalendarApiService, type BackendCalendarEvent } from '@/services/calendarApiService';
 import type {
   AdminStudentItem,
   AdminParentItem,
@@ -230,6 +232,62 @@ export class AdminApiService {
     subject_id?: string;
   }) {
     return MarksApiService.getMarksSummary(params);
+  }
+
+  /**
+   * Fetch master timetable slots across the school (/api/v1/timetable/)
+   */
+  static async getTimetableSlots(params?: Parameters<typeof TimetableApiService.getTimetableSlots>[0]): Promise<BackendTimetableSlot[]> {
+    return TimetableApiService.getTimetableSlots(params);
+  }
+
+  /**
+   * Create a master timetable slot (/api/v1/timetable/)
+   */
+  static async createTimetableSlot(payload: Partial<BackendTimetableSlot>): Promise<BackendTimetableSlot> {
+    return TimetableApiService.createTimetableSlot(payload);
+  }
+
+  /**
+   * Update an existing timetable slot (/api/v1/timetable/{id}/)
+   */
+  static async updateTimetableSlot(id: string, payload: Partial<BackendTimetableSlot>): Promise<BackendTimetableSlot> {
+    return TimetableApiService.updateTimetableSlot(id, payload);
+  }
+
+  /**
+   * Delete a timetable slot (/api/v1/timetable/{id}/)
+   */
+  static async deleteTimetableSlot(id: string): Promise<void> {
+    return TimetableApiService.deleteTimetableSlot(id);
+  }
+
+  /**
+   * Fetch institutional calendar events (/api/v1/calendar/events/)
+   */
+  static async getCalendarEvents(params?: Parameters<typeof CalendarApiService.getCalendarEvents>[0]): Promise<BackendCalendarEvent[]> {
+    return CalendarApiService.getCalendarEvents(params);
+  }
+
+  /**
+   * Publish an institutional calendar event (/api/v1/calendar/events/)
+   */
+  static async createCalendarEvent(payload: Partial<BackendCalendarEvent>): Promise<BackendCalendarEvent> {
+    return CalendarApiService.createCalendarEvent(payload);
+  }
+
+  /**
+   * Update an institutional calendar event (/api/v1/calendar/events/{id}/)
+   */
+  static async updateCalendarEvent(id: string, payload: Partial<BackendCalendarEvent>): Promise<BackendCalendarEvent> {
+    return CalendarApiService.updateCalendarEvent(id, payload);
+  }
+
+  /**
+   * Delete an institutional calendar event (/api/v1/calendar/events/{id}/)
+   */
+  static async deleteCalendarEvent(id: string): Promise<void> {
+    return CalendarApiService.deleteCalendarEvent(id);
   }
 }
 

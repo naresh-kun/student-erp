@@ -336,7 +336,7 @@ describe('Parent Domain — Deterministic Advisories & Timetable/Calendar', () =
   });
 
   it('loads weekly timetable for child section with valid 5 daily periods', async () => {
-    const timetable = await ParentService.getChildTimetable('STU202600001');
+    const timetable = await ParentService.getChildTimetable('STU202600001', { useMock: true });
 
     expect(timetable).toHaveLength(5); // Mon-Fri
     const monday = timetable.find((t) => t.day === 'Monday');
@@ -348,11 +348,12 @@ describe('Parent Domain — Deterministic Advisories & Timetable/Calendar', () =
   });
 
   it('loads institutional school events with categories', async () => {
-    const events = await ParentService.getParentCalendarEvents();
+    const events = await ParentService.getParentCalendarEvents({ useMock: true });
 
     expect(events.length).toBeGreaterThan(0);
     const ptmEvent = events.find((e) => e.category === 'PTM');
     expect(ptmEvent).toBeDefined();
     expect(ptmEvent?.title).toContain('Parent-Teacher Meeting');
   });
+
 });

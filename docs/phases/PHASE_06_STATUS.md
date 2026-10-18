@@ -4,7 +4,7 @@
 > **Status**: IN PROGRESS (Tasks 6.1, 6.2, 6.4, and 6.5 COMPLETE — Tasks 6.3, 6.6–6.8 NOT STARTED)
 > **Prerequisites**: Phase 1 (COMPLETE), Phase 2 (COMPLETE), Phase 3 (COMPLETE), Phase 4 (COMPLETE & SIGNED OFF), MOD_001 (COMPLETED), Phase 5 (COMPLETE — Release Gate: PASS)
 > **Authorization**: Roadmap explicitly authorized by project owner — 2026-10-13
-> **Last Updated**: 2026-10-15
+> **Last Updated**: 2026-10-18
 
 ---
 
@@ -25,7 +25,7 @@ Per authoritative project governance:
 - **Phase 6**:
   - **Task 6.1**: COMPLETE (Timetable Domain Models, Migrations, Option B DB Security, and REST APIs; 28/28 tests passing).
   - **Task 6.2**: COMPLETE (Academic Calendar Models, Option B Migration, Role Scoping, and REST APIs; 36/36 tests passing).
-  - **Task 6.4**: COMPLETE (Student and Parent Timetable/Calendar Integration; 20/20 new frontend tests passing; 303 total frontend tests passing; clean build).
+  - **Task 6.4**: COMPLETE (Student and Parent Timetable/Calendar Integration; Final live-data fallback audit reconciled: silent catch fallbacks removed, recoverable ErrorState on all 4 pages with retry, true empty states preserved distinct from errors, 28/28 focused tests passing; 326 total frontend tests passing; clean build).
   - **Task 6.5**: COMPLETE (Faculty Timetable and Attendance Scheduling Integration; 15/15 new frontend tests passing; 318 total frontend tests passing; clean build).
   - **Tasks 6.3, 6.6–6.8**: NOT STARTED.
 
@@ -216,8 +216,8 @@ Per authoritative project governance:
 - [x] Student calendar page displays live events scoped to `Student` target_roles.
 - [x] Parent calendar page displays live events scoped to `Parent` target_roles.
 - [x] Zero raw JSON imports or mock data inline in Student/Parent UI pages after migration.
-- [x] Graceful offline/test fallback preserved in `StudentService` and `ParentService`.
-- [x] Vitest tests added: min. 8 new frontend tests in `tests/timetable_calendar_student_parent.test.ts` (20 new tests implemented, 100% passing).
+- [x] Graceful offline/test fallback preserved in `StudentService` and `ParentService` strictly behind explicit opt-in (`{ useMock: true }`); live API requests strictly propagate errors to render recoverable `ErrorState` with retry; genuine empty states distinct from errors.
+- [x] Vitest tests added: min. 8 new frontend tests in `tests/timetable_calendar_student_parent.test.ts` (28 tests implemented, 100% passing).
 - [x] No regression in existing Student suite (`student.test.ts`, `student_api_integration.test.ts`).
 - [x] No regression in existing Parent suite (`parent.test.ts`, `parent_api_integration.test.ts`).
 
@@ -228,20 +228,25 @@ Per authoritative project governance:
 
 ### 6.3 Evidence
 
-- **Implementation date**: 2026-10-15
-- **Frontend tests added**: 20 passing tests (100% pass rate in `frontend/tests/timetable_calendar_student_parent.test.ts`)
+- **Implementation date**: 2026-10-15 (Audited & Reconciled: 2026-10-18)
+- **Frontend tests added**: 28 passing tests (100% pass rate in `frontend/tests/timetable_calendar_student_parent.test.ts`)
 - **Test file**: `frontend/tests/timetable_calendar_student_parent.test.ts`
-- **Services created / updated**:
+- **Services & Pages created / updated**:
   - `frontend/src/services/timetableApiService.ts` (TimetableApiService with formatters and weekly grid/parent day transformers)
   - `frontend/src/services/calendarApiService.ts` (CalendarApiService with date/time interval formatters and role presentation mappers)
   - `frontend/src/features/students/services/studentApiService.ts` (DRF `/api/v1/timetable/` and `/api/v1/calendar/events/` bindings)
-  - `frontend/src/features/students/services/studentService.ts` (Live DRF query integration with fallback)
+  - `frontend/src/features/students/services/studentService.ts` (Live DRF query integration; removed silent catch fallback; propagates API errors; maps true empty responses; supports `{ useMock: true }`)
   - `frontend/src/features/parents/services/parentApiService.ts` (DRF child timetable and calendar bindings)
-  - `frontend/src/features/parents/services/parentService.ts` (Live DRF query integration with fallback)
+  - `frontend/src/features/parents/services/parentService.ts` (Live DRF query integration; removed silent catch fallback; propagates API errors; maps true empty responses; supports `{ useMock: true }`)
+  - `frontend/src/pages/student/StudentTimetablePage.tsx` (Added recoverable `ErrorState` with `onRetry` on timetable fetch failure)
+  - `frontend/src/pages/student/StudentCalendarPage.tsx` (Added recoverable `ErrorState` with `onRetry` on calendar fetch failure)
+  - `frontend/src/pages/parent/ParentTimetablePage.tsx` (Added recoverable `ErrorState` with `onRetry` while keeping child switcher banner accessible)
+  - `frontend/src/pages/parent/ParentCalendarPage.tsx` (Added recoverable `ErrorState` with `onRetry` on calendar fetch failure)
+  - `frontend/src/features/parents/components/ParentCalendarEventsList.tsx` (Added explicit empty-state banner when `events.length === 0`)
   - `frontend/src/services/index.ts` (Barrel re-exports)
-- **Frontend test suite**: 303 passing tests (283 baseline + 20 new tests), 0 failures.
-- **Frontend build**: Clean build with `tsc -b && vite build` in 7.35s (and `tsc && vite build` in 17.49s).
-- **Completion report**: Task 6.4 Student and Parent Timetable/Calendar Integration is complete. Connected `StudentService` and `ParentService` to Django REST Framework `/api/v1/timetable/` and `/api/v1/calendar/events/` endpoints via dedicated, typed API services (`TimetableApiService`, `CalendarApiService`). Implemented period formatting, laboratory/activity classification, multi-day interval formatting, and category detection (PTM, Exam, Holiday). Maintained graceful fallback for resilience. Verified with 20 new Vitest tests and confirmed zero regressions across the entire 303-test frontend suite and clean production build.
+- **Frontend test suite**: 326 passing tests across 19 test files (0 failures).
+- **Frontend build**: Clean build with `tsc && vite build` in 7.09s (0 errors).
+- **Completion report**: Task 6.4 Student and Parent Timetable/Calendar Integration is complete and audited. Reconciled fallback behavior across all four Student and Parent timetable and calendar pages (`/student/timetable`, `/student/calendar`, `/parent/timetable`, `/parent/calendar`). Live API requests strictly propagate errors, triggering UI `ErrorState` components with retry buttons on all four pages. True empty responses (`slots = []` or `events = []`) render valid empty schedule grids / event list states rather than silently falling through to mock data. Explicit mock mode preserved strictly behind `{ useMock: true }` parameter for synthetic offline unit test suites (`student.test.ts`, `parent.test.ts`). Verified with 28 focused Vitest tests in `timetable_calendar_student_parent.test.ts`, zero regressions across the entire 326-test frontend suite, and a clean production build (`tsc && vite build` exit code 0).
 
 ---
 

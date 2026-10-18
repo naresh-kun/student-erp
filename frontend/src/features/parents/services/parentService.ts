@@ -634,18 +634,42 @@ export class ParentService {
 
   /**
    * Retrieves weekly period timetable for the child's enrolled section.
-   * Backed by Django REST Framework /api/v1/timetable/ with mock fallback.
+   * Backed by Django REST Framework /api/v1/timetable/.
+   * Strictly queries live backend without silent mock fallback on API failure or empty results.
    */
-  static async getChildTimetable(_studentId = 'STU202600001'): Promise<ParentTimetableDay[]> {
-    try {
-      const slots = await TimetableApiService.getTimetableSlots();
-      if (Array.isArray(slots) && slots.length > 0) {
-        return TimetableApiService.transformSlotsToParentTimetable(slots);
-      }
-    } catch {
-      // Graceful offline/test fallback
+  static async getChildTimetable(_studentId = 'STU202600001', options?: { useMock?: boolean }): Promise<ParentTimetableDay[]> {
+    if (options?.useMock) {
+      return this.getMockChildTimetable();
     }
+    const slots = await TimetableApiService.getTimetableSlots();
 
+    return TimetableApiService.transformSlotsToParentTimetable(Array.isArray(slots) ? slots : []);
+  }
+
+  /**
+   * Retrieves relevant school academic events, holidays, and PTM dates.
+   * Backed by Django REST Framework /api/v1/calendar/events/.
+   * Strictly queries live backend without silent mock fallback on API failure or empty results.
+   */
+  static async getParentCalendarEvents(options?: { useMock?: boolean }): Promise<ParentCalendarEvent[]> {
+    if (options?.useMock) {
+      return this.getMockParentCalendarEvents();
+    }
+    const events = await CalendarApiService.getCalendarEvents({ target_role: 'Parent' });
+    return (Array.isArray(events) ? events : []).map((e) => CalendarApiService.transformEventToParentItem(e));
+  }
+
+  /**
+   * Alias for getParentCalendarEvents() satisfying Task 6.4 API contract.
+   */
+  static async getCalendarEvents(options?: { useMock?: boolean }): Promise<ParentCalendarEvent[]> {
+    return this.getParentCalendarEvents(options);
+  }
+
+  /**
+   * Explicit mock data for demo/offline unit test verification.
+   */
+  static getMockChildTimetable(): ParentTimetableDay[] {
     return [
       {
         day: 'Monday',
@@ -701,19 +725,9 @@ export class ParentService {
   }
 
   /**
-   * Retrieves relevant school academic events, holidays, and PTM dates.
-   * Backed by Django REST Framework /api/v1/calendar/events/ with mock fallback.
+   * Explicit mock calendar events for demo/offline unit test verification.
    */
-  static async getParentCalendarEvents(): Promise<ParentCalendarEvent[]> {
-    try {
-      const events = await CalendarApiService.getCalendarEvents({ target_role: 'Parent' });
-      if (Array.isArray(events) && events.length > 0) {
-        return events.map((e) => CalendarApiService.transformEventToParentItem(e));
-      }
-    } catch {
-      // Graceful offline/test fallback
-    }
-
+  static getMockParentCalendarEvents(): ParentCalendarEvent[] {
     return [
       {
         id: 'ev_001',
@@ -763,12 +777,6 @@ export class ParentService {
     ];
   }
 
-  /**
-   * Alias for getParentCalendarEvents() satisfying Task 6.4 API contract.
-   */
-  static async getCalendarEvents(): Promise<ParentCalendarEvent[]> {
-    return this.getParentCalendarEvents();
-  }
 
   /**
    * Generates deterministic academic and attendance advisories based on actual mock data

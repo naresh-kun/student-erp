@@ -21,6 +21,8 @@ import { SCHOOL_CONFIG } from '@/config/schoolConfig';
 import { AdminApiService } from './adminApiService';
 import { AttendanceApiService } from '@/services/attendanceApiService';
 import { MarksApiService } from '@/services/marksApiService';
+import { TimetableApiService, type BackendTimetableSlot } from '@/services/timetableApiService';
+import { CalendarApiService, type BackendCalendarEvent } from '@/services/calendarApiService';
 import type {
   AdminDashboardKPIs,
   AdminStudentItem,
@@ -826,7 +828,27 @@ export class AdminService {
   // ==========================================
   // 9. TIMETABLE
   // ==========================================
-  static async getMasterTimetable(): Promise<AdminTimetableSlotItem[]> {
+  static async getMasterTimetable(params?: Parameters<typeof TimetableApiService.getTimetableSlots>[0]): Promise<AdminTimetableSlotItem[]> {
+    try {
+      const slots = await AdminApiService.getTimetableSlots(params);
+      if (Array.isArray(slots) && slots.length > 0) {
+        return slots.map((s) => ({
+          id: s.id,
+          class_name: s.class_name || 'Class',
+          section_name: s.section_name || 'Section',
+          day_of_week: s.day_of_week,
+          period_number: s.period_number,
+          start_time: TimetableApiService.formatTime(s.start_time),
+          end_time: TimetableApiService.formatTime(s.end_time),
+          subject_name: s.subject_name || 'Subject',
+          faculty_name: s.faculty_name || 'Faculty',
+          room_number: s.room_number || 'Room',
+        }));
+      }
+    } catch {
+      // Graceful offline/test fallback
+    }
+
     await delay();
     return [
       { id: '1', class_name: 'Grade 11-A2', section_name: 'Section A2', day_of_week: 'Monday', period_number: 1, start_time: '08:30', end_time: '09:15', subject_name: 'Mathematics', faculty_name: 'R. Suresh', room_number: 'XI-A2' },
@@ -840,10 +862,124 @@ export class AdminService {
     ];
   }
 
+  static async createTimetableSlot(payload: Partial<BackendTimetableSlot>): Promise<AdminTimetableSlotItem> {
+    const slot = await AdminApiService.createTimetableSlot(payload);
+    return {
+      id: slot.id,
+      class_name: slot.class_name || 'Class',
+      section_name: slot.section_name || 'Section',
+      day_of_week: slot.day_of_week,
+      period_number: slot.period_number,
+      start_time: TimetableApiService.formatTime(slot.start_time),
+      end_time: TimetableApiService.formatTime(slot.end_time),
+      subject_name: slot.subject_name || 'Subject',
+      faculty_name: slot.faculty_name || 'Faculty',
+      room_number: slot.room_number || 'Room',
+    };
+  }
+
+  static async updateTimetableSlot(id: string, payload: Partial<BackendTimetableSlot>): Promise<AdminTimetableSlotItem> {
+    const slot = await AdminApiService.updateTimetableSlot(id, payload);
+    return {
+      id: slot.id,
+      class_name: slot.class_name || 'Class',
+      section_name: slot.section_name || 'Section',
+      day_of_week: slot.day_of_week,
+      period_number: slot.period_number,
+      start_time: TimetableApiService.formatTime(slot.start_time),
+      end_time: TimetableApiService.formatTime(slot.end_time),
+      subject_name: slot.subject_name || 'Subject',
+      faculty_name: slot.faculty_name || 'Faculty',
+      room_number: slot.room_number || 'Room',
+    };
+  }
+
+  static async deleteTimetableSlot(id: string): Promise<void> {
+    await AdminApiService.deleteTimetableSlot(id);
+  }
+
+  /**
+   * Pre-validation conflict detector to guard against double-booking before submission.
+   */
+  static validateTimetableSlotConflict(
+    slot: {
+      id?: string;
+      section?: string;
+      section_name?: string;
+      class_name?: string;
+      faculty?: string;
+      faculty_name?: string;
+      day_of_week: string;
+      period_number: number;
+    },
+    existingSlots: Array<BackendTimetableSlot | AdminTimetableSlotItem>
+  ): { hasConflict: boolean; type?: 'faculty' | 'section'; message?: string } {
+    for (const existing of existingSlots) {
+      if (existing.id && slot.id && existing.id === slot.id) continue;
+      if (existing.day_of_week !== slot.day_of_week || existing.period_number !== slot.period_number) {
+        continue;
+      }
+
+      // Check section double-booking
+      const existingSec = (existing as any).section || (existing as any).section_name;
+      const targetSec = slot.section || slot.section_name;
+      if (existingSec && targetSec && existingSec === targetSec) {
+        return {
+          hasConflict: true,
+          type: 'section',
+          message: `Section Conflict: ${slot.section_name || 'Section'} is already scheduled for period ${slot.period_number} on ${slot.day_of_week}.`,
+        };
+      }
+
+      // Check faculty double-booking
+      const existingFac = (existing as any).faculty || (existing as any).faculty_name;
+      const targetFac = slot.faculty || slot.faculty_name;
+      if (existingFac && targetFac && existingFac === targetFac) {
+        return {
+          hasConflict: true,
+          type: 'faculty',
+          message: `Faculty Conflict: ${slot.faculty_name || 'Faculty'} is already assigned to another section for period ${slot.period_number} on ${slot.day_of_week}.`,
+        };
+      }
+    }
+
+    return { hasConflict: false };
+  }
+
   // ==========================================
   // 10. CALENDAR & EVENTS
   // ==========================================
   static async getCalendarEvents(): Promise<AdminCalendarEventItem[]> {
+    try {
+      const liveEvents = await AdminApiService.getCalendarEvents();
+      if (Array.isArray(liveEvents) && liveEvents.length > 0) {
+        return liveEvents.map((e) => {
+          const startDate = e.start_date.includes('T') ? e.start_date.split('T')[0] : e.start_date;
+          const endDate = e.end_date.includes('T') ? e.end_date.split('T')[0] : e.end_date;
+          const startTime = e.start_date.includes('T') ? e.start_date.split('T')[1].substring(0, 5) : '09:00';
+          const endTime = e.end_date.includes('T') ? e.end_date.split('T')[1].substring(0, 5) : '15:30';
+
+          return {
+            id: e.id,
+            title: e.title,
+            category: CalendarApiService.formatCategory(e.category) as any,
+            description: e.description || '',
+            start_date: startDate,
+            end_date: endDate,
+            start_time: startTime,
+            end_time: endTime,
+            location: e.location || 'Campus',
+            target_audience: (e.target_roles || []).join(', ') || 'All Students & Staff',
+            academic_relevance: e.category || 'General School Event',
+            od_eligible: Boolean(e.od_eligible || e.is_school_sanctioned),
+            is_holiday: Boolean(e.is_holiday),
+          };
+        });
+      }
+    } catch {
+      // Graceful offline/test fallback
+    }
+
     await delay();
     const storage = getStorage();
     const saved = storage.getItem(STORAGE_CALENDAR_KEY);
@@ -921,27 +1057,105 @@ export class AdminService {
   }
 
   static async addCalendarEvent(input: AdminEventInput): Promise<AdminCalendarEventItem> {
-    await delay();
-    const current = await this.getCalendarEvents();
-    const newEvent: AdminCalendarEventItem = {
-      id: `evt_${Date.now()}`,
-      title: input.title,
-      category: input.category,
-      description: input.description,
-      start_date: input.start_date,
-      end_date: input.end_date,
-      start_time: input.start_time,
-      end_time: input.end_time,
-      location: input.location,
-      target_audience: input.target_audience,
-      academic_relevance: input.academic_relevance || 'General School Event',
-      od_eligible: input.od_eligible,
-      is_holiday: input.is_holiday,
-    };
+    try {
+      const startDateTime = input.start_time ? `${input.start_date}T${input.start_time}:00Z` : `${input.start_date}T00:00:00Z`;
+      const endDateTime = input.end_time ? `${input.end_date}T${input.end_time}:00Z` : `${input.end_date}T23:59:59Z`;
 
-    const updated = [newEvent, ...current];
+      const created = await AdminApiService.createCalendarEvent({
+        title: input.title,
+        category: input.category.toLowerCase(),
+        description: input.description,
+        start_date: startDateTime,
+        end_date: endDateTime,
+        location: input.location,
+        is_holiday: input.is_holiday,
+        is_published: true,
+        target_roles: ['Student', 'Parent', 'Faculty', 'Admin', 'Principal'],
+        od_eligible: input.od_eligible,
+        is_school_sanctioned: input.od_eligible,
+      });
+
+      const newEvent: AdminCalendarEventItem = {
+        id: created.id,
+        title: created.title,
+        category: CalendarApiService.formatCategory(created.category) as any,
+        description: created.description || '',
+        start_date: input.start_date,
+        end_date: input.end_date,
+        start_time: input.start_time,
+        end_time: input.end_time,
+        location: input.location,
+        target_audience: input.target_audience,
+        academic_relevance: input.academic_relevance || 'General School Event',
+        od_eligible: input.od_eligible,
+        is_holiday: input.is_holiday,
+      };
+
+      const current = await this.getCalendarEvents();
+      const updated = [newEvent, ...current];
+      getStorage().setItem(STORAGE_CALENDAR_KEY, JSON.stringify(updated));
+      return newEvent;
+    } catch {
+      await delay();
+      const current = await this.getCalendarEvents();
+      const newEvent: AdminCalendarEventItem = {
+        id: `evt_${Date.now()}`,
+        title: input.title,
+        category: input.category,
+        description: input.description,
+        start_date: input.start_date,
+        end_date: input.end_date,
+        start_time: input.start_time,
+        end_time: input.end_time,
+        location: input.location,
+        target_audience: input.target_audience,
+        academic_relevance: input.academic_relevance || 'General School Event',
+        od_eligible: input.od_eligible,
+        is_holiday: input.is_holiday,
+      };
+
+      const updated = [newEvent, ...current];
+      getStorage().setItem(STORAGE_CALENDAR_KEY, JSON.stringify(updated));
+      return newEvent;
+    }
+  }
+
+  static async updateCalendarEvent(id: string, input: Partial<AdminEventInput>): Promise<AdminCalendarEventItem> {
+    try {
+      const payload: Partial<BackendCalendarEvent> = {};
+      if (input.title) payload.title = input.title;
+      if (input.category) payload.category = input.category.toLowerCase();
+      if (input.description) payload.description = input.description;
+      if (input.location) payload.location = input.location;
+      if (input.is_holiday !== undefined) payload.is_holiday = input.is_holiday;
+      if (input.start_date) payload.start_date = `${input.start_date}T${input.start_time || '09:00'}:00Z`;
+      if (input.end_date) payload.end_date = `${input.end_date}T${input.end_time || '15:30'}:00Z`;
+
+      await AdminApiService.updateCalendarEvent(id, payload);
+    } catch {
+      // offline fallback
+    }
+
+    const current = await this.getCalendarEvents();
+    const item = current.find((e) => e.id === id);
+    if (!item) throw new Error(`Event ${id} not found`);
+
+    const updatedItem = { ...item, ...input } as AdminCalendarEventItem;
+    const updatedList = current.map((e) => (e.id === id ? updatedItem : e));
+    getStorage().setItem(STORAGE_CALENDAR_KEY, JSON.stringify(updatedList));
+    return updatedItem;
+  }
+
+  static async deleteCalendarEvent(id: string): Promise<void> {
+    try {
+      await AdminApiService.deleteCalendarEvent(id);
+    } catch {
+      // offline fallback
+    }
+
+    const current = await this.getCalendarEvents();
+    const updated = current.filter((e) => e.id !== id);
     getStorage().setItem(STORAGE_CALENDAR_KEY, JSON.stringify(updated));
-    return newEvent;
   }
 
   // ==========================================

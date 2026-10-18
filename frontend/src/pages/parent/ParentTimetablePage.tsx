@@ -11,7 +11,7 @@
 import React from 'react';
 import { PageContainer } from '@/components/ui/PageContainer';
 import { SectionHeader } from '@/components/ui/SectionHeader';
-import { LoadingState } from '@/components/ui/States';
+import { LoadingState, ErrorState } from '@/components/ui/States';
 import { Badge } from '@/components/ui/Badge';
 import {
   useParentProfile,
@@ -29,7 +29,12 @@ export const ParentTimetablePage: React.FC = () => {
   );
   const { activeChild, activeChildId, selectChild } = useActiveChild(linkedChildren);
 
-  const { data: timetableDays = [], isLoading: timetableLoading } = useChildTimetable(activeChildId);
+  const {
+    data: timetableDays = [],
+    isLoading: timetableLoading,
+    error: timetableError,
+    refetch: refetchTimetable,
+  } = useChildTimetable(activeChildId);
 
   if (profileLoading || childrenLoading || timetableLoading) {
     return (
@@ -38,6 +43,39 @@ export const ParentTimetablePage: React.FC = () => {
       </PageContainer>
     );
   }
+
+  if (timetableError) {
+    return (
+      <PageContainer>
+        <div className="space-y-6">
+          <SectionHeader
+            title="Student Timetable & Daily Periods"
+            description={`Weekly period routine and classroom schedule for ${activeChild?.full_name || 'your ward'}`}
+            actions={
+              <Badge variant="outline" className="text-xs font-mono">
+                Class: {activeChild?.class_name} — {activeChild?.section_name}
+              </Badge>
+            }
+          />
+
+          <ParentChildBanner
+            parentProfile={parentProfile}
+            activeChild={activeChild}
+            linkedChildren={linkedChildren}
+            onSelectChild={selectChild}
+            showChildSelector={true}
+          />
+
+          <ErrorState
+            title="Unable to load timetable schedule"
+            message={(timetableError as any)?.message || 'Failed to load timetable for the selected child. Please try again.'}
+            onRetry={() => refetchTimetable()}
+          />
+        </div>
+      </PageContainer>
+    );
+  }
+
 
   return (
     <PageContainer>

@@ -325,14 +325,27 @@ describe('Phase 6 Task 6.4 — Timetable & Calendar API Integration', () => {
       expect(grid2).toEqual(grid1);
     });
 
-    it('getWeeklyTimetable gracefully falls back to mock grid when API throws', async () => {
-      vi.spyOn(TimetableApiService, 'getTimetableSlots').mockRejectedValue(new Error('Network error'));
+    it('getWeeklyTimetable rejects with error and does NOT silently return mock grid when API fails', async () => {
+      vi.spyOn(TimetableApiService, 'getTimetableSlots').mockRejectedValue(new Error('Network error: 500 Internal Server Error'));
 
-      const fallbackGrid = await StudentService.getWeeklyTimetable();
-      expect(fallbackGrid).toHaveLength(5);
-      const monday = fallbackGrid.find((d) => d.day === 'Monday')!;
+      await expect(StudentService.getWeeklyTimetable()).rejects.toThrow('Network error: 500 Internal Server Error');
+    });
+
+    it('getWeeklyTimetable returns genuine empty 5-day grid when API returns 0 slots', async () => {
+      vi.spyOn(TimetableApiService, 'getTimetableSlots').mockResolvedValue([]);
+
+      const emptyGrid = await StudentService.getWeeklyTimetable();
+      expect(emptyGrid).toHaveLength(5);
+      emptyGrid.forEach((day) => {
+        expect(day.periods).toHaveLength(0);
+      });
+    });
+
+    it('getWeeklyTimetable returns explicit mock grid when useMock: true option is provided', async () => {
+      const mockGrid = await StudentService.getWeeklyTimetable({ useMock: true });
+      expect(mockGrid).toHaveLength(5);
+      const monday = mockGrid.find((d) => d.day === 'Monday')!;
       expect(monday.periods.length).toBeGreaterThan(0);
-      expect(monday.periods[0].subject).toBeDefined();
     });
 
     it('getCalendarEvents returns live DRF events scoped to Student', async () => {
@@ -345,12 +358,23 @@ describe('Phase 6 Task 6.4 — Timetable & Calendar API Integration', () => {
       expect(events[0].category).toBe('Examination');
     });
 
-    it('getCalendarEvents gracefully falls back to mock events when API throws', async () => {
+    it('getCalendarEvents rejects with error and does NOT silently return mock events when API fails', async () => {
       vi.spyOn(CalendarApiService, 'getCalendarEvents').mockRejectedValue(new Error('500 Internal Error'));
 
-      const fallbackEvents = await StudentService.getCalendarEvents();
-      expect(fallbackEvents.length).toBeGreaterThan(0);
-      expect(fallbackEvents[0].title).toBeDefined();
+      await expect(StudentService.getCalendarEvents()).rejects.toThrow('500 Internal Error');
+    });
+
+    it('getCalendarEvents returns genuine empty array when API returns 0 events', async () => {
+      vi.spyOn(CalendarApiService, 'getCalendarEvents').mockResolvedValue([]);
+
+      const events = await StudentService.getCalendarEvents();
+      expect(events).toEqual([]);
+    });
+
+    it('getCalendarEvents returns explicit mock events when useMock: true option is provided', async () => {
+      const mockEventsList = await StudentService.getCalendarEvents({ useMock: true });
+      expect(mockEventsList.length).toBeGreaterThan(0);
+      expect(mockEventsList[0].title).toBeDefined();
     });
   });
 
@@ -369,14 +393,27 @@ describe('Phase 6 Task 6.4 — Timetable & Calendar API Integration', () => {
       expect(monday.periods[0].faculty).toBe('R. Suresh');
     });
 
-    it('getChildTimetable gracefully falls back to mock timetable when API throws', async () => {
-      vi.spyOn(TimetableApiService, 'getTimetableSlots').mockRejectedValue(new Error('Service unavailable'));
+    it('getChildTimetable rejects with error and does NOT silently return mock timetable when API fails', async () => {
+      vi.spyOn(TimetableApiService, 'getTimetableSlots').mockRejectedValue(new Error('Service unavailable: 503'));
 
-      const fallbackDays = await ParentService.getChildTimetable('STU202600001');
-      expect(fallbackDays).toHaveLength(5);
-      const monday = fallbackDays.find((d) => d.day === 'Monday')!;
+      await expect(ParentService.getChildTimetable('STU202600001')).rejects.toThrow('Service unavailable: 503');
+    });
+
+    it('getChildTimetable returns genuine empty 5-day schedule when API returns 0 slots', async () => {
+      vi.spyOn(TimetableApiService, 'getTimetableSlots').mockResolvedValue([]);
+
+      const emptyDays = await ParentService.getChildTimetable('STU202600001');
+      expect(emptyDays).toHaveLength(5);
+      emptyDays.forEach((day) => {
+        expect(day.periods).toHaveLength(0);
+      });
+    });
+
+    it('getChildTimetable returns explicit mock days when useMock: true option is provided', async () => {
+      const mockDays = await ParentService.getChildTimetable('STU202600001', { useMock: true });
+      expect(mockDays).toHaveLength(5);
+      const monday = mockDays.find((d) => d.day === 'Monday')!;
       expect(monday.periods.length).toBeGreaterThan(0);
-      expect(monday.periods[0].subject).toBe('Mathematics');
     });
 
     it('getParentCalendarEvents and getCalendarEvents return live DRF events scoped to Parent', async () => {
@@ -392,14 +429,26 @@ describe('Phase 6 Task 6.4 — Timetable & Calendar API Integration', () => {
       expect(events2).toEqual(events1);
     });
 
-    it('getParentCalendarEvents gracefully falls back to mock events when API throws', async () => {
-      vi.spyOn(CalendarApiService, 'getCalendarEvents').mockRejectedValue(new Error('Timeout'));
+    it('getParentCalendarEvents rejects with error and does NOT silently return mock events when API fails', async () => {
+      vi.spyOn(CalendarApiService, 'getCalendarEvents').mockRejectedValue(new Error('Gateway Timeout: 504'));
 
-      const fallbackEvents = await ParentService.getParentCalendarEvents();
-      expect(fallbackEvents.length).toBeGreaterThan(0);
-      expect(fallbackEvents[0].title).toBe('Parent-Teacher Meeting (Term 1 Academic Review)');
+      await expect(ParentService.getParentCalendarEvents()).rejects.toThrow('Gateway Timeout: 504');
+    });
+
+    it('getParentCalendarEvents returns genuine empty array when API returns 0 events', async () => {
+      vi.spyOn(CalendarApiService, 'getCalendarEvents').mockResolvedValue([]);
+
+      const events = await ParentService.getParentCalendarEvents();
+      expect(events).toEqual([]);
+    });
+
+    it('getParentCalendarEvents returns explicit mock events when useMock: true option is provided', async () => {
+      const mockEventsList = await ParentService.getParentCalendarEvents({ useMock: true });
+      expect(mockEventsList.length).toBeGreaterThan(0);
+      expect(mockEventsList[0].title).toContain('Parent-Teacher Meeting');
     });
   });
+
 
   // =========================================================================
   // 5. Section and Role Scoping Invariants

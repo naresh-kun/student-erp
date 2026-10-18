@@ -16,8 +16,22 @@ interface ParentCalendarEventsListProps {
 export const ParentCalendarEventsList: React.FC<ParentCalendarEventsListProps> = ({
   events = [],
 }) => {
+  if (events.length === 0) {
+    return (
+      <div className="py-12 text-center rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-2">
+        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+          No calendar events scheduled
+        </p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+          There are currently no official school events, holidays, or parent-teacher meetings scheduled.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
       {events.map((e) => {
         const isPtm = e.category === 'PTM';
         const isExam = e.category === 'Examination';

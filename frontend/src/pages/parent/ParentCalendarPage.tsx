@@ -12,7 +12,7 @@
 import React from 'react';
 import { PageContainer } from '@/components/ui/PageContainer';
 import { SectionHeader } from '@/components/ui/SectionHeader';
-import { LoadingState } from '@/components/ui/States';
+import { LoadingState, ErrorState } from '@/components/ui/States';
 import { Badge } from '@/components/ui/Badge';
 import {
   useParentCalendar,
@@ -20,7 +20,7 @@ import {
 } from '@/features/parents';
 
 export const ParentCalendarPage: React.FC = () => {
-  const { data: events = [], isLoading } = useParentCalendar();
+  const { data: events = [], isLoading, error, refetch } = useParentCalendar();
 
   if (isLoading) {
     return (
@@ -29,6 +29,31 @@ export const ParentCalendarPage: React.FC = () => {
       </PageContainer>
     );
   }
+
+  if (error) {
+    return (
+      <PageContainer>
+        <div className="space-y-6">
+          <SectionHeader
+            title="School Academic Calendar & Events"
+            description="Official schedule of term examinations, parent-teacher meetings, holidays, and school exhibitions"
+            actions={
+              <Badge variant="outline" className="text-xs font-mono">
+                Academic Year 2026–27
+              </Badge>
+            }
+          />
+
+          <ErrorState
+            title="Unable to load academic calendar"
+            message={(error as any)?.message || 'Failed to load institutional calendar events. Please try again.'}
+            onRetry={() => refetch()}
+          />
+        </div>
+      </PageContainer>
+    );
+  }
+
 
   return (
     <PageContainer>

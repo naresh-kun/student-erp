@@ -498,4 +498,27 @@ export class PrincipalService {
       },
     ];
   }
+
+  // ==========================================
+  // 6. TIMETABLE & CALENDAR (Read-Only Matrix Oversight)
+  // ==========================================
+  static async getTimetable(params?: {
+    academic_year?: string;
+    class_name?: string;
+    section_name?: string;
+    faculty_id?: string;
+    day_of_week?: string;
+  }) {
+    return AdminApiService.getTimetableSlots(params);
+  }
+
+  static async getCalendarEvents(params?: {
+    event_type?: string;
+    start_date?: string;
+    end_date?: string;
+    is_published?: boolean;
+    target_role?: string;
+  }) {
+    return AdminApiService.getCalendarEvents(params);
+  }
 }

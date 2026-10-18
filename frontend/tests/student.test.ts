@@ -346,7 +346,7 @@ describe('Student Domain — Indian School Governance & Visual Contracts', () =>
   });
 
   it('guarantees weekly timetable periods have subjects, faculty, and room allocations with zero credits', async () => {
-    const grid = await StudentService.getWeeklyTimetable();
+    const grid = await StudentService.getWeeklyTimetable({ useMock: true });
     expect(grid.length).toBeGreaterThan(0);
     const monday = grid.find((d) => d.day === 'Monday');
     expect(monday).toBeDefined();
@@ -361,7 +361,7 @@ describe('Student Domain — Indian School Governance & Visual Contracts', () =>
   });
 
   it('provides institutional calendar events strictly aligned with Indian school milestones', async () => {
-    const events = await StudentService.getCalendarEvents();
+    const events = await StudentService.getCalendarEvents({ useMock: true });
     expect(events.length).toBeGreaterThan(0);
     const examEvent = events.find((e) => e.category === 'Examination');
     const holidayEvent = events.find((e) => e.category === 'Holiday');
@@ -369,3 +369,4 @@ describe('Student Domain — Indian School Governance & Visual Contracts', () =>
     expect(holidayEvent?.title).toContain('Diwali');
   });
 });
+

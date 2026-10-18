@@ -7,7 +7,7 @@
 import React from 'react';
 import { PageContainer } from '@/components/ui/PageContainer';
 import { SectionHeader } from '@/components/ui/SectionHeader';
-import { LoadingState } from '@/components/ui/States';
+import { LoadingState, ErrorState } from '@/components/ui/States';
 import { 
   useStudentTimetable, 
   StudentTimetableSchedule 
@@ -18,13 +18,31 @@ export const StudentTimetablePage: React.FC = () => {
     selectedDay, 
     setSelectedDay, 
     activeDaySchedule, 
-    loading 
+    loading,
+    error,
+    refetch,
   } = useStudentTimetable();
 
   if (loading) {
     return (
       <PageContainer>
         <LoadingState message="Loading weekly timetable..." />
+      </PageContainer>
+    );
+  }
+
+  if (error) {
+    return (
+      <PageContainer>
+        <SectionHeader 
+          title="Weekly School Timetable" 
+          description="Daily period schedule, classroom allocations, and lab workshop timings"
+        />
+        <ErrorState
+          title="Unable to load timetable"
+          message={error}
+          onRetry={refetch}
+        />
       </PageContainer>
     );
   }
@@ -44,3 +62,4 @@ export const StudentTimetablePage: React.FC = () => {
     </PageContainer>
   );
 };
+
